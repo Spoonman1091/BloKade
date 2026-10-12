@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { GeometryTimeoutError } from '../geometry/client'
-import { createShapeCatalog, resultFor } from './catalog'
+import { createShapeCatalog, namesFromChecks, resultFor } from './catalog'
+import { codeHash } from './hash'
 import { CHECK_FAILED, TOO_LONG } from './messages'
 import type { InspectResult } from './meta'
 
@@ -61,5 +62,20 @@ describe('the shape catalog', () => {
     await flush()
     expect(resultFor(catalog.getState().results, 'y')).toEqual({ ok: false, problem: CHECK_FAILED })
     error.mockRestore()
+  })
+})
+
+describe('namesFromChecks', () => {
+  it("takes each library shape's name from its checked code", () => {
+    const library = [
+      { id: 'my-a', name: 'Old', code: 'a', updatedAt: 1 },
+      { id: 'my-b', name: 'B', code: 'b', updatedAt: 1 },
+      { id: 'my-c', name: 'C', code: 'c', updatedAt: 1 },
+    ]
+    const results = {
+      [codeHash('a')]: { ok: true, meta: { name: 'Rocket', icon: '🚀', params: {} } },
+      [codeHash('b')]: { ok: false, problem: 'x' },
+    } as const
+    expect(namesFromChecks(library, results)).toEqual({ 'my-a': 'Rocket' })
   })
 })

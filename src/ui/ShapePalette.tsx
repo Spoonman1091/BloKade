@@ -7,6 +7,8 @@ interface ShapePaletteProps {
   kits: readonly ShapeKit[]
   onAdd(pluginId: string): void
   onAddKit(kitId: string): void
+  /** Kade's own shapes. When given, they get their own My shapes section and leave the other grids. */
+  mine?: readonly ShapePlugin[]
 }
 
 const sectionOf = (plugin: ShapePlugin): 'shapes' | 'fit' | 'hidden' => plugin.palette ?? 'shapes'
@@ -20,8 +22,9 @@ function PaletteButton({ testId, icon, name, onClick }: { testId: string; icon: 
   )
 }
 
-export function ShapePalette({ registry, kits, onAdd, onAddKit }: ShapePaletteProps) {
-  const plugins = registry.list()
+export function ShapePalette({ registry, kits, onAdd, onAddKit, mine }: ShapePaletteProps) {
+  const mineIds = new Set((mine ?? []).map((p) => p.id))
+  const plugins = registry.list().filter((p) => !mineIds.has(p.id))
   const pluginButton = (p: ShapePlugin) => <PaletteButton key={p.id} testId={`add-${p.id}`} icon={p.icon} name={p.name} onClick={() => onAdd(p.id)} />
   return (
     <>
@@ -36,6 +39,14 @@ export function ShapePalette({ registry, kits, onAdd, onAddKit }: ShapePalettePr
           {plugins.filter((p) => sectionOf(p) === 'fit').map(pluginButton)}
         </div>
       </section>
+      {mine && (
+        <section className="panel" aria-label="My shapes">
+          <h2 data-help="panel-my-shapes">My shapes</h2>
+          {mine.length > 0
+            ? <div className="palette-grid">{mine.map(pluginButton)}</div>
+            : <p className="hint">Make your own with <strong>🧩 My shapes</strong> at the top.</p>}
+        </section>
+      )}
     </>
   )
 }

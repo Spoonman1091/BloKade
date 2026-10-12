@@ -25,9 +25,11 @@ interface ToolbarProps {
   onLearn(): void
   helpMode: boolean
   onHelpMode(): void
+  /** Opens 🧩 My shapes. The button only shows when this is given. */
+  onMyShapes?(): void
 }
 
-export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn, helpMode, onHelpMode }: ToolbarProps) {
+export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn, helpMode, onHelpMode, onMyShapes }: ToolbarProps) {
   const undoable = useBloKade((s) => canUndo(s.history))
   const redoable = useBloKade((s) => canRedo(s.history))
   const count = useBloKade((s) => s.selection.length)
@@ -45,6 +47,7 @@ export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn, 
         <button type="button" className="tool-button" data-testid="learn" aria-pressed={learnOpen} onClick={onLearn}>📘 Learn</button>
         <button type="button" className="tool-button" data-testid="help-mode" data-help-toggle="" aria-pressed={helpMode}
           aria-label="Help mode" onClick={onHelpMode}>❓</button>
+        {onMyShapes && <button type="button" className="tool-button" data-testid="my-shapes" onClick={onMyShapes}>🧩 My shapes</button>}
       </div>
       <div className="toolbar-group">
         <button type="button" className="tool-button" data-testid="undo" title="Undo (Ctrl+Z)" disabled={!undoable} onClick={actions.undo}>↶ Undo</button>

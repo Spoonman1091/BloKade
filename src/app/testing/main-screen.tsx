@@ -7,11 +7,12 @@ import type { LessonStore } from '../../learn/lesson-store'
 import { StoreProvider } from '../../store/context'
 import { createBloKadeStore, type BloKadeStore } from '../../store/store'
 import { Workspace } from '../../ui/Workspace'
+import type { AppDeps } from '../deps'
 import { fakeDeps } from './fakes'
 
 /** The whole main screen. Test files must `vi.mock('../viewport/Viewport', …)` (path relative to them) first. */
-export function renderMainScreen(store: BloKadeStore, lessons?: LessonStore) {
-  return render(<StoreProvider store={store}><Workspace deps={fakeDeps()} lessons={lessons} /></StoreProvider>)
+export function renderMainScreen(store: BloKadeStore, lessons?: LessonStore, deps: AppDeps = fakeDeps()) {
+  return render(<StoreProvider store={store}><Workspace deps={deps} lessons={lessons} /></StoreProvider>)
 }
 
 function richDoc(): BloKadeDocument {

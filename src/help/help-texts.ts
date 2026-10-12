@@ -22,6 +22,8 @@ export const HELP_TEXTS: Readonly<Record<string, HelpEntry>> = {
   viewport: { tip: 'The 3D view. Drag to spin, scroll to zoom, click a part to select it.', card: 'This is your design in 3D. Drag with the left button to spin around, the right button to slide, and the wheel to zoom. Click a part to select it, then use the handles to move, turn or size it.', tutorial: 'first-shape' },
   learn: { tip: 'Opens the lessons: step-by-step guides to BloKade.', card: 'Lessons walk you through BloKade one step at a time. Each lesson uses its own practice design, so your work stays safe.' },
   'help-mode': { tip: 'Help mode: click anything to learn what it does.', card: 'In help mode, clicking a button shows what it does instead of doing it. Press Esc or ❓ again to stop.' },
+  'my-shapes': { tip: 'Opens My shapes, where you write your own shapes in code.', card: 'My shapes is where you make shapes with code. Write a few lines, watch the preview, then add your shape to the design. The coding lessons start there too.' },
+  'panel-my-shapes': { tip: 'Shapes you made yourself.', card: 'Every shape you write in 🧩 My shapes appears here. Click one to add it to your design.' },
   // Panel headings
   'panel-shapes': { tip: 'Shapes you can add. Click one to add it.', card: 'Click a shape to add it to your design. It appears in the middle, or on your workplane.', tutorial: 'first-shape' },
   'panel-fit-tools': { tip: 'Parts that fit together: pegs, screws, threads and clips.', card: 'Fit tools make parts that go together after printing. They all leave a little extra room, set by the Fit gap.', tutorial: 'perfect-fit' },

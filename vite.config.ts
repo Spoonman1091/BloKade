@@ -28,7 +28,7 @@ export default defineConfig({
       exclude: [
         '**/*.test.*', '**/testing/**', '**/*.tsx',
         'src/geometry/geometry.worker.ts', 'src/geometry/oc-browser.ts', 'src/geometry/spawn.ts',
-        'src/app/useGeometrySync.ts', 'src/app/useAutosave.ts', 'src/app/deps.ts', 'src/app/download.ts',
+        'src/app/useGeometrySync.ts', 'src/app/useAutosave.ts', 'src/app/deps.ts', 'src/app/download.ts', 'src/app/useShapeSetup.ts',
         'src/kade/blob-loader.ts', 'src/kade/use*.ts',
       ],
       thresholds: { lines: 80, statements: 80, functions: 80, branches: 75 },

@@ -36,4 +36,21 @@ describe('ShapePalette', () => {
     expect(ids('Shapes')).toEqual(['add-plain', 'add-listed'])
     expect(ids('Fit tools')).toEqual(['add-fitty'])
   })
+
+  it("lists Kade's shapes in their own My shapes section", async () => {
+    const mine = definePlugin({ id: 'my-gear', name: 'Gear', icon: '⚙️', version: 1, palette: 'fit', params: {}, build: () => { throw new Error('unused') } })
+    const { registry: withMine } = createRegistry([...registry.list(), mine])
+    const onAdd = vi.fn()
+    render(<ShapePalette registry={withMine} mine={[mine]} kits={KITS} onAdd={onAdd} onAddKit={vi.fn()} />)
+    const ids = (name: string) => within(screen.getByRole('region', { name })).getAllByRole('button').map((b) => b.dataset.testid)
+    expect(ids('My shapes')).toEqual(['add-my-gear'])
+    expect(ids('Fit tools')).not.toContain('add-my-gear')
+    await userEvent.click(screen.getByTestId('add-my-gear'))
+    expect(onAdd).toHaveBeenCalledWith('my-gear')
+  })
+
+  it('says how to make shapes when there are none yet', () => {
+    render(<ShapePalette registry={registry} mine={[]} kits={KITS} onAdd={vi.fn()} onAddKit={vi.fn()} />)
+    expect(within(screen.getByRole('region', { name: 'My shapes' })).getByText(/Make your own/)).toBeInTheDocument()
+  })
 })

@@ -16,8 +16,9 @@ function setup() {
   const onOpenDesigns = vi.fn()
   const onLearn = vi.fn()
   const onHelpMode = vi.fn()
-  renderWithStore(<Toolbar actions={actions} onExport={onExport} onOpenDesigns={onOpenDesigns} learnOpen={false} onLearn={onLearn} helpMode={false} onHelpMode={onHelpMode} />, store)
-  return { store, actions, onExport, onOpenDesigns, onLearn, onHelpMode, doc: () => store.getState().history.present }
+  const onMyShapes = vi.fn()
+  renderWithStore(<Toolbar actions={actions} onExport={onExport} onOpenDesigns={onOpenDesigns} learnOpen={false} onLearn={onLearn} helpMode={false} onHelpMode={onHelpMode} onMyShapes={onMyShapes} />, store)
+  return { store, actions, onExport, onOpenDesigns, onLearn, onHelpMode, onMyShapes, doc: () => store.getState().history.present }
 }
 
 describe('Toolbar', () => {
@@ -94,5 +95,11 @@ describe('Toolbar', () => {
     act(() => store.getState().setWorkplane({ origin: [0, 0, 5], rotation: [0, 0, 0] }))
     await userEvent.click(screen.getByTestId('workplane-reset'))
     expect(store.getState().workplane).toBeNull()
+  })
+
+  it('opens My shapes', async () => {
+    const { onMyShapes } = setup()
+    await userEvent.click(screen.getByTestId('my-shapes'))
+    expect(onMyShapes).toHaveBeenCalledOnce()
   })
 })

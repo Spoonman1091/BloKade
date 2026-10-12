@@ -1,6 +1,7 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import { GeometryTimeoutError } from '../geometry/client'
 import { codeHash } from './hash'
+import type { LibraryShape } from './library'
 import { CHECK_FAILED, TOO_LONG } from './messages'
 import type { InspectResult } from './meta'
 
@@ -42,5 +43,13 @@ export function createShapeCatalog(inspect: (code: string) => Promise<InspectRes
         return failureOf(error)
       }).then((result) => set((s) => ({ results: { ...s.results, [key]: result } })))
     },
+  }))
+}
+
+/** The name in each library shape's checked code, by shape id. Shapes not checked yet, or broken, are left out. */
+export function namesFromChecks(library: readonly LibraryShape[], results: CatalogState['results']): Record<string, string> {
+  return Object.fromEntries(library.flatMap((shape) => {
+    const result = resultFor(results, shape.code)
+    return result?.ok ? [[shape.id, result.meta.name]] : []
   }))
 }
