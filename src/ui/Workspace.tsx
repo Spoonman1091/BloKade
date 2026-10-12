@@ -10,11 +10,14 @@ import { useAutosave } from '../app/useAutosave'
 import { useEdgeCandidates } from '../app/useEdgeCandidates'
 import { useGeometrySync } from '../app/useGeometrySync'
 import { createLessonStore, currentStepOf, type LessonStore } from '../learn/lesson-store'
+import { startLesson } from '../learn/start-lesson'
+import { TUTORIALS } from '../learn/tutorials'
 import { browserStorage } from '../learn/progress'
 import { useStepWatcher } from '../learn/watch-steps'
 import { useBloKadeStore } from '../store/context'
 import { Viewport } from '../viewport/Viewport'
 import { DesignsDialog } from './DesignsDialog'
+import { EmptyNudge } from './EmptyNudge'
 import { HelpMode } from './HelpMode'
 import { HelpTooltips } from './HelpTooltips'
 import { LessonsPanel } from './LessonsPanel'
@@ -58,6 +61,10 @@ export function Workspace({ deps, lessons: injected }: { deps: AppDeps; lessons?
       </aside>
       <main className="viewport" data-testid="viewport">
         <Viewport registry={deps.registry} onToggleEdge={actions.togglePickedEdge} />
+        <EmptyNudge lessons={lessons} onStart={() => {
+          const first = TUTORIALS[0]
+          if (first) void startLesson(session, lessons, first)
+        }} />
       </main>
       <aside className="right-panel">
         <PropertiesPanel registry={deps.registry} onCheckOverlap={() => void checkOverlap(store, deps.client)} />
