@@ -1,5 +1,5 @@
-import { measureVolume } from 'replicad'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { measureVolume, type Shape3D } from 'replicad'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { createEmptyDocument, createShapeNode } from '../document/factory'
 import { addNode, groupNodes, setHidden, setMode, updateNode } from '../document/ops'
 import { modifierField, writeField } from '../document/fields'
@@ -212,4 +212,34 @@ describe('Evaluator modifiers', () => {
     const { doc, modifierId } = withModifier(addNode(createEmptyDocument(), shape('a', 'box', { width: 20, depth: 20, height: 20 })), 'a', 'mirror')
     expect(buildError(() => newEvaluator().edgeCandidates(doc, 'a', modifierId)).message).toContain('Only Round edges and Bevel edges')
   })
+
+  it('reuses the shape before the picked modifier while Kade clicks edges', () => {
+    const base = addNode(createEmptyDocument(), shape('a', 'box', { width: 20, depth: 20, height: 20 }))
+    const repeated = withModifier(base, 'a', 'linearPattern').doc
+    const { doc, modifierId } = withModifier(repeated, 'a', 'fillet')
+    const ev = newEvaluator()
+    const fuseOwner = fuseOwnerOf(createCadToolkit().box(1, 1, 1))
+    const fuse = vi.spyOn(fuseOwner, 'fuse')
+    try {
+      const first = ev.edgeCandidates(doc, 'a', modifierId)
+      const picked = setEdgeSelection(doc, 'a', modifierId, { by: 'picked', fingerprints: [first[0]!.fingerprint] })
+      ev.beginPass()
+      ev.local(picked, 'a')
+      ev.endPass()
+      fuse.mockClear()
+      expect(ev.edgeCandidates(picked, 'a', modifierId).filter((c) => c.picked)).toHaveLength(1)
+      expect(fuse).not.toHaveBeenCalled()
+    } finally {
+      fuse.mockRestore()
+    }
+  })
 })
+
+/** The replicad prototype that defines fuse(), so a test can count fuses. Frees `sample`. */
+function fuseOwnerOf(sample: Shape3D): { fuse: Shape3D['fuse'] } {
+  let proto: object | null = Object.getPrototypeOf(sample) as object
+  while (proto && !Object.hasOwn(proto, 'fuse')) proto = Object.getPrototypeOf(proto) as object | null
+  sample.delete()
+  if (!proto) throw new Error('fuse not found')
+  return proto as { fuse: Shape3D['fuse'] }
+}

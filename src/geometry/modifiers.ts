@@ -243,9 +243,3 @@ export function applyModifiers(input: Shape3D, modifiers: readonly Modifier[]): 
     return { shape: applied.shape, warnings: applied.warning ? { ...acc.warnings, [modifier.id]: applied.warning } : acc.warnings }
   }, { shape: input, warnings: {} })
 }
-
-/** The shape a modifier works on: the enabled modifiers before it applied. Consumes `input`. */
-export function modifierInput(input: Shape3D, modifiers: readonly Modifier[], modifierId: string): Shape3D {
-  const index = modifiers.findIndex((m) => m.id === modifierId)
-  return applyModifiers(input, index === -1 ? modifiers : modifiers.slice(0, index)).shape
-}

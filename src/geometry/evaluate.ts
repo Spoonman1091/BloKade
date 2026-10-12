@@ -5,7 +5,7 @@ import type { CadToolkit } from '../plugins/cad-types'
 import { resolveParams } from '../plugins/params'
 import type { PluginRegistry } from '../plugins/registry'
 import { findEdgeCandidates } from './edge-candidates'
-import { applyModifiers, ModifierError, modifierInput } from './modifiers'
+import { applyModifiers, ModifierError } from './modifiers'
 import { placeShape } from './transform'
 import type { EdgeCandidate, ModifierWarnings } from './types'
 
@@ -30,6 +30,8 @@ export class Evaluator {
   private readonly warningCache = new Map<string, Readonly<Record<string, string>>>()
   private passWarnings = new Map<NodeId, Readonly<Record<string, string>>>()
   private touched = new Set<string>()
+  /** The edge-picking input, kept through the next pass so clicking edges doesn't rebuild it. */
+  private pinned = new Set<string>()
 
   constructor(private readonly registry: PluginRegistry, private readonly cad: CadToolkit) {}
 
@@ -40,12 +42,13 @@ export class Evaluator {
 
   endPass(): void {
     for (const [key, shape] of this.cache) {
-      if (!this.touched.has(key)) {
+      if (!this.touched.has(key) && !this.pinned.has(key)) {
         shape.delete()
         this.cache.delete(key)
         this.warningCache.delete(key)
       }
     }
+    this.pinned = new Set()
   }
 
   local(doc: BloKadeDocument, id: NodeId): Shape3D {
@@ -71,12 +74,18 @@ export class Evaluator {
     if (!target || (target.type !== 'fillet' && target.type !== 'chamfer')) {
       throw new NodeBuildError('Only Round edges and Bevel edges can pick edges.', id)
     }
-    const input = this.asBuildError(id, () => modifierInput(this.base(doc, node).clone(), modifiersOf(node), modifierId))
-    try {
-      return findEdgeCandidates(input, target.edges)
-    } finally {
-      input.delete()
-    }
+    return findEdgeCandidates(this.modifierInput(doc, node, modifierId), target.edges)
+  }
+
+  /** The cached shape a modifier works on: the node's base with the enabled modifiers before it applied. */
+  private modifierInput(doc: BloKadeDocument, node: SceneNode, modifierId: string): Shape3D {
+    const all = modifiersOf(node)
+    const before = all.slice(0, all.findIndex((m) => m.id === modifierId)).filter((m) => m.enabled)
+    const base = this.base(doc, node)
+    if (before.length === 0) return base
+    const key = `${this.baseKey(doc, node)}|mods:${JSON.stringify(before)}`
+    this.pinned = new Set([key])
+    return this.entry(key, () => this.modified(base, before, key, node.id))
   }
 
   private base(doc: BloKadeDocument, node: SceneNode): Shape3D {
@@ -98,8 +107,12 @@ export class Evaluator {
     }
   }
 
+  private baseKey(doc: BloKadeDocument, node: SceneNode): string {
+    return node.kind === 'shape' ? this.shapeKey(node) : this.groupKey(doc, node)
+  }
+
   private localKey(doc: BloKadeDocument, node: SceneNode): string {
-    const base = node.kind === 'shape' ? this.shapeKey(node) : this.groupKey(doc, node)
+    const base = this.baseKey(doc, node)
     const modifiers = enabledModifiers(node)
     return modifiers.length > 0 ? `${base}|mods:${JSON.stringify(modifiers)}` : base
   }
