@@ -3,7 +3,7 @@ import type { Actions } from './actions'
 
 export type ShortcutAction =
   | 'delete' | 'duplicate' | 'group' | 'ungroup' | 'undo' | 'redo'
-  | 'toggleHole' | 'toolMove' | 'toolRotate' | 'toolSize' | 'clearSelection'
+  | 'toggleHole' | 'toolMove' | 'toolRotate' | 'toolSize' | 'cancel'
 
 export interface KeyInput {
   readonly key: string
@@ -37,7 +37,7 @@ const PLAIN: Readonly<Record<string, ShortcutAction>> = {
   m: 'toolMove',
   r: 'toolRotate',
   s: 'toolSize',
-  escape: 'clearSelection',
+  escape: 'cancel',
 }
 
 export function matchShortcut(input: KeyInput): ShortcutAction | null {
@@ -62,7 +62,7 @@ export function runShortcut(action: ShortcutAction, actions: Actions): void {
     toolMove: () => actions.setTool('move'),
     toolRotate: () => actions.setTool('rotate'),
     toolSize: () => actions.setTool('size'),
-    clearSelection: actions.clearSelection,
+    cancel: actions.cancel,
   }
   table[action]()
 }

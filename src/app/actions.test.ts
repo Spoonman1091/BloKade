@@ -118,4 +118,18 @@ describe('actions', () => {
     actions.resetWorkplane()
     expect(store.getState().workplane).toBeNull()
   })
+
+  it('Escape stops workplane picking first, and otherwise clears the selection', () => {
+    const { store, actions, doc } = setup()
+    actions.addShape('box')
+    const [id] = doc().root as [string]
+    store.getState().setWorkplane({ origin: [0, 0, 5], rotation: [0, 0, 0] })
+    actions.toggleWorkplanePicking()
+    actions.cancel()
+    expect(store.getState().pickingWorkplane).toBe(false)
+    expect(store.getState().workplane).toEqual({ origin: [0, 0, 5], rotation: [0, 0, 0] })
+    expect(store.getState().selection).toEqual([id])
+    actions.cancel()
+    expect(store.getState().selection).toEqual([])
+  })
 })

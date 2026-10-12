@@ -50,7 +50,7 @@ npm run e2e           # end-to-end tests in a real browser
 | Ctrl/Cmd + D | Duplicate |
 | Delete | Delete |
 | Ctrl/Cmd + Z / Shift + Z | Undo / redo |
-| Esc | Deselect |
+| Esc | Deselect (or stop choosing a workplane) |
 
 ### Smart sizes
 

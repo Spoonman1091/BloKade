@@ -17,6 +17,8 @@ export interface Actions {
   toggleHole(): void
   selectNode(id: NodeId, additive: boolean): void
   clearSelection(): void
+  /** Esc: stop choosing a workplane if that's happening (keeping the current one), otherwise deselect. */
+  cancel(): void
   setTool(tool: ToolMode): void
   setGridSnap(gridSnap: number): void
   toggleWorkplanePicking(): void
@@ -96,6 +98,7 @@ export function createActions(store: BloKadeStore, registry: PluginRegistry): Ac
     },
     selectNode: (id, additive) => state().select(nextSelection(state().selection, id, additive)),
     clearSelection: () => state().select([]),
+    cancel: () => (state().pickingWorkplane ? state().setPickingWorkplane(false) : state().select([])),
     setTool: (tool) => state().setTool(tool),
     setGridSnap: (gridSnap) => state().apply((doc) => setGridSnap(doc, gridSnap)),
     toggleWorkplanePicking: () => state().setPickingWorkplane(!state().pickingWorkplane),
