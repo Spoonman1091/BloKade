@@ -17,9 +17,11 @@ interface NodeMeshProps {
   onSelect(id: NodeId, additive: boolean): void
   /** Set while choosing a workplane: clicking a face reports it instead of selecting the part. */
   onPickFace?(point: Vec3, normal: Vec3): void
+  /** Set while picking edges: clicks pass through to the edge lines and don't select the part. */
+  passive?: boolean
 }
 
-export function NodeMesh({ node, displayed, selected, onSelect, onPickFace }: NodeMeshProps) {
+export function NodeMesh({ node, displayed, selected, onSelect, onPickFace, passive }: NodeMeshProps) {
   const geometry = useMemo(() => toBufferGeometry(displayed.mesh), [displayed.mesh])
   const edges = useMemo(() => toEdgeGeometry(displayed.mesh), [displayed.mesh])
   useEffect(() => () => {
@@ -32,6 +34,7 @@ export function NodeMesh({ node, displayed, selected, onSelect, onPickFace }: No
   const isHole = node.mode === 'hole'
   const opacity = isHole ? 0.35 : displayed.stale ? 0.5 : 1
   const handleClick = (event: ThreeEvent<MouseEvent>): void => {
+    if (passive) return
     event.stopPropagation()
     if (onPickFace) {
       const picked = pickFromIntersections(event.intersections, event.eventObject)
