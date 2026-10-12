@@ -23,11 +23,13 @@ export default defineConfig({
       include: [
         'src/document/**', 'src/history/**', 'src/store/**', 'src/plugins/**',
         'src/geometry/**', 'src/persistence/**', 'src/app/**', 'src/learn/**', 'src/help/**',
+        'src/kade/**',
       ],
       exclude: [
         '**/*.test.*', '**/testing/**', '**/*.tsx',
         'src/geometry/geometry.worker.ts', 'src/geometry/oc-browser.ts', 'src/geometry/spawn.ts',
         'src/app/useGeometrySync.ts', 'src/app/useAutosave.ts', 'src/app/deps.ts', 'src/app/download.ts',
+        'src/kade/blob-loader.ts',
       ],
       thresholds: { lines: 80, statements: 80, functions: 80, branches: 75 },
     },
