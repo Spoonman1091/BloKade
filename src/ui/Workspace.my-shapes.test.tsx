@@ -65,7 +65,7 @@ describe('My shapes in the app', () => {
     await userEvent.click(await screen.findByTestId(`add-${id}`))
     expect(Object.values(store.getState().history.present.nodes)).toHaveLength(2)
   })
-  it('settles the code Kade just typed before adding the shape', async () => {
+  it('adds the code Kade just typed once it has settled and built', async () => {
     const store = createBloKadeStore({ designId: 'd', doc: createEmptyDocument() })
     renderMainScreen(store, undefined, buildingDeps())
     await userEvent.click(screen.getByTestId('my-shapes'))
@@ -73,6 +73,8 @@ describe('My shapes in the app', () => {
     await waitFor(() => expect(screen.getByTestId('add-to-design')).toBeEnabled())
     codeView().dispatch({ changes: { from: 0, insert: '// a newer version\n' } })
     const typed = codeView().state.doc.toString()
+    await waitFor(() => expect(screen.getByTestId('add-to-design')).toBeDisabled())
+    await waitFor(() => expect(screen.getByTestId('add-to-design')).toBeEnabled())
     await userEvent.click(screen.getByTestId('add-to-design'))
     await waitFor(() => expect(Object.values(carriedPlugins(store))).toHaveLength(1))
     expect(Object.values(carriedPlugins(store))[0]?.code).toBe(typed)

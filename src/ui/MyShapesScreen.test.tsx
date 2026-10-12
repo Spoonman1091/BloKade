@@ -34,6 +34,14 @@ describe('MyShapesScreen', () => {
     await userEvent.click(screen.getByTestId('add-to-design'))
     expect(onAdd).toHaveBeenCalledWith(editor.getState().selectedId)
   })
+  it('waits for typing to settle before Add to design works', async () => {
+    const { editor } = setup()
+    await userEvent.click(screen.getByTestId('new-shape'))
+    await waitFor(() => expect(screen.getByTestId('add-to-design')).toBeEnabled())
+    const id = editor.getState().selectedId ?? ''
+    act(() => { editor.getState().setCode(id, `${editor.getState().shapes[0]?.code ?? ''}\n`) })
+    expect(screen.getByTestId('add-to-design')).toBeDisabled()
+  })
   it('shows the problem with broken code', async () => {
     const { editor } = setup()
     act(() => { editor.getState().create("export default { name: 'BROKEN' }") })

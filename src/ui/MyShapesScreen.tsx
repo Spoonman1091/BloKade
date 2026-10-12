@@ -105,7 +105,7 @@ export function MyShapesScreen({ editor, lessons, catalog, base, client, helpMod
   const carried = useStore(preview.store, (s) => s.history.present.plugins)
   const registry = useShapeRegistry({ base, catalog, library: NO_SHAPES, carried })
   const shapeId = view.shapeId
-  const canAdd = shapeId !== null && view.built && registry.get(shapeId) !== undefined
+  const canAdd = shapeId !== null && !view.typing && view.built && registry.get(shapeId) !== undefined
   return (
     <div className="workspace my-shapes">
       <EditorHeader helpMode={helpMode} onHelpMode={onHelpMode} onBack={onBack} />
