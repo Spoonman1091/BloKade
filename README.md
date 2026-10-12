@@ -52,6 +52,19 @@ npm run e2e           # end-to-end tests in a real browser
 | Ctrl/Cmd + Z / Shift + Z | Undo / redo |
 | Esc | Deselect |
 
+### Smart sizes
+
+- **Formulas:** any size, position or rotation box takes a formula, such as `wall * 2 + fit`. The box shows
+  the answer underneath. If a formula has a problem, the box turns red and the part keeps its last good size.
+- **Variables:** in the Variables panel (right side), press **+ Add variable**, give it a name like `wall`, and
+  type a number. Change it later and every part that uses it updates. Renaming a variable updates every formula that uses it.
+- **Fit gap:** the `fit` number (0.2 mm to start) is extra room for parts that slot together. Use it in formulas,
+  for example a hole of `peg + 2 * fit`.
+- **Text:** the 🔤 Text shape makes raised letters. Change the words in Properties.
+- **Line up:** select two or more parts (Shift-click) and use the Line up buttons.
+- **Snapping:** while dragging, a part snaps flush against parts within 2 mm. Hold **Shift** to move freely.
+- **Workplane:** press 📐 Workplane, then click any face. New shapes are built on that face. **Ground** goes back to the floor.
+
 ## How it's built
 
 - `src/document`: the design "recipe" (shapes, groups, transforms) and immutable edits
