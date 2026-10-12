@@ -57,11 +57,6 @@ describe('Perfect fit', () => {
     expect(h.done('fit')).toBe(false)
     h.apply((d) => setFit(d, 0.3, h.normalize))
     expect(h.done('fit')).toBe(true)
-    h.actions.cancel() // addKit selects the new parts; Kade starts this step with nothing selected
-    expect(h.done('select-pair')).toBe(false)
-    h.actions.selectNode(h.firstShape('peg'), false)
-    h.actions.selectNode(h.firstShape('socket'), true)
-    expect(h.done('select-pair')).toBe(true)
     expect(h.done('check')).toBe(false)
     const s = h.store.getState()
     s.setOverlap({ doc: s.history.present, selection: s.selection, result: { status: 'none' } })

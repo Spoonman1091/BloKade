@@ -26,18 +26,9 @@ export const perfectFit: Tutorial = {
       hint: 'Fit gap is at the top of Variables, on the right. It starts at 0.2.',
     },
     {
-      id: 'select-pair', text: 'Click **Peg** in **Parts**, then hold **Shift** and click **Socket**.',
-      check: (v) => {
-        const p = peg(v)
-        const s = socket(v)
-        return p !== undefined && s !== undefined && v.selection.length === 2 && v.selection.includes(p.id) && v.selection.includes(s.id)
-      },
-      hint: 'Parts is the list on the left. Hold Shift while you click the second one.',
-    },
-    {
-      id: 'check', text: 'Click **🔍 Check overlap**. It tells you if the two parts bump into each other.', target: 'check-overlap',
+      id: 'check', text: 'Peg and Socket are both selected. Click **🔍 Check overlap** to see if they bump into each other.', target: 'check-overlap',
       check: (v) => v.overlapShown,
-      hint: 'Check overlap is in Properties while two parts are selected.',
+      hint: 'Check overlap is in Properties while two parts are selected. If it is missing, click Peg in Parts, then hold Shift and click Socket.',
     },
   ],
 }
