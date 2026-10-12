@@ -120,3 +120,18 @@ describe('threads', () => {
     expect(volumeOf(build('threaded-hole', { size: 'M6', depth: 10, clearance: 2 }))).toBeGreaterThan(0)
   })
 })
+
+describe('snap-fit clip and catch', () => {
+  it('builds an arm with a barbed hook', () => {
+    const ramp = 2
+    expect(volumeOf(build('snap-clip'))).toBeCloseTo(6 * (1.5 * 12 + (1 * ramp) / 2), 3)
+  })
+
+  it('makes the catch slot fit the arm but not the hook', () => {
+    expect(volumeOf(build('snap-catch', { clearance: 0.2 }))).toBeCloseTo(1.9 * 6.4 * 5, 3)
+  })
+
+  it('explains an arm too short for its hook', () => {
+    expect(() => build('snap-clip', { length: 4, hook: 2 })).toThrow('Make the arm longer than 5 mm for that hook.')
+  })
+})
