@@ -23,10 +23,21 @@ interface PendingRebuild {
   reject(error: unknown): void
 }
 
-/** Talks to the geometry worker: one rebuild at a time, newest request wins, stuck workers restart. */
+interface PendingInspect {
+  readonly code: string
+  resolve(result: InspectResult): void
+  reject(error: unknown): void
+}
+
+/**
+ * Talks to the geometry worker, one queued job at a time. Each build channel keeps only its newest
+ * waiting rebuild. The design goes first, then waiting inspects (oldest first, none dropped), then
+ * the preview. Every job goes through `call`, so a stuck worker restarts after the timeout.
+ */
 export class GeometryClient {
   private handle: WorkerHandle
   private busy = false
+  private inspects: readonly PendingInspect[] = []
   private pending: Readonly<Record<BuildChannel, PendingRebuild | null>> = { design: null, preview: null }
 
   constructor(private readonly spawn: () => WorkerHandle, private readonly timeoutMs = REBUILD_TIMEOUT_MS) {
@@ -44,7 +55,10 @@ export class GeometryClient {
 
   /** Checks one of Kade's shapes in the worker. Runaway code restarts the worker like a stuck build. */
   inspect(code: string): Promise<InspectResult> {
-    return this.call((api) => api.inspect(code))
+    return new Promise((resolve, reject) => {
+      this.inspects = [...this.inspects, { code, resolve, reject }]
+      this.pump()
+    })
   }
 
   exportStl(doc: BloKadeDocument, ids?: readonly NodeId[]): Promise<ArrayBuffer> {
@@ -72,16 +86,32 @@ export class GeometryClient {
   }
 
   private pump(): void {
-    const job = this.pending.design ?? this.pending.preview
-    if (this.busy || !job) return
-    this.pending = { ...this.pending, [job.channel]: null }
+    if (this.busy) return
+    const run = this.takeNext()
+    if (!run) return
     this.busy = true
-    this.call((api) => api.rebuild(job.doc, job.channel))
-      .then(job.resolve, job.reject)
-      .finally(() => {
-        this.busy = false
-        this.pump()
-      })
+    run().finally(() => {
+      this.busy = false
+      this.pump()
+    })
+  }
+
+  /** Picks the next job (design, then inspects, then preview) and removes it from the queue. */
+  private takeNext(): (() => Promise<void>) | null {
+    const rebuild = this.pending.design
+    if (rebuild) return this.startRebuild(rebuild)
+    const [inspect, ...rest] = this.inspects
+    if (inspect) {
+      this.inspects = rest
+      return () => this.call((api) => api.inspect(inspect.code)).then(inspect.resolve, inspect.reject)
+    }
+    const preview = this.pending.preview
+    return preview ? this.startRebuild(preview) : null
+  }
+
+  private startRebuild(job: PendingRebuild): () => Promise<void> {
+    this.pending = { ...this.pending, [job.channel]: null }
+    return () => this.call((api) => api.rebuild(job.doc, job.channel)).then(job.resolve, job.reject)
   }
 
   private call<T>(fn: (api: GeometryApi) => Promise<T>): Promise<T> {
