@@ -1,5 +1,6 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
-import { MAX_SHAPE_NAME_LENGTH } from '../document/types'
+import { MAX_SHAPE_CODE_LENGTH, MAX_SHAPE_NAME_LENGTH } from '../document/types'
+import { CODE_TOO_BIG } from './messages'
 import { newShapeId, sortByName, type LibraryShape, type ShapeLibraryRepo } from './library'
 import { nameInCode, NEW_SHAPE_CODE, renameInCode, uniqueName } from './starter'
 
@@ -78,7 +79,15 @@ function settle(ctx: Context, id: string): Promise<void> {
   const { drafts, shapes } = ctx.get()
   const shape = shapes.find((s) => s.id === id)
   const draft = Object.hasOwn(drafts, id) ? drafts[id] : undefined
-  if (!shape || draft === undefined) return Promise.resolve()
+  if (draft === undefined) return Promise.resolve()
+  if (!shape) {
+    ctx.set((s) => ({ drafts: without(s.drafts, id) }))
+    return Promise.resolve()
+  }
+  if (draft.length > MAX_SHAPE_CODE_LENGTH) {
+    ctx.set({ notice: CODE_TOO_BIG })
+    return Promise.resolve()
+  }
   const next = { ...shape, code: draft, updatedAt: ctx.now() }
   ctx.set((s) => ({ drafts: without(s.drafts, id) }))
   replaceShape(ctx, next)
@@ -86,7 +95,7 @@ function settle(ctx: Context, id: string): Promise<void> {
 }
 
 function addShape(ctx: Context, code: string, baseName: string): LibraryShape {
-  const name = uniqueName(baseName.slice(0, MAX_SHAPE_NAME_LENGTH), ctx.get().shapes.map((s) => s.name))
+  const name = uniqueName(baseName, ctx.get().shapes.map((s) => s.name), MAX_SHAPE_NAME_LENGTH)
   const shape = { id: newShapeId(), name, code: renameInCode(code, name), updatedAt: ctx.now() }
   ctx.set((s) => ({ shapes: sortByName([...s.shapes, shape]), selectedId: shape.id }))
   void saveShape(ctx, shape)
@@ -121,7 +130,11 @@ function syncShapeNames(ctx: Context, names: Readonly<Record<string, string>>): 
 async function loadShapes(ctx: Context): Promise<void> {
   try {
     const shapes = await ctx.repo.list()
-    ctx.set((s) => ({ shapes, loaded: true, selectedId: s.selectedId ?? shapes[0]?.id ?? null }))
+    ctx.set((s) => {
+      const kept = s.shapes.filter((m) => !shapes.some((l) => l.id === m.id))
+      const merged = sortByName([...shapes, ...kept])
+      return { shapes: merged, loaded: true, selectedId: s.selectedId ?? merged[0]?.id ?? null }
+    })
   } catch (error) {
     console.error("Could not open Kade's shape library", error)
     ctx.set({ loaded: true, notice: LOAD_FAILED })

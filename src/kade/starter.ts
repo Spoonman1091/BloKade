@@ -15,7 +15,7 @@ export const NEW_SHAPE_CODE = `export default {
 const NAME_IN_CODE = /(\bname\s*:\s*)(['"])((?:\\.|(?!\2)[^\\\n])*)\2/
 
 export function nameInCode(code: string): string | null {
-  return code.match(NAME_IN_CODE)?.[3]?.trim() || null
+  return code.match(NAME_IN_CODE)?.[3]?.replace(/\\(.)/g, '$1').trim() || null
 }
 
 /** The code with its shape name changed, quoting it safely. Code without a name is left alone. */
@@ -24,10 +24,13 @@ export function renameInCode(code: string, name: string): string {
     `${start}${quote}${name.replaceAll('\\', '\\\\').replaceAll(quote, `\\${quote}`)}${quote}`)
 }
 
-export function uniqueName(base: string, taken: readonly string[]): string {
-  if (!taken.includes(base)) return base
+/** A name not in `taken`, with " 2", " 3"... added and the base cut so the result fits `max` characters. */
+export function uniqueName(base: string, taken: readonly string[], max = Infinity): string {
+  const fit = base.slice(0, max)
+  if (!taken.includes(fit)) return fit
   for (let n = 2; ; n += 1) {
-    const name = `${base} ${n}`
+    const suffix = ` ${n}`
+    const name = `${base.slice(0, max - suffix.length)}${suffix}`
     if (!taken.includes(name)) return name
   }
 }
