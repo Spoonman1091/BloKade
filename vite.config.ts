@@ -22,7 +22,7 @@ export default defineConfig({
       provider: 'v8',
       include: [
         'src/document/**', 'src/history/**', 'src/store/**', 'src/plugins/**',
-        'src/geometry/**', 'src/persistence/**', 'src/app/**',
+        'src/geometry/**', 'src/persistence/**', 'src/app/**', 'src/learn/**', 'src/help/**',
       ],
       exclude: [
         '**/*.test.*', '**/testing/**', '**/*.tsx',
