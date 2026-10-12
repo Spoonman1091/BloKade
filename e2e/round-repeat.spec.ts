@@ -12,6 +12,27 @@ async function downloadBytes(page: Page, testId: string): Promise<Buffer> {
   return readFile(await (await downloading).path())
 }
 
+/** Everything autosave has stored so far, as text, read straight from IndexedDB. */
+function savedDesigns(page: Page): Promise<string> {
+  return page.evaluate(
+    () =>
+      new Promise<string>((resolve) => {
+        const open = indexedDB.open('blokade')
+        open.onerror = () => resolve('')
+        open.onsuccess = () => {
+          const db = open.result
+          if (!db.objectStoreNames.contains('designs')) return resolve('')
+          const all = db.transaction('designs').objectStore('designs').getAll()
+          all.onerror = () => resolve('')
+          all.onsuccess = () => {
+            resolve(JSON.stringify(all.result))
+            db.close()
+          }
+        }
+      }),
+  )
+}
+
 /** Smallest and largest X over every vertex of a binary STL. */
 function stlXRange(bytes: Buffer): [number, number] {
   const triangles = bytes.readUInt32LE(80)
@@ -33,16 +54,25 @@ test('box with a hole, grouped, top edges rounded, exported (spec §8 flow)', as
   await page.getByRole('treeitem', { name: 'Cylinder' }).click({ modifiers: ['Shift'] })
   await page.getByTestId('group').click()
   await page.getByRole('treeitem', { name: 'Group' }).click()
+  await expect(page.getByText('Warming up the geometry engine…')).toBeHidden()
+
+  let baseline = 0
+  await expect(async () => {
+    baseline = (await downloadBytes(page, 'export-stl')).readUInt32LE(80)
+    expect(baseline).toBeGreaterThan(12)
+  }).toPass({ timeout: 20_000 })
 
   await page.getByTestId('add-modifier').selectOption('fillet')
   await setField(page, 'mod-radius-0', '1')
-  await expect(page.getByText('Warming up the geometry engine…')).toBeHidden()
-  await expect(page.getByTestId('mod-warning-0')).toHaveCount(0)
 
-  const bytes = await downloadBytes(page, 'export-stl')
-  const triangles = bytes.readUInt32LE(80)
-  expect(triangles).toBeGreaterThan(200)
-  expect(bytes.length).toBe(84 + triangles * 50)
+  // Rounded edges add triangles, so more than the baseline proves the rebuild landed.
+  await expect(async () => {
+    const bytes = await downloadBytes(page, 'export-stl')
+    const triangles = bytes.readUInt32LE(80)
+    expect(triangles).toBeGreaterThan(baseline)
+    expect(bytes.length).toBe(84 + triangles * 50)
+  }).toPass({ timeout: 20_000 })
+  await expect(page.getByTestId('mod-warning-0')).toHaveCount(0)
 })
 
 test('repeat a box in a row of three', async ({ page }) => {
@@ -73,7 +103,7 @@ test('modifiers survive a reload', async ({ page }) => {
   await page.getByTestId('add-box').click()
   await page.getByTestId('add-modifier').selectOption('chamfer')
   await page.getByTestId('mod-edges-0').selectOption('bottom')
-  await page.waitForTimeout(1500) // autosave runs 1 s after the last change
+  await expect.poll(() => savedDesigns(page), { timeout: 10_000 }).toContain('bottom')
   await page.reload()
   await page.getByRole('treeitem', { name: 'Box' }).click()
   await expect(page.getByTestId('modifier-0')).toContainText('Bevel edges')
