@@ -1,12 +1,13 @@
-import { createShapeNode, pickColor } from '../document/factory'
+import { pickColor } from '../document/factory'
 import {
-  addNode, DocumentOpError, duplicateNodes, groupNodes, removeNodes, setGridSnap, setMode, ungroupNode,
+  DocumentOpError, duplicateNodes, groupNodes, removeNodes, setGridSnap, setMode, ungroupNode,
 } from '../document/ops'
 import type { BloKadeDocument, NodeId } from '../document/types'
-import { defaultParams } from '../plugins/params'
 import type { PluginRegistry } from '../plugins/registry'
 import type { BloKadeStore, ToolMode } from '../store/store'
+import { addPart } from './add-part'
 import { createEdgeActions, type EdgeActions } from './edge-actions'
+import { createFieldNormalizer } from './field-normalizer'
 import { nextSelection } from './selection'
 
 export interface Actions extends EdgeActions {
@@ -44,6 +45,7 @@ function run<T>(store: BloKadeStore, op: (doc: BloKadeDocument) => { doc: BloKad
 
 export function createActions(store: BloKadeStore, registry: PluginRegistry): Actions {
   const state = () => store.getState()
+  const normalize = createFieldNormalizer(registry)
   const selectIf = (ids: readonly NodeId[] | undefined): void => {
     if (ids) state().select(ids)
   }
@@ -58,11 +60,11 @@ export function createActions(store: BloKadeStore, registry: PluginRegistry): Ac
       }
       const color = pickColor(Object.keys(state().history.present.nodes).length)
       const workplane = state().workplane
-      const node = createShapeNode({
-        shapeType: plugin.id, name: plugin.name, params: defaultParams(plugin), color,
-        position: workplane?.origin, rotation: workplane?.rotation,
-      })
-      selectIf(run(store, (doc) => ({ doc: addNode(doc, node), value: [node.id] })))
+      selectIf(run(store, (doc) => {
+        const placement = { color, position: workplane?.origin, rotation: workplane?.rotation }
+        const { doc: next, id } = addPart(doc, plugin, placement, normalize)
+        return { doc: next, value: [id] }
+      }))
     },
     deleteSelection: () => {
       const ids = state().selection
