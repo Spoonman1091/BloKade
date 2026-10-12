@@ -1,5 +1,6 @@
 import type { BloKadeDocument, NodeId } from '../document/types'
-import type { BuildResult, EdgeCandidate, GeometryApi, OverlapResult } from './types'
+import type { InspectResult } from '../kade/meta'
+import type { BuildChannel, BuildResult, EdgeCandidate, GeometryApi, OverlapResult } from './types'
 
 export interface WorkerHandle {
   readonly api: GeometryApi
@@ -17,6 +18,7 @@ export class GeometryTimeoutError extends Error {
 
 interface PendingRebuild {
   readonly doc: BloKadeDocument
+  readonly channel: BuildChannel
   resolve(result: BuildResult | null): void
   reject(error: unknown): void
 }
@@ -25,18 +27,24 @@ interface PendingRebuild {
 export class GeometryClient {
   private handle: WorkerHandle
   private busy = false
-  private pending: PendingRebuild | null = null
+  private pending: Readonly<Record<BuildChannel, PendingRebuild | null>> = { design: null, preview: null }
 
   constructor(private readonly spawn: () => WorkerHandle, private readonly timeoutMs = REBUILD_TIMEOUT_MS) {
     this.handle = spawn()
   }
 
-  rebuild(doc: BloKadeDocument): Promise<BuildResult | null> {
+  /** Newest request per channel wins; the design goes before the preview. */
+  rebuild(doc: BloKadeDocument, channel: BuildChannel = 'design'): Promise<BuildResult | null> {
     return new Promise((resolve, reject) => {
-      this.pending?.resolve(null)
-      this.pending = { doc, resolve, reject }
+      this.pending[channel]?.resolve(null)
+      this.pending = { ...this.pending, [channel]: { doc, channel, resolve, reject } }
       this.pump()
     })
+  }
+
+  /** Checks one of Kade's shapes in the worker. Runaway code restarts the worker like a stuck build. */
+  inspect(code: string): Promise<InspectResult> {
+    return this.call((api) => api.inspect(code))
   }
 
   exportStl(doc: BloKadeDocument, ids?: readonly NodeId[]): Promise<ArrayBuffer> {
@@ -64,11 +72,11 @@ export class GeometryClient {
   }
 
   private pump(): void {
-    const job = this.pending
+    const job = this.pending.design ?? this.pending.preview
     if (this.busy || !job) return
-    this.pending = null
+    this.pending = { ...this.pending, [job.channel]: null }
     this.busy = true
-    this.call((api) => api.rebuild(job.doc))
+    this.call((api) => api.rebuild(job.doc, job.channel))
       .then(job.resolve, job.reject)
       .finally(() => {
         this.busy = false

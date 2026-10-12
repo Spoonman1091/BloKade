@@ -13,12 +13,12 @@ function deferred<T>(): Deferred<T> {
 }
 
 function fakeWorker() {
-  const calls: { doc: BloKadeDocument; reply: Deferred<BuildResult> }[] = []
+  const calls: { doc: BloKadeDocument; channel?: string; reply: Deferred<BuildResult> }[] = []
   const handle: WorkerHandle = {
     api: {
-      rebuild: (doc) => {
+      rebuild: (doc, channel) => {
         const reply = deferred<BuildResult>()
-        calls.push({ doc, reply })
+        calls.push({ doc, channel, reply })
         return reply.promise
       },
       exportStl: async () => new ArrayBuffer(84),
@@ -35,6 +35,7 @@ function fakeWorker() {
 
 const doc = (name: string) => createEmptyDocument(name)
 const result = (tag: string): BuildResult => ({ nodes: { [tag]: { status: 'error', message: tag } } })
+const never = <T>() => new Promise<T>(() => undefined)
 const flush = () => new Promise((r) => setTimeout(r, 0))
 
 afterEach(() => vi.useRealTimers())
@@ -117,5 +118,68 @@ describe('GeometryClient', () => {
       terminate: () => undefined,
     }))
     await expect(client.overlap(createEmptyDocument(), 'a', 'b')).resolves.toBe(result)
+  })
+})
+
+describe('GeometryClient channels', () => {
+  it('keeps one waiting rebuild per channel, so the preview never replaces the design', async () => {
+    const { handle, calls } = fakeWorker()
+    const client = new GeometryClient(() => handle)
+    const first = client.rebuild(doc('one'))
+    const preview = client.rebuild(doc('shape'), 'preview')
+    const design = client.rebuild(doc('two'))
+    calls[0]?.reply.resolve(result('one'))
+    await first
+    await flush()
+    expect(calls[1]?.doc.name).toBe('two')
+    calls[1]?.reply.resolve(result('two'))
+    await expect(design).resolves.toEqual(result('two'))
+    await flush()
+    expect(calls[2]).toMatchObject({ channel: 'preview' })
+    calls[2]?.reply.resolve(result('shape'))
+    await expect(preview).resolves.toEqual(result('shape'))
+  })
+  it('replaces a waiting preview with a newer one', async () => {
+    const { handle, calls } = fakeWorker()
+    const client = new GeometryClient(() => handle)
+    void client.rebuild(doc('busy'))
+    const old = client.rebuild(doc('a'), 'preview')
+    void client.rebuild(doc('b'), 'preview')
+    await expect(old).resolves.toBeNull()
+    calls[0]?.reply.resolve(result('busy'))
+    await flush()
+    expect(calls[1]?.doc.name).toBe('b')
+  })
+})
+
+describe('GeometryClient with runaway code', () => {
+  it('restarts the worker when checking code never finishes', async () => {
+    const stuck = fakeWorker()
+    stuck.handle.api.inspect = () => never()
+    const fresh = fakeWorker()
+    const spawn = vi.fn().mockReturnValueOnce(stuck.handle).mockReturnValueOnce(fresh.handle)
+    const client = new GeometryClient(spawn, 20)
+    await expect(client.inspect('while (true) {}')).rejects.toBeInstanceOf(GeometryTimeoutError)
+    expect(stuck.handle.terminate).toHaveBeenCalled()
+    const next = client.rebuild(doc('after'))
+    await flush()
+    fresh.calls[0]?.reply.resolve(result('after'))
+    await expect(next).resolves.toEqual(result('after'))
+  })
+  it('restarts the worker when a preview build never finishes, then builds the design', async () => {
+    const stuck = fakeWorker()
+    const fresh = fakeWorker()
+    const spawn = vi.fn().mockReturnValueOnce(stuck.handle).mockReturnValueOnce(fresh.handle)
+    const client = new GeometryClient(spawn, 20)
+    await expect(client.rebuild(doc('loop'), 'preview')).rejects.toBeInstanceOf(GeometryTimeoutError)
+    const next = client.rebuild(doc('design'))
+    await flush()
+    fresh.calls[0]?.reply.resolve(result('design'))
+    await expect(next).resolves.toEqual(result('design'))
+  })
+  it('passes inspect results through', async () => {
+    const { handle } = fakeWorker()
+    handle.api.inspect = async () => ({ ok: false, problem: 'nope' })
+    await expect(new GeometryClient(() => handle).inspect('x')).resolves.toEqual({ ok: false, problem: 'nope' })
   })
 })
