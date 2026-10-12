@@ -96,7 +96,7 @@ function TreeItem({ id, registry, drag }: { id: NodeId; registry: PluginRegistry
       >
         <span aria-hidden="true">{icon}</span>
         {editing ? <RenameInput initial={node.name} onDone={finishRename} /> : <span className="tree-name">{node.name}</span>}
-        {modifiers.length > 0 && (
+        {modifiers.some((m) => m.enabled) && (
           <span className="tree-mods" data-testid={`tree-mods-${id}`} title={modifierLabels} aria-label={`Modifiers: ${modifierLabels}`}>
             {modifiers.filter((m) => m.enabled).map((m) => MODIFIER_ICONS[m.type]).join('')}
           </span>
