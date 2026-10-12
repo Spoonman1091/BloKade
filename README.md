@@ -2,6 +2,8 @@
 
 Kade's 3D design app for 3D printing. It's as easy as TinkerCAD, and it's built so we can keep adding to it.
 
+**Use it online:** [spoonman1091.github.io/BloKade](https://spoonman1091.github.io/BloKade/)
+
 ## Run it
 
 **On the home server (Docker):**
@@ -19,8 +21,6 @@ for example `http://192.168.1.50:5233`.
 - **Update it:** `git pull`, then `docker compose up -d --build`
 
 **On a server managed by Portainer:** see [Deploy with Portainer](#deploy-with-portainer) below.
-
-**On the internet (GitHub Pages):** see [GitHub Pages](#github-pages) below.
 
 **Back up your designs.** Designs live in each browser, not on the server, so clearing the browser's data
 deletes them. To keep a copy (or move a design to another computer), click the **📁** button with the
