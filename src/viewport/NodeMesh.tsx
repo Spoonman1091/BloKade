@@ -41,7 +41,9 @@ export function NodeMesh({ node, displayed, selected, onSelect }: NodeMeshProps)
       onClick={handleClick}
     >
       <mesh geometry={geometry}>
+        {/* three.js bakes transparency into the shader at compile time, so a new key rebuilds the material when it flips */}
         <meshStandardMaterial
+          key={opacity < 1 ? 'transparent' : 'opaque'}
           color={isHole ? HOLE_COLOR : node.color}
           transparent={opacity < 1}
           opacity={opacity}
