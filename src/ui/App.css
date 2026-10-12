@@ -18,7 +18,7 @@ button { font: inherit; }
 .splash { display: grid; place-items: center; height: 100vh; font-size: 1.4rem; }
 .workspace {
   display: grid;
-  grid-template-columns: 250px 1fr 290px;
+  grid-template-columns: 250px minmax(0, 1fr) 290px;
   grid-template-rows: auto 1fr;
   grid-template-areas: 'toolbar toolbar toolbar' 'left viewport right';
   height: 100vh;
@@ -31,7 +31,7 @@ button { font: inherit; }
 .toolbar-group { display: flex; gap: 4px; padding-right: 8px; border-right: 1px solid var(--border); }
 .left-panel { grid-area: left; overflow-y: auto; background: var(--panel); border-right: 1px solid var(--border); }
 .right-panel { grid-area: right; overflow-y: auto; background: var(--panel); border-left: 1px solid var(--border); }
-.viewport { grid-area: viewport; position: relative; min-height: 0; background: #e9eef7; }
+.viewport { grid-area: viewport; position: relative; min-width: 0; min-height: 0; overflow: hidden; background: #e9eef7; }
 .viewport-overlay { position: absolute; left: 0; right: 0; bottom: 16px; text-align: center; color: var(--muted); pointer-events: none; }
 .panel { padding: 12px; }
 .panel h2 { margin: 0 0 8px; font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
@@ -110,7 +110,7 @@ button { font: inherit; }
 .overlap-check { margin-top: 8px; }
 
 .workspace.with-lessons {
-  grid-template-columns: 250px 1fr 290px 300px;
+  grid-template-columns: 250px minmax(0, 1fr) 290px 300px;
   grid-template-areas: 'toolbar toolbar toolbar toolbar' 'left viewport right lessons';
 }
 .lessons-panel { grid-area: lessons; overflow-y: auto; background: var(--panel); border-left: 1px solid var(--border); }
@@ -154,7 +154,20 @@ body.help-mode, body.help-mode * { cursor: help !important; }
   padding: 10px 14px; border-radius: var(--radius); background: var(--panel); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
-.workspace.my-shapes { grid-template-columns: 300px 1fr 340px; }
+.workspace.my-shapes { grid-template-columns: 300px minmax(0, 1fr) 340px; }
+.code-pane { min-width: 0; }
+
+/* Narrow windows: thinner side panels, and the lessons sit above the properties panel. */
+@media (max-width: 1199px) {
+  .workspace { grid-template-columns: 210px minmax(0, 1fr) 250px; }
+  .workspace.with-lessons {
+    grid-template-columns: 210px minmax(0, 1fr) 280px;
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: 'toolbar toolbar toolbar' 'left viewport lessons' 'left viewport right';
+  }
+  .workspace.with-lessons .lessons-panel { border-bottom: 1px solid var(--border); }
+  .workspace.my-shapes { grid-template-columns: 240px minmax(0, 1fr) 280px; }
+}
 .editor-title { margin: 0 auto 0 8px; font-size: 1.1rem; }
 .code-pane { grid-area: viewport; display: flex; flex-direction: column; gap: 8px; min-height: 0; padding: 12px; background: var(--bg); }
 .code-heading { margin: 0; font-size: 1rem; }
