@@ -39,4 +39,8 @@ describe('CodeBox', () => {
     expect(document.querySelector('.cm-tooltip-autocomplete')).toBeNull()
     expect(document.querySelector('.cm-tooltip')).toBeNull()
   })
+  it('shows line numbers', () => {
+    render(<CodeBox docKey="a" code={'one\ntwo'} onChange={vi.fn()} jump={null} />)
+    expect(document.querySelector('.cm-lineNumbers')).not.toBeNull()
+  })
 })

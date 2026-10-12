@@ -1,4 +1,6 @@
 import { javascript } from '@codemirror/lang-javascript'
+import { bracketMatching, foldGutter, indentOnInput } from '@codemirror/language'
+import { highlightActiveLine, highlightActiveLineGutter, lineNumbers } from '@codemirror/view'
 import { EditorView, minimalSetup } from 'codemirror'
 import { useEffect, useRef } from 'react'
 
@@ -17,10 +19,8 @@ interface CodeBoxProps {
 }
 
 /**
- * Kade's code box (CodeMirror): colours and history. It uses `minimalSetup`, not
- * `basicSetup`, so there is no autocomplete. Line numbers and bracket matching
- * live in @codemirror/view and @codemirror/language, which are not declared
- * dependencies, so they are left out.
+ * Kade's code box (CodeMirror): line numbers, colours, bracket matching and
+ * history. It uses `minimalSetup`, not `basicSetup`, so there is no autocomplete.
  */
 export function CodeBox({ docKey, code, onChange, jump }: CodeBoxProps) {
   const host = useRef<HTMLDivElement>(null)
@@ -40,6 +40,12 @@ export function CodeBox({ docKey, code, onChange, jump }: CodeBoxProps) {
       parent: host.current,
       extensions: [
         minimalSetup,
+        lineNumbers(),
+        highlightActiveLineGutter(),
+        highlightActiveLine(),
+        bracketMatching(),
+        indentOnInput(),
+        foldGutter(),
         javascript(),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) changed.current(update.state.doc.toString())
