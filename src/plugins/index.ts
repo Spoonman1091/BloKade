@@ -1,5 +1,6 @@
 import { createRegistry } from './registry'
 
+// Helper files in builtin/ must be named *-profile.ts: they are not plugins, so they are left out here.
 const builtin = import.meta.glob<unknown>(['./builtin/*.ts', '!./builtin/*.test.ts', '!./builtin/*-profile.ts'], { eager: true, import: 'default' })
 const kades = import.meta.glob<unknown>(['../../plugins/**/*.{js,ts}', '!../../plugins/**/*.test.{js,ts}'], { eager: true, import: 'default' })
 

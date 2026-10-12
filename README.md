@@ -194,6 +194,7 @@ Every modifier number takes formulas too, like `holes + 1`.
 The **Fit tools** section (left side) makes parts that go together. Every one of them uses the **Fit gap**
 (Variables panel, 0.2 mm to start): holes get that much extra room on every side, so parts slide together
 after printing. If your printer makes tight parts, raise the fit gap and every hole grows.
+Tip: printed threads usually need a bigger fit gap. If the rod won't screw in, try 0.3 to 0.4 mm in the Fit gap.
 
 - **🧷 Peg & socket:** adds a peg and its socket (a hole) together, linked by the variables `peg_size` and
   `peg_length`. Change those and both follow. Put the socket in a part and group them to cut it.
