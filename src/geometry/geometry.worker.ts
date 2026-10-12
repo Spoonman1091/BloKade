@@ -3,6 +3,8 @@ import fontUrl from '../assets/fonts/AtkinsonHyperlegible-Bold.ttf?url'
 import { createCadToolkit } from '../plugins/cad'
 import { registerFont, setFontFailed } from '../plugins/font'
 import { registry } from '../plugins/index'
+import { blobModuleLoader } from '../kade/blob-loader'
+import { KadeShapes } from '../kade/kade-shapes'
 import { createGeometryApi } from './api'
 import { Evaluator } from './evaluate'
 import { initBrowserOC } from './oc-browser'
@@ -25,15 +27,17 @@ async function loadLetters(): Promise<void> {
 
 void loadLetters()
 
-const apiReady = initBrowserOC().then(() => createGeometryApi(new Evaluator(registry, createCadToolkit())))
+const apiReady = initBrowserOC().then(() =>
+  createGeometryApi(new Evaluator(registry, createCadToolkit()), new KadeShapes(blobModuleLoader, registry)))
 
 const api: GeometryApi = {
-  rebuild: async (doc) => (await apiReady).rebuild(doc),
+  rebuild: async (doc, channel) => (await apiReady).rebuild(doc, channel),
   exportStl: async (doc, ids) => (await apiReady).exportStl(doc, ids),
   export3mf: async (doc, ids) => (await apiReady).export3mf(doc, ids),
   exportStep: async (doc, ids) => (await apiReady).exportStep(doc, ids),
   edgeCandidates: async (doc, nodeId, modifierId) => (await apiReady).edgeCandidates(doc, nodeId, modifierId),
   overlap: async (doc, a, b) => (await apiReady).overlap(doc, a, b),
+  inspect: async (code) => (await apiReady).inspect(code),
 }
 
 Comlink.expose(api)

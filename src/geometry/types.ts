@@ -1,4 +1,5 @@
 import type { BloKadeDocument, EdgeFingerprint, NodeId } from '../document/types'
+import type { InspectResult } from '../kade/meta'
 
 export interface MeshData {
   readonly positions: Float32Array
@@ -34,11 +35,16 @@ export type OverlapResult =
   | { readonly status: 'none' }
   | { readonly status: 'overlap'; readonly volume: number; readonly mesh: MeshData }
 
+/** Which screen a rebuild is for. Each keeps its own cache entries, so the preview and the design don't push each other out. */
+export type BuildChannel = 'design' | 'preview'
+
 export interface GeometryApi {
-  rebuild(doc: BloKadeDocument): Promise<BuildResult>
+  rebuild(doc: BloKadeDocument, channel?: BuildChannel): Promise<BuildResult>
   exportStl(doc: BloKadeDocument, ids?: readonly NodeId[]): Promise<ArrayBuffer>
   export3mf(doc: BloKadeDocument, ids?: readonly NodeId[]): Promise<ArrayBuffer>
   exportStep(doc: BloKadeDocument, ids?: readonly NodeId[]): Promise<ArrayBuffer>
   edgeCandidates(doc: BloKadeDocument, nodeId: NodeId, modifierId: string): Promise<EdgeCandidate[]>
   overlap(doc: BloKadeDocument, a: NodeId, b: NodeId): Promise<OverlapResult>
+  /** Loads and checks one of Kade's shapes: its name, icon and settings, or a friendly problem. */
+  inspect(code: string): Promise<InspectResult>
 }

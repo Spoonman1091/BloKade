@@ -279,3 +279,30 @@ describe("Evaluator with Kade's shapes", () => {
     expect(second.boundingBox.bounds[1]?.[0]).toBeCloseTo(10)
   })
 })
+
+describe('Evaluator build channels', () => {
+  const single = (id: string, shapeType: string, params: Record<string, number>) => addNode(createEmptyDocument(), shape(id, shapeType, params))
+  const pass = (evaluator: Evaluator, doc: BloKadeDocument, channel: 'design' | 'preview', id: string) => {
+    evaluator.beginPass(channel)
+    const built = evaluator.local(doc, id)
+    evaluator.endPass()
+    return built
+  }
+
+  it('keeps the preview\'s shapes while the design rebuilds, and the other way round', () => {
+    const evaluator = newEvaluator()
+    const design = single('b', 'box', { width: 10, depth: 10, height: 10 })
+    const preview = single('p', 'cylinder', { diameter: 10, height: 10 })
+    const box = pass(evaluator, design, 'design', 'b')
+    const cylinder = pass(evaluator, preview, 'preview', 'p')
+    expect(pass(evaluator, design, 'design', 'b')).toBe(box)
+    expect(pass(evaluator, preview, 'preview', 'p')).toBe(cylinder)
+  })
+  it('still frees a channel\'s old shapes', () => {
+    const evaluator = newEvaluator()
+    const design = single('b', 'box', { width: 10, depth: 10, height: 10 })
+    const box = pass(evaluator, design, 'design', 'b')
+    pass(evaluator, single('s', 'sphere', { diameter: 10 }), 'design', 's')
+    expect(pass(evaluator, design, 'design', 'b')).not.toBe(box)
+  })
+})

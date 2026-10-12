@@ -7,12 +7,13 @@ export function spawnGeometryWorker(): WorkerHandle {
   const remote = Comlink.wrap<GeometryApi>(worker)
   return {
     api: {
-      rebuild: (doc) => remote.rebuild(doc),
+      rebuild: (doc, channel) => remote.rebuild(doc, channel),
       exportStl: (doc, ids) => remote.exportStl(doc, ids),
       export3mf: (doc, ids) => remote.export3mf(doc, ids),
       exportStep: (doc, ids) => remote.exportStep(doc, ids),
       edgeCandidates: (doc, nodeId, modifierId) => remote.edgeCandidates(doc, nodeId, modifierId),
       overlap: (doc, a, b) => remote.overlap(doc, a, b),
+      inspect: (code) => remote.inspect(code),
     },
     terminate: () => worker.terminate(),
   }

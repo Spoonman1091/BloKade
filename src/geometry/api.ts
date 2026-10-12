@@ -1,12 +1,13 @@
 import type { Shape3D } from 'replicad'
 import type { BloKadeDocument, NodeId } from '../document/types'
+import type { KadeShapes } from '../kade/kade-shapes'
 import { NodeBuildError, type Evaluator } from './evaluate'
 import { exportTargets } from './export-targets'
 import { UNEXPECTED } from './messages'
 import { findOverlap, OverlapError } from './overlap'
 import { write3mf } from './export-3mf'
 import { EXPORT_QUALITY, toMeshData } from './tessellate'
-import type { BuildResult, GeometryApi, NodeBuild } from './types'
+import type { BuildChannel, BuildResult, GeometryApi, NodeBuild } from './types'
 import { countOpenEdges, weldMesh } from './weld'
 
 export class ExportError extends Error {
@@ -34,8 +35,8 @@ function buildNode(evaluator: Evaluator, doc: BloKadeDocument, id: NodeId): Node
   }
 }
 
-function rebuild(evaluator: Evaluator, doc: BloKadeDocument): BuildResult {
-  evaluator.beginPass()
+function rebuild(evaluator: Evaluator, doc: BloKadeDocument, channel: BuildChannel): BuildResult {
+  evaluator.beginPass(channel)
   try {
     const nodes = Object.fromEntries(doc.root.map((id) => [id, buildNode(evaluator, doc, id)]))
     return { nodes, warnings: evaluator.warnings() }
@@ -65,35 +66,33 @@ function exportShape(evaluator: Evaluator, doc: BloKadeDocument, ids?: readonly 
   }, first.clone())
 }
 
-export function createGeometryApi(evaluator: Evaluator): GeometryApi {
+export function createGeometryApi(evaluator: Evaluator, shapes: KadeShapes): GeometryApi {
+  /**
+   * Loads the design's carried shapes, then runs `run` with them. setRegistry and `run` happen with no await
+   * between them, so calls that overlap can never build with each other's shapes.
+   */
+  const withShapes = async <T>(doc: BloKadeDocument, run: () => T): Promise<T> => {
+    const registry = await shapes.registryFor(doc)
+    evaluator.setRegistry(registry)
+    return run()
+  }
+  const exported = async (doc: BloKadeDocument, ids: readonly NodeId[] | undefined, write: (shape: Shape3D) => Promise<ArrayBuffer> | ArrayBuffer) => {
+    const shape = await withShapes(doc, () => exportShape(evaluator, doc, ids))
+    try {
+      return await write(shape)
+    } finally {
+      shape.delete()
+    }
+  }
   return {
-    rebuild: async (doc) => rebuild(evaluator, doc),
-    exportStl: async (doc, ids) => {
-      const shape = exportShape(evaluator, doc, ids)
-      try {
-        return await shape.blobSTL({ binary: true, ...EXPORT_QUALITY }).arrayBuffer()
-      } finally {
-        shape.delete()
-      }
-    },
-    export3mf: async (doc, ids) => {
-      const shape = exportShape(evaluator, doc, ids)
-      try {
-        const mesh = shape.mesh(EXPORT_QUALITY)
-        return new Uint8Array(write3mf(closedMeshFor3mf(mesh.vertices, mesh.triangles), doc.name)).buffer
-      } finally {
-        shape.delete()
-      }
-    },
-    exportStep: async (doc, ids) => {
-      const shape = exportShape(evaluator, doc, ids)
-      try {
-        return await shape.blobSTEP().arrayBuffer()
-      } finally {
-        shape.delete()
-      }
-    },
-    edgeCandidates: async (doc, nodeId, modifierId) => {
+    rebuild: (doc, channel = 'design') => withShapes(doc, () => rebuild(evaluator, doc, channel)),
+    exportStl: (doc, ids) => exported(doc, ids, (shape) => shape.blobSTL({ binary: true, ...EXPORT_QUALITY }).arrayBuffer()),
+    export3mf: (doc, ids) => exported(doc, ids, (shape) => {
+      const mesh = shape.mesh(EXPORT_QUALITY)
+      return new Uint8Array(write3mf(closedMeshFor3mf(mesh.vertices, mesh.triangles), doc.name)).buffer
+    }),
+    exportStep: (doc, ids) => exported(doc, ids, (shape) => shape.blobSTEP().arrayBuffer()),
+    edgeCandidates: (doc, nodeId, modifierId) => withShapes(doc, () => {
       try {
         return evaluator.edgeCandidates(doc, nodeId, modifierId)
       } catch (error) {
@@ -101,8 +100,8 @@ export function createGeometryApi(evaluator: Evaluator): GeometryApi {
         console.error('Unexpected edge-picking failure', error)
         throw new Error(UNEXPECTED)
       }
-    },
-    overlap: async (doc, a, b) => {
+    }),
+    overlap: (doc, a, b) => withShapes(doc, () => {
       try {
         return findOverlap(evaluator, doc, a, b)
       } catch (error) {
@@ -110,6 +109,7 @@ export function createGeometryApi(evaluator: Evaluator): GeometryApi {
         console.error('Unexpected overlap failure', error)
         throw new Error(UNEXPECTED)
       }
-    },
+    }),
+    inspect: (code) => shapes.inspect(code),
   }
 }

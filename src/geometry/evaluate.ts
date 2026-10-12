@@ -9,7 +9,7 @@ import { runKadeBuild, type KadeBuild } from '../kade/run-build'
 import { findEdgeCandidates } from './edge-candidates'
 import { applyModifiers, ModifierError } from './modifiers'
 import { placeShape } from './transform'
-import type { EdgeCandidate, ModifierWarnings } from './types'
+import type { BuildChannel, EdgeCandidate, ModifierWarnings } from './types'
 
 export class NodeBuildError extends Error {
   override name = 'NodeBuildError'
@@ -31,7 +31,9 @@ export class Evaluator {
   private readonly cache = new Map<string, Shape3D>()
   private readonly warningCache = new Map<string, Readonly<Record<string, string>>>()
   private passWarnings = new Map<NodeId, Readonly<Record<string, string>>>()
-  private touched = new Set<string>()
+  private channel: BuildChannel = 'design'
+  /** Cache keys each channel's latest pass used. Entries no channel used are freed. */
+  private readonly touchedBy = new Map<BuildChannel, Set<string>>()
   /** The edge-picking input, kept through the next pass so clicking edges doesn't rebuild it. */
   private pinned = new Set<string>()
 
@@ -42,14 +44,16 @@ export class Evaluator {
     this.registry = registry
   }
 
-  beginPass(): void {
-    this.touched = new Set()
+  beginPass(channel: BuildChannel = 'design'): void {
+    this.channel = channel
+    this.touchedBy.set(channel, new Set())
     this.passWarnings = new Map()
   }
 
   endPass(): void {
+    const used = (key: string): boolean => this.pinned.has(key) || [...this.touchedBy.values()].some((keys) => keys.has(key))
     for (const [key, shape] of this.cache) {
-      if (!this.touched.has(key) && !this.pinned.has(key)) {
+      if (!used(key)) {
         shape.delete()
         this.cache.delete(key)
         this.warningCache.delete(key)
@@ -137,12 +141,18 @@ export class Evaluator {
   }
 
   private entry(key: string, make: () => Shape3D): Shape3D {
-    this.touched.add(key)
+    this.touch(key)
     const hit = this.cache.get(key)
     if (hit) return hit
     const shape = make()
     this.cache.set(key, shape)
     return shape
+  }
+
+  private touch(key: string): void {
+    const keys = this.touchedBy.get(this.channel) ?? new Set<string>()
+    this.touchedBy.set(this.channel, keys)
+    keys.add(key)
   }
 
   private shapeKey(node: ShapeNode): string {

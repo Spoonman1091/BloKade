@@ -26,6 +26,7 @@ function fakeWorker() {
       exportStep: async () => new ArrayBuffer(5),
       edgeCandidates: async () => [],
       overlap: async () => ({ status: 'none' }),
+      inspect: async () => ({ ok: false, problem: 'unused' }),
     },
     terminate: vi.fn(),
   }

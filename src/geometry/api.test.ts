@@ -6,6 +6,8 @@ import { addModifier } from '../document/modifiers'
 import type { BloKadeDocument } from '../document/types'
 import { createCadToolkit } from '../plugins/cad'
 import { registry } from '../plugins/index'
+import { KadeShapes } from '../kade/kade-shapes'
+import { fileModuleLoader } from '../kade/testing/file-loader'
 import { closedMeshFor3mf, createGeometryApi, ExportError } from './api'
 import { Evaluator } from './evaluate'
 import { exportTargets, looseHoles } from './export-targets'
@@ -27,7 +29,7 @@ function design(): BloKadeDocument {
   return groupNodes(setMode(doc, ['hole'], 'hole'), ['box', 'hole'], 'g').doc
 }
 
-const newApi = () => createGeometryApi(new Evaluator(registry, createCadToolkit()))
+const newApi = () => createGeometryApi(new Evaluator(registry, createCadToolkit()), new KadeShapes(fileModuleLoader, registry))
 
 describe('geometry api', () => {
   it('rebuilds every top-level part into a mesh', async () => {
@@ -105,5 +107,37 @@ describe('geometry api', () => {
   it('explains edge-picking problems in plain words', async () => {
     const doc = addNode(createEmptyDocument(), createShapeNode({ id: 'a', shapeType: 'box', name: 'Box', params: {}, color: '#f00' }))
     await expect(newApi().edgeCandidates(doc, 'a', 'deadbeef')).rejects.toThrow('Only Round edges and Bevel edges')
+  })
+})
+
+describe("designs carrying Kade's shapes (a fresh worker, an empty library)", () => {
+  const ROBOT = "export default { name: 'Robot', settings: { size: { type: 'mm', default: 20 } }, build({ size }, cad) { return cad.box(size, size, size).add(cad.sphere(size).move(0, 0, size)) } }"
+  const carrying = (code: string): BloKadeDocument => {
+    const robot = createShapeNode({ id: 'robot', shapeType: 'my-robot0001', name: 'Robot', params: { size: 10 }, color: '#fff' })
+    const doc = addNode(addNode(createEmptyDocument('Robots'), robot), shape('box', 'box', { width: 10, depth: 10, height: 10 }, [30, 0, 0]))
+    return { ...doc, plugins: { 'my-robot0001': { name: 'Robot', code } } }
+  }
+
+  it('builds the carried shape', async () => {
+    const result = await newApi().rebuild(carrying(ROBOT))
+    expect(result.nodes.robot?.status).toBe('ok')
+    expect(result.nodes.box?.status).toBe('ok')
+  })
+  it('exports a design that carries a shape', async () => {
+    expect((await newApi().exportStl(carrying(ROBOT))).byteLength).toBeGreaterThan(84)
+  })
+  it('fails only the part whose carried code has a problem', async () => {
+    const result = await newApi().rebuild(carrying("export default { name: 'Robot', build(s, cad) { return cad.box(-1, 1, 1) } }"))
+    const robot = result.nodes.robot
+    expect(robot?.status === 'error' && robot.message).toBe("Robot couldn't be built: Line 1: Sizes must be bigger than 0 — width was -1")
+    expect(result.nodes.box?.status).toBe('ok')
+  })
+  it('explains carried code that does not even load', async () => {
+    const result = await newApi().rebuild(carrying("export default { name: 'Robot' "))
+    const robot = result.nodes.robot
+    expect(robot?.status === 'error' && robot.message).toMatch(/^Robot couldn't be built: Line 1: something here doesn't look right/)
+  })
+  it('inspects code', async () => {
+    await expect(newApi().inspect(ROBOT)).resolves.toMatchObject({ ok: true, meta: { name: 'Robot' } })
   })
 })
