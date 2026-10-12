@@ -14,7 +14,7 @@ export interface LessonView {
   readonly canUndo: boolean
 }
 
-export interface TutorialStep {
+export interface TutorialStep<V = LessonView> {
   /** Unique within its tutorial. */
   readonly id: string
   /** One instruction. `**text**` shows in bold. */
@@ -22,15 +22,18 @@ export interface TutorialStep {
   /** `data-testid` of the control to highlight. */
   readonly target?: string
   /** The step is done when this returns true. Missing means a reading step with a Next button. */
-  readonly check?: (view: LessonView) => boolean
+  readonly check?: (view: V) => boolean
   /** Longer help for 💡 Show me. It also says where to find the control. */
   readonly hint: string
 }
 
-export interface Tutorial {
+export interface Tutorial<V = LessonView> {
   readonly id: string
   readonly title: string
   readonly icon: string
   readonly intro: string
-  readonly steps: readonly TutorialStep[]
+  readonly steps: readonly TutorialStep<V>[]
 }
+
+/** Any lesson, design or code, for lists that hold both kinds. Its checks can't be called through this type. */
+export type AnyTutorial = Tutorial<never>

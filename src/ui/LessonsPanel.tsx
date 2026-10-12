@@ -4,6 +4,7 @@ import type { LessonStore } from '../learn/lesson-store'
 import { startLesson } from '../learn/start-lesson'
 import { TUTORIALS } from '../learn/tutorials'
 import type { Tutorial } from '../learn/types'
+import { FinishedCard } from './LessonCards'
 import { LessonStep } from './LessonStep'
 
 interface LessonsPanelProps {
@@ -39,11 +40,7 @@ function Finished({ lessons, tutorials }: Pick<Required<LessonsPanelProps>, 'les
   const finished = useStore(lessons, (s) => s.finished)
   const title = tutorials.find((t) => t.id === finished)?.title ?? 'the lesson'
   return (
-    <div className="lesson-finished" data-testid="lesson-finished" role="status">
-      <p className="lesson-cheer">🎉 You finished <strong>{title}</strong>!</p>
-      <button type="button" className="tool-button" data-testid="lessons-list-back"
-        onClick={() => lessons.getState().clearFinished()}>Back to all lessons</button>
-    </div>
+    <FinishedCard title={title} onBack={() => lessons.getState().clearFinished()} />
   )
 }
 

@@ -16,10 +16,10 @@ export function lessonView(state: BloKadeState): LessonView {
   }
 }
 
-const reported = new WeakSet<TutorialStep>()
+const reported = new WeakSet<object>()
 
 /** True when the step's check passes. A check that throws counts as "not done yet" and is logged once. */
-export function isStepDone(step: TutorialStep, view: LessonView): boolean {
+export function isStepDone<V>(step: TutorialStep<V>, view: V): boolean {
   if (!step.check) return false
   try {
     return step.check(view)

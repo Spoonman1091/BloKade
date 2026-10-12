@@ -1,7 +1,7 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import { loadProgress, saveProgress, type KeyValueStorage, type LessonProgress } from './progress'
 import { TUTORIALS } from './tutorials'
-import type { Tutorial, TutorialStep } from './types'
+import type { AnyTutorial, Tutorial, TutorialStep } from './types'
 
 export interface LessonState {
   readonly panelOpen: boolean
@@ -24,12 +24,12 @@ export interface LessonState {
 
 export type LessonStore = StoreApi<LessonState>
 
-export function currentStepOf(progress: LessonProgress, tutorials: readonly Tutorial[] = TUTORIALS): TutorialStep | undefined {
+export function currentStepOf<V>(progress: LessonProgress, tutorials: readonly Tutorial<V>[]): TutorialStep<V> | undefined {
   const active = progress.active
   return active ? tutorials.find((t) => t.id === active.tutorialId)?.steps[active.step] : undefined
 }
 
-function sanitize(progress: LessonProgress, tutorials: readonly Tutorial[]): LessonProgress {
+function sanitize(progress: LessonProgress, tutorials: readonly AnyTutorial[]): LessonProgress {
   const known = new Set(tutorials.map((t) => t.id))
   const active = progress.active
   const tutorial = active ? tutorials.find((t) => t.id === active.tutorialId) : undefined
@@ -45,7 +45,7 @@ function finish(progress: LessonProgress, tutorialId: string): LessonProgress {
   return { ...progress, done, active: null }
 }
 
-export function createLessonStore(storage: KeyValueStorage | null, tutorials: readonly Tutorial[] = TUTORIALS): LessonStore {
+export function createLessonStore(storage: KeyValueStorage | null, tutorials: readonly AnyTutorial[] = TUTORIALS): LessonStore {
   const store = createStore<LessonState>()((set, get) => ({
     panelOpen: false,
     focused: null,

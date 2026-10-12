@@ -46,7 +46,7 @@ export function Workspace({ deps, lessons: injected }: { deps: AppDeps; lessons?
   const lessonTarget = useStore(lessons, (s) => {
     const active = s.progress.active
     if (!s.panelOpen || !active || active.designId !== openDesignId) return null
-    return currentStepOf(s.progress)?.target ?? null
+    return currentStepOf(s.progress, TUTORIALS)?.target ?? null
   })
   const learnMore = useCallback((tutorialId: string) => {
     setHelpMode(false)
