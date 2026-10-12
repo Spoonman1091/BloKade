@@ -1,6 +1,9 @@
 import type { HelpEntry } from './types'
 
 /** Help for controls with a fixed data-testid or data-help id. Families like add-* are in help-patterns.ts. */
+const CODE_BOX: HelpEntry = { tip: "Your shape's code. Type to change it.", card: 'This is where your shape is written. The colours help you read it. Your code is saved as you type, and the preview updates when you stop.' }
+const NEWER_SHAPES: HelpEntry = { tip: 'Puts your newest code for this shape in the design.', card: 'You changed this shape after adding it to the design. This uses your newest version. Undo puts the old one back.' }
+
 export const HELP_TEXTS: Readonly<Record<string, HelpEntry>> = {
   // Top bar
   'open-designs': { tip: 'Opens Designs: rename, open, save to a file or start a new design.', card: 'Every design you make is kept in this browser. Designs lets you switch between them, give this one a name, save a copy to a file, or load one back.', tutorial: 'undo-save' },
@@ -24,6 +27,33 @@ export const HELP_TEXTS: Readonly<Record<string, HelpEntry>> = {
   'help-mode': { tip: 'Help mode: click anything to learn what it does.', card: 'In help mode, clicking a button shows what it does instead of doing it. Press Esc or ❓ again to stop.' },
   'my-shapes': { tip: 'Opens My shapes, where you write your own shapes in code.', card: 'My shapes is where you make shapes with code. Write a few lines, watch the preview, then add your shape to the design. The coding lessons start there too.' },
   'panel-my-shapes': { tip: 'Shapes you made yourself.', card: 'Every shape you write in 🧩 My shapes appears here. Click one to add it to your design.' },
+  // My shapes
+  'back-to-design': { tip: 'Goes back to your design. Your shapes are saved.', card: 'Back to my design shows your design again, just as you left it. Your shapes are saved as you type.' },
+  'panel-library': { tip: 'All the shapes you have made.', card: 'Your shapes live in this browser. Click one to open its code. Save a shape to a file to keep a copy or move it to another computer.' },
+  'new-shape': { tip: 'Starts a new shape from a simple box.', card: 'New shape makes a shape with a little code to start from: a box with a Size setting. Change the code to make it your own.' },
+  'duplicate-shape': { tip: 'Makes a copy of this shape to try ideas on.', card: 'Duplicate copies the code into a new shape, so you can try things out and keep the first one safe.' },
+  'delete-shape': { tip: 'Deletes this shape. It asks first.', card: 'Delete removes the shape from My shapes. Designs that already use it keep working, because they carry their own copy.' },
+  'delete-shape-yes': { tip: 'Yes, delete this shape.', card: "This removes the shape from My shapes. It can't be undone, but designs that use it keep their copy." },
+  'delete-shape-no': { tip: 'Keeps the shape.', card: 'Nothing is deleted.' },
+  'save-shape-file': { tip: "Downloads this shape's code as a .js file.", card: 'Save to file keeps a copy of the code outside the browser. Load from file brings it back, on this computer or another one.' },
+  'load-shape-file': { tip: 'Opens a shape from a .js file.', card: 'Load from file adds a shape from a .js file you saved before. It becomes a new shape in My shapes.' },
+  'tab-lessons': { tip: 'Coding lessons, one small step at a time.', card: 'Ten short lessons teach coding with shapes, from changing numbers to making a gear. Each lesson makes its own practice shape.' },
+  'tab-commands': { tip: 'Every cad command, with an example.', card: 'Commands lists everything cad can do, what each command does, and a tiny example you can copy.' },
+  'use-gear': { tip: 'Copies the Gear into your shapes to change.', card: 'Use as a starting point makes a new shape from the Gear code. Change its numbers, or read it to see how it works.' },
+  'panel-code': { tip: "Your shape's code.", card: 'Type your code here. BloKade saves it and updates the preview half a second after you stop typing.' },
+  'code-box': CODE_BOX,
+  'code-input': CODE_BOX,
+  'code-problems': { tip: 'What needs fixing in your code.', card: 'When something is wrong, a message shows here. Click it to jump to the line it talks about.' },
+  'code-ok': { tip: 'Your shape builds without problems.', card: 'Everything works! Try the settings under the preview, or add your shape to your design.' },
+  'code-checking': { tip: 'BloKade is checking your code.', card: 'BloKade checks your code and builds the preview a moment after you stop typing.' },
+  'panel-preview': { tip: 'Your shape in 3D.', card: 'The preview shows what your code makes. Try its settings below it. Nothing here changes your design.' },
+  'preview-view': { tip: 'Your shape in 3D. Drag to spin it.', card: 'Drag to spin the preview, and scroll to zoom in and out.' },
+  'add-to-design': { tip: 'Puts this shape in your design.', card: 'Add to my design goes back to your design and adds this shape. The design keeps a copy of the code, so it works anywhere.' },
+  'newer-shapes': NEWER_SHAPES,
+  'use-newest': NEWER_SHAPES,
+  'code-lesson-go-back': { tip: "Opens this lesson's practice shape again.", card: 'Each coding lesson has its own practice shape. Go back opens it so you can keep going.' },
+  'code-lesson-restart': { tip: 'Starts this lesson again with a new practice shape.', card: "The lesson's practice shape is gone, so this makes a fresh one." },
+  'param-yesno': { tip: 'Tick or untick to switch this setting on or off.', card: 'A tick box is a yes-or-no setting. The shape changes as soon as you tick it.' },
   // Panel headings
   'panel-shapes': { tip: 'Shapes you can add. Click one to add it.', card: 'Click a shape to add it to your design. It appears in the middle, or on your workplane.', tutorial: 'first-shape' },
   'panel-fit-tools': { tip: 'Parts that fit together: pegs, screws, threads and clips.', card: 'Fit tools make parts that go together after printing. They all leave a little extra room, set by the Fit gap.', tutorial: 'perfect-fit' },

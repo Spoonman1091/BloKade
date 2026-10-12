@@ -27,6 +27,9 @@ const ALIGN_AXIS: Readonly<Record<string, string>> = { x: 'left to right', y: 'f
 
 /** Families of controls. Checked in order, so more specific patterns come first. */
 export const HELP_PATTERNS: readonly HelpPattern[] = [
+  { pattern: /^shape-item-.+$/, entry: (label) => ({ tip: `Opens ${label}.`, card: 'Click a shape to open its code and its preview.' }) },
+  { pattern: /^problem-\d+$/, entry: () => ({ tip: 'Click to jump to the line with the problem.', card: 'The message says what is wrong and which line to look at. Click it and the code box jumps there.' }) },
+  { pattern: /^code-lesson-start-.+$/, entry: () => ({ tip: 'Starts this coding lesson with its own practice shape.', card: 'Coding lessons make a practice shape, so your own shapes stay safe.' }) },
   { pattern: /^add-kit-.+$/, entry: (label) => ({ tip: `Adds a matched ${label} set that fits together.`, card: `${label} adds parts that are linked by variables, so they stay matched when you change one.`, tutorial: 'perfect-fit' }) },
   { pattern: /^add-.+$/, entry: (label) => ({ tip: `Adds a ${label} to your design.`, card: `Click to add a ${label}. Change its size in Properties on the right.`, tutorial: 'first-shape' }) },
   { pattern: /^param-.+$/, entry: (label) => ({ tip: `Changes ${label}. Type a number or a formula, then press Enter.`, card: `${label} is one of this part's settings. You can type a number, or a formula like wall * 2 that uses your variables.`, tutorial: 'smart-sizes' }) },

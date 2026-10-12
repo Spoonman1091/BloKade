@@ -4,6 +4,13 @@ import { HELP_TEXTS } from './help-texts'
 import { helpFor, helpKeyOf } from './lookup'
 
 describe('helpFor', () => {
+  it("has help for My shapes' families of controls", () => {
+    expect(helpFor('shape-item-my-0123456789', 'Gear')?.tip).toBe('Opens Gear.')
+    expect(helpFor('problem-0')).not.toBeNull()
+    expect(helpFor('code-lesson-start-code-numbers', 'Start')).not.toBeNull()
+    expect(helpFor('param-yesno')?.tip).toContain('Tick')
+  })
+
   it('has help for the 3D view', () => {
     expect(helpFor('viewport')).not.toBeNull()
   })

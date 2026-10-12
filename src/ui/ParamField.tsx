@@ -27,7 +27,7 @@ export function ParamField({ node, name, spec, errors, setField, setRaw }: Param
   if (spec.type === 'yesno') {
     return (
       <label className="checkbox-field">
-        <input type="checkbox" data-testid={`param-${name}`} checked={typeof raw === 'boolean' ? raw : spec.default}
+        <input type="checkbox" data-help="param-yesno" data-testid={`param-${name}`} checked={typeof raw === 'boolean' ? raw : spec.default}
           onChange={(e) => setRaw(name, e.target.checked)} />
         <span>{spec.label}</span>
       </label>
