@@ -54,4 +54,11 @@ describe('fields', () => {
     const after = withFormula(writeField(before, positionField(0), 7), positionField(0), 'wall + 4')
     expect(dropStaleFormulas(before, after)).toBe(after)
   })
+
+  it('keeps a formula when an edit only moved its value by rounding noise (< 1e-6)', () => {
+    const before = withFormula(writeField(box, positionField(1), 10 / 3), positionField(1), '10/3')
+    const rounded = writeField(before, positionField(1), 3.333333)
+    expect(formulaOf(dropStaleFormulas(before, rounded), positionField(1))).toBe('10/3')
+    expect(readField(dropStaleFormulas(before, rounded), positionField(1))).toBe(3.333333)
+  })
 })

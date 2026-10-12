@@ -221,4 +221,11 @@ describe('formulas survive only the edits that keep their value', () => {
     expect(copied.nodes[newIds[0] ?? '']?.formulas).toEqual({ 'param.width': 'wall * 10' })
     expect(copied.nodes.b?.formulas).toEqual(withFormulas.formulas)
   })
+
+  it('ungrouping an unmoved group keeps a formula whose value has many decimals', () => {
+    const child = { ...withFormulas, transform: { position: [0, 10 / 3, 0] as const, rotation: [0, 0, 0] as const }, formulas: { 'position.1': '10/3' } }
+    const doc = { ...createEmptyDocument(), root: ['g'], nodes: { g: createGroupNode({ id: 'g', children: ['b'] }), b: child } }
+    const { doc: flat } = ungroupNode(doc, 'g')
+    expect(flat.nodes.b?.formulas).toEqual({ 'position.1': '10/3' })
+  })
 })

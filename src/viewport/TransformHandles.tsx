@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react'
 import { MathUtils, Vector3, type Object3D } from 'three'
 import { translateBox } from '../document/box'
 import { updateNode } from '../document/ops'
-import { transformFromParts } from '../document/transform-math'
+import { keepUnchanged, transformFromParts } from '../document/transform-math'
 import type { SceneNode, Transform, Vec3 } from '../document/types'
 import type { PluginRegistry } from '../plugins/registry'
 import { useBloKade, useBloKadeStore } from '../store/context'
@@ -76,10 +76,15 @@ export function TransformHandles({ registry, onMeasure }: TransformHandlesProps)
 
   const commit = (): void => {
     onMeasure(null)
-    const transform = transformFromParts(
+    const dragged = transformFromParts(
       [target.position.x, target.position.y, target.position.z],
       [target.rotation.x, target.rotation.y, target.rotation.z],
     )
+    // Rounding must not count as a change, or untouched fields would lose their formulas.
+    const transform: Transform = {
+      position: keepUnchanged(node.transform.position, dragged.position),
+      rotation: keepUnchanged(node.transform.rotation, dragged.rotation),
+    }
     const scale: Vec3 = [target.scale.x, target.scale.y, target.scale.z]
     // TransformControls scales the three.js object directly; BloKade stores size in parameters instead.
     target.scale.set(1, 1, 1)

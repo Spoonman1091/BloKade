@@ -59,6 +59,12 @@ export function withFormula(node: SceneNode, key: FieldKey, formula: string | nu
   return { ...node, formulas: Object.keys(formulas).length > 0 ? formulas : undefined }
 }
 
+/** Changes smaller than this are rounding noise (a drag's 6-decimal rounding), not a real edit. */
+export const UNCHANGED_EPSILON = 1e-6
+
+const sameValue = (a: number | undefined, b: number | undefined): boolean =>
+  a === b || (a !== undefined && b !== undefined && Math.abs(a - b) < UNCHANGED_EPSILON)
+
 /**
  * After an edit that set fields directly (a drag, align, snap or typed number), forget the formulas
  * whose value it changed: the edit wins. Edits that set formulas themselves are left alone.
@@ -66,7 +72,7 @@ export function withFormula(node: SceneNode, key: FieldKey, formula: string | nu
 export function dropStaleFormulas(before: SceneNode, after: SceneNode): SceneNode {
   if (after.formulas !== before.formulas) return after
   return formulaEntries(after).reduce(
-    (node, [key]) => (readField(before, key) === readField(after, key) ? node : withFormula(node, key, null)),
+    (node, [key]) => (sameValue(readField(before, key), readField(after, key)) ? node : withFormula(node, key, null)),
     after,
   )
 }

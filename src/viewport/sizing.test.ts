@@ -32,4 +32,11 @@ describe('paramsFromScale', () => {
     expect(paramsFromScale(plugin('cone'), { bottomDiameter: 20, topDiameter: 4, height: 20 }, [2, 2, 1]))
       .toEqual({ bottomDiameter: 40, topDiameter: 4, height: 20 })
   })
+
+  it('leaves a parameter exactly as it was when its axis did not scale', () => {
+    const width = 10 * Math.PI
+    const next = paramsFromScale(plugin('box'), { width, depth: 20, height: 20 }, [1, 1, 2])
+    expect(next.width).toBe(width)
+    expect(next.height).toBe(40)
+  })
 })
