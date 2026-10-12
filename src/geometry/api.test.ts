@@ -5,8 +5,9 @@ import { addNode, groupNodes, setHidden, setMode } from '../document/ops'
 import type { BloKadeDocument } from '../document/types'
 import { createCadToolkit } from '../plugins/cad'
 import { registry } from '../plugins/index'
-import { createGeometryApi, exportTargets } from './api'
+import { createGeometryApi } from './api'
 import { Evaluator } from './evaluate'
+import { exportTargets, looseHoles } from './export-targets'
 import { initTestOC } from './testing/oc-node'
 import { meshVolume, parseBinaryStl } from './testing/stl'
 import { countOpenEdges, weldMesh } from './weld'
@@ -67,6 +68,8 @@ describe('geometry api', () => {
     const hidden = setHidden(doc, ['hidden'], true)
     expect(exportTargets(hidden)).toEqual(['g'])
     expect(exportTargets(hidden, ['box', 'hole'])).toEqual(['g'])
+    expect(looseHoles(hidden)).toEqual(['ball'])
+    expect(looseHoles(hidden, ['box'])).toEqual([])
   })
 
   it('refuses to export nothing', async () => {

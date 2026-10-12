@@ -1,7 +1,7 @@
 import type { Shape3D } from 'replicad'
-import { rootAncestorOf } from '../document/tree'
 import type { BloKadeDocument, NodeId } from '../document/types'
 import { NodeBuildError, type Evaluator } from './evaluate'
+import { exportTargets } from './export-targets'
 import { write3mf } from './export-3mf'
 import { EXPORT_QUALITY, toMeshData } from './tessellate'
 import type { BuildResult, GeometryApi, NodeBuild } from './types'
@@ -30,16 +30,6 @@ function rebuild(evaluator: Evaluator, doc: BloKadeDocument): BuildResult {
   } finally {
     evaluator.endPass()
   }
-}
-
-/** Visible, solid, top-level parts to export. Selected children export their whole top-level group. */
-export function exportTargets(doc: BloKadeDocument, ids?: readonly NodeId[]): NodeId[] {
-  const roots = (ids ?? doc.root).map((id) => rootAncestorOf(doc, id))
-  return [...new Set(roots)].filter((id): id is NodeId => {
-    if (id === undefined || !Object.hasOwn(doc.nodes, id)) return false
-    const node = doc.nodes[id]
-    return node !== undefined && !node.hidden && node.mode === 'solid'
-  })
 }
 
 function placedForExport(evaluator: Evaluator, doc: BloKadeDocument, id: NodeId): Shape3D {
