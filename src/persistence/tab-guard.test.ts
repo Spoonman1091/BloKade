@@ -104,6 +104,15 @@ describe('tab guard', () => {
     expect(channel.closed).toBe(true)
   })
 
+  it('stays quiet after dispose, even if a save finishes later', () => {
+    const channel = { postMessage: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), close: vi.fn() }
+    const guard = createTabGuard({ channel, onLocked: vi.fn(), tabId: 'A' })
+    guard.opened('x')
+    guard.dispose()
+    guard.saved('x')
+    expect(channel.postMessage).toHaveBeenCalledOnce()
+  })
+
   it('has no channel in browsers without BroadcastChannel', () => {
     vi.stubGlobal('BroadcastChannel', undefined)
     expect(openTabChannel()).toBeNull()

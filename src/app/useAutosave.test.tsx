@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react'
+import { StrictMode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createEmptyDocument, createShapeNode } from '../document/factory'
 import { addNode } from '../document/ops'
@@ -54,6 +55,17 @@ describe('useAutosave', () => {
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS)
     expect(a.save).toHaveBeenCalled()
     expect(a.save.mock.calls.every(([id]) => id === 'y')).toBe(true)
+  })
+
+  it('does not lock itself when React mounts the hook twice', async () => {
+    const repo = createMemoryDesignRepository()
+    const save = vi.spyOn(repo, 'save')
+    const store = createBloKadeStore({ designId: 'x', doc: createEmptyDocument() })
+    renderHook(() => useAutosave(store, repo, createFakeTabBus().open), { wrapper: StrictMode })
+    act(() => store.getState().apply((d) => addNode(d, box())))
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS)
+    expect(store.getState().stickyNotice).toBeNull()
+    expect(save).toHaveBeenCalledOnce()
   })
 
   it('works without BroadcastChannel', async () => {

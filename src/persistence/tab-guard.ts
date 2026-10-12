@@ -48,9 +48,10 @@ export function createTabGuard(options: {
   const now = options.now ?? Date.now
   let current: { designId: string; openedAt: number } | null = null
   let lockedId: string | null = null
+  let disposed = false
 
   const post = (type: 'opened' | 'saved', designId: string): void => {
-    if (!current || current.designId !== designId) return
+    if (disposed || !current || current.designId !== designId) return
     channel?.postMessage({ type, designId, tabId, openedAt: current.openedAt })
   }
 
@@ -75,6 +76,8 @@ export function createTabGuard(options: {
     saved: (designId) => post('saved', designId),
     isLocked: (designId) => lockedId === designId,
     dispose() {
+      if (disposed) return
+      disposed = true
       channel?.removeEventListener('message', onMessage)
       channel?.close()
     },

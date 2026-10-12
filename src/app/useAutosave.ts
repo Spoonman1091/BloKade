@@ -48,7 +48,9 @@ export function useAutosave(
     return () => {
       unsubscribe()
       window.removeEventListener('pagehide', flushOnHide)
-      void autosaver.flush().finally(() => guard.dispose())
+      // Stop listening right away (React may mount this again at once); the final save still honours the lock.
+      guard.dispose()
+      void autosaver.flush()
       saver.current = null
     }
   }, [store, repo, openChannel])
