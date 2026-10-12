@@ -125,7 +125,7 @@ npm run e2e           # end-to-end tests in a real browser
 | Ctrl/Cmd + D | Duplicate |
 | Delete | Delete |
 | Ctrl/Cmd + Z / Shift + Z | Undo / redo |
-| Esc | Deselect (or stop choosing a workplane) |
+| Esc | Deselect (or stop picking edges or a workplane) |
 
 ### Smart sizes
 
@@ -139,6 +139,24 @@ npm run e2e           # end-to-end tests in a real browser
 - **Line up:** select two or more parts (Shift-click) and use the Line up buttons.
 - **Snapping:** while dragging, a part snaps flush against parts within 2 mm. Hold **Shift** to move freely.
 - **Workplane:** press 📐 Workplane, then click any face. New shapes are built on that face. **Ground** goes back to the floor.
+
+### Round & repeat
+
+Select a part (or a group) and use **+ Add a modifier…** under Properties. Modifiers run top to bottom; use
+↑ ↓ to change the order, the tick box to switch one off, and 🗑 to remove it.
+
+- **◠ Round edges / ◿ Bevel edges:** pick *Top edges*, *Bottom edges*, *Upright edges*, *Flat edges* or
+  *All edges*. To choose exact edges, press **👆 Pick edges** and click them in the 3D view (orange = chosen).
+  BloKade remembers where they were, so they stay rounded when you resize the part. If an edge disappears,
+  the modifier says "Lost track of an edge" and you can pick again.
+- **⋯ Repeat in a row:** how many copies, and the step between them.
+- **✲ Repeat in a circle:** how many copies, how far round (360° = all the way), which way to turn, and the
+  center to turn around (measured from the part's middle).
+- **⇋ Mirror:** flip left↔right, front↔back or top↕bottom, keeping the original or not.
+
+Every modifier number takes formulas too, like `holes + 1`.
+
+**⬇ STEP** saves the design for other CAD programs (Fusion 360, FreeCAD, Onshape…).
 
 ## How it's built
 
