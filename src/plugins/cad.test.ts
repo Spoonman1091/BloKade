@@ -54,4 +54,16 @@ describe('cad toolkit', () => {
     expect(measureVolume(cad.torus(50, 10))).toBeCloseTo(2 * Math.PI ** 2 * 20 * 25, 1)
     expect(() => cad.torus(20, 10)).toThrow('wider than twice its thickness')
   })
+
+  it('pushes a flat outline straight up', () => {
+    const hex = cad.prism([[2, 0], [1, 1.7320508], [-1, 1.7320508], [-2, 0], [-1, -1.7320508], [1, -1.7320508]], 3)
+    expect(measureVolume(hex)).toBeCloseTo(((3 * Math.sqrt(3)) / 2) * 4 * 3, 3)
+    hex.delete()
+  })
+
+  it('makes threads through the toolkit', () => {
+    const rod = cad.thread(8, 1.25, 10)
+    expect(measureVolume(rod)).toBeGreaterThan(0)
+    rod.delete()
+  })
 })

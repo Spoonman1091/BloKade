@@ -25,6 +25,7 @@ function fakeWorker() {
       export3mf: async () => new ArrayBuffer(10),
       exportStep: async () => new ArrayBuffer(5),
       edgeCandidates: async () => [],
+      overlap: async () => ({ status: 'none' }),
     },
     terminate: vi.fn(),
   }
@@ -105,5 +106,15 @@ describe('GeometryClient', () => {
     }))
     await expect(client.exportStep(doc('x'))).resolves.toBe(step)
     await expect(client.edgeCandidates(doc('x'), 'a', 'deadbeef')).resolves.toEqual([])
+  })
+
+  it('forwards overlap checks to the worker', async () => {
+    const result = { status: 'none' } as const
+    const base = fakeWorker().handle
+    const client = new GeometryClient(() => ({
+      api: { ...base.api, overlap: async () => result },
+      terminate: () => undefined,
+    }))
+    await expect(client.overlap(createEmptyDocument(), 'a', 'b')).resolves.toBe(result)
   })
 })

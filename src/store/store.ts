@@ -1,7 +1,7 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import { DocumentOpError } from '../document/ops'
 import type { BloKadeDocument, NodeId, Vec3 } from '../document/types'
-import type { BuildResult, EdgeCandidate, ModifierWarnings } from '../geometry/types'
+import type { BuildResult, EdgeCandidate, ModifierWarnings, OverlapResult } from '../geometry/types'
 import { commit, createHistory, redo, undo, type History } from '../history/history'
 import { mergeBuild, type DisplayedMesh } from './merge-build'
 
@@ -17,6 +17,13 @@ export interface Workplane {
 export interface EdgePicking {
   readonly nodeId: NodeId
   readonly modifierId: string
+}
+
+/** The last overlap check, with the design and selection it was run on. */
+export interface OverlapView {
+  readonly doc: BloKadeDocument
+  readonly selection: readonly NodeId[]
+  readonly result: OverlapResult
 }
 
 export interface BloKadeState {
@@ -38,6 +45,8 @@ export interface BloKadeState {
   readonly pickingEdges: EdgePicking | null
   /** Edges to show while picking; null until the worker has listed them. */
   readonly edgeCandidates: readonly EdgeCandidate[] | null
+  readonly overlap: OverlapView | null
+  setOverlap(overlap: OverlapView | null): void
   setPickingEdges(picking: EdgePicking | null): void
   setEdgeCandidates(candidates: readonly EdgeCandidate[] | null): void
   setWorkplane(workplane: Workplane | null): void
@@ -63,6 +72,7 @@ export function createBloKadeStore(init: { designId: string; doc: BloKadeDocumen
     designId: init.designId,
     history: createHistory(init.doc),
     selection: [],
+    overlap: null,
     tool: 'move',
     meshes: {},
     errors: {},
@@ -103,9 +113,10 @@ export function createBloKadeStore(init: { designId: string; doc: BloKadeDocumen
       const history = redo(s.history)
       return { history, selection: pruneSelection(history.present, s.selection) }
     }),
+    setOverlap: (overlap) => set({ overlap }),
     openDesign: (designId, doc) =>
       set({ designId, history: createHistory(doc), selection: [], meshes: {}, errors: {}, workplane: null, pickingWorkplane: false,
-        modifierWarnings: {}, pickingEdges: null, edgeCandidates: null }),
+        modifierWarnings: {}, pickingEdges: null, edgeCandidates: null, overlap: null }),
     applyBuild: (designId, result) => {
       if (designId !== get().designId) return
       set((s) => ({ ...mergeBuild(s.meshes, result), modifierWarnings: result.warnings ?? {}, engineReady: true }))

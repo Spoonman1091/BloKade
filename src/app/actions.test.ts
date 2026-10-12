@@ -19,6 +19,17 @@ describe('actions', () => {
     expect(doc().nodes[id as string]).toMatchObject({ shapeType: 'box', name: 'Box', params: { width: 20, depth: 20, height: 20 } })
   })
 
+  it('adds a kit as one undo step and selects its parts (Review Focus 2)', () => {
+    const { store, actions } = setup()
+    const before = store.getState().history.present
+    actions.addKit('peg-socket')
+    expect(store.getState().selection).toHaveLength(2)
+    actions.undo()
+    expect(store.getState().history.present).toBe(before)
+    actions.addKit('nope')
+    expect(store.getState().notice).toBe('BloKade doesn\'t have a "nope" kit.')
+  })
+
   it('explains an unknown shape', () => {
     const { store, actions } = setup()
     actions.addShape('spaceship')
@@ -149,5 +160,13 @@ describe('actions', () => {
     actions.cancel()
     expect(store.getState().selection).toEqual([])
     expect(typeof actions.togglePickedEdge).toBe('function')
+  })
+
+  it('Escape clears an overlap result when it deselects', () => {
+    const { store, actions } = setup()
+    const s = store.getState()
+    s.setOverlap({ doc: s.history.present, selection: s.selection, result: { status: 'none' } })
+    actions.cancel()
+    expect(store.getState().overlap).toBeNull()
   })
 })

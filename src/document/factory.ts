@@ -1,6 +1,6 @@
 import {
   CURRENT_SCHEMA_VERSION, DEFAULT_FIT, DEFAULT_GRID_SNAP, IDENTITY_TRANSFORM,
-  type BloKadeDocument, type GroupNode, type NodeId, type ParamValue, type ShapeNode, type Vec3,
+  type BloKadeDocument, type GroupNode, type Mode, type NodeId, type ParamValue, type ShapeNode, type Vec3,
 } from './types'
 
 export const SHAPE_COLORS: readonly string[] = ['#ff6b6b', '#4f9dff', '#ffd93d', '#6bcb77', '#c77dff', '#ff9f43']
@@ -37,6 +37,7 @@ export function createShapeNode(input: {
   id?: NodeId
   position?: Vec3
   rotation?: Vec3
+  mode?: Mode
 }): ShapeNode {
   return {
     id: input.id ?? newId(),
@@ -44,7 +45,7 @@ export function createShapeNode(input: {
     name: input.name,
     shapeType: input.shapeType,
     params: input.params,
-    mode: 'solid',
+    mode: input.mode ?? 'solid',
     hidden: false,
     color: input.color,
     transform: { position: input.position ?? IDENTITY_TRANSFORM.position, rotation: input.rotation ?? IDENTITY_TRANSFORM.rotation },

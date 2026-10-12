@@ -33,6 +33,7 @@ const api: GeometryApi = {
   export3mf: async (doc, ids) => (await apiReady).export3mf(doc, ids),
   exportStep: async (doc, ids) => (await apiReady).exportStep(doc, ids),
   edgeCandidates: async (doc, nodeId, modifierId) => (await apiReady).edgeCandidates(doc, nodeId, modifierId),
+  overlap: async (doc, a, b) => (await apiReady).overlap(doc, a, b),
 }
 
 Comlink.expose(api)

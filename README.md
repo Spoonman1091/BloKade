@@ -189,6 +189,26 @@ Every modifier number takes formulas too, like `holes + 1`.
 
 **⬇ STEP** saves the design for other CAD programs (Fusion 360, FreeCAD, Onshape…).
 
+### Perfect fit
+
+The **Fit tools** section (left side) makes parts that go together. Every one of them uses the **Fit gap**
+(Variables panel, 0.2 mm to start): holes get that much extra room on every side, so parts slide together
+after printing. If your printer makes tight parts, raise the fit gap and every hole grows.
+Tip: printed threads usually need a bigger fit gap. If the rod won't screw in, try 0.3 to 0.4 mm in the Fit gap.
+
+- **🧷 Peg & socket:** adds a peg and its socket (a hole) together, linked by the variables `peg_size` and
+  `peg_length`. Change those and both follow. Put the socket in a part and group them to cut it.
+- **🪝 Snap-fit clip:** a bendy arm with a hook, and the slot it snaps through (linked by `clip_width` and
+  `clip_thickness`). Set the catch's *Wall thickness* to the wall it goes through.
+- **🔩 Screw hole:** M2–M5, as a plain hole, countersunk (flat-head screws), counterbored (cap-head screws),
+  with a nut trap at the bottom, or for a heat-set insert at the top. The screw goes in from the top.
+- **🪛 Threaded rod / 🌀 Threaded hole:** printable M6–M20 threads, up to 40 turns long. M8 and bigger print
+  best.
+- **🔍 Check overlap:** select two parts (Shift-click) and press *Check overlap* under *Fit check* in Properties.
+  Any overlap shows in red, with its size.
+
+Every fit tool's **Extra room** starts as the formula `fit`. Type a number there to give one part its own gap.
+
 ## How it's built
 
 - `src/document`: the design "recipe" (shapes, groups, transforms) and immutable edits

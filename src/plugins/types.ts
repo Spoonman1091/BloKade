@@ -10,6 +10,8 @@ export interface NumberParamSpec {
   readonly min?: number
   readonly max?: number
   readonly label: string
+  /** Starts as this formula instead of a plain number, e.g. 'fit' for a clearance. May only use `fit`. */
+  readonly formula?: string
 }
 
 /** A line of text, such as the letters of the Text shape. Text params never hold formulas. */
@@ -21,17 +23,33 @@ export interface TextParamSpec {
   readonly label: string
 }
 
-export type ParamSpec = NumberParamSpec | TextParamSpec
+export interface ChoiceOption {
+  readonly value: string
+  readonly label: string
+}
+
+/** Pick one from a list, like a screw size. Stored as the option's value; never holds a formula. */
+export interface ChoiceParamSpec {
+  readonly type: 'choice'
+  readonly default: string
+  readonly options: readonly ChoiceOption[]
+  readonly label: string
+}
+
+export type ParamSpec = NumberParamSpec | TextParamSpec | ChoiceParamSpec
+
+export const isNumberSpec = (spec: ParamSpec): spec is NumberParamSpec => spec.type !== 'text' && spec.type !== 'choice'
+
 export type ParamSpecs = Readonly<Record<string, ParamSpec>>
 export type ParamValues = Readonly<Record<string, ParamValue>>
 
-/** Distributes over a union, so a general ParamSpec gives number | string. */
-type ValueOf<S> = S extends TextParamSpec ? string : number
+/** Distributes over a union, so a general ParamSpec gives number | string. Choices give the union of their option values. */
+type ValueOf<S> = S extends ChoiceParamSpec ? S['options'][number]['value'] : S extends TextParamSpec ? string : number
 
 /** What build() receives: numbers for number params, strings for text params. */
 export type ParamValuesOf<P extends ParamSpecs> = { readonly [K in keyof P]: ValueOf<P[K]> }
 
-type NumberParamKey<P extends ParamSpecs> = { [K in keyof P]: P[K] extends TextParamSpec ? never : K }[keyof P] & string
+type NumberParamKey<P extends ParamSpecs> = { [K in keyof P]: P[K] extends NumberParamSpec ? K : never }[keyof P] & string
 /** Size handles may only point at number params. Kept out of ShapePlugin so ShapePlugin<ParamSpecs> stays assignable from any plugin. */
 type SizeHandles<P extends ParamSpecs> = NoInfer<{
   readonly x?: NumberParamKey<P>
@@ -47,6 +65,10 @@ export interface ShapePlugin<P extends ParamSpecs = ParamSpecs> {
   readonly params: P
   /** Which number parameter each size handle (x/y/z) changes. */
   readonly size?: { readonly x?: string; readonly y?: string; readonly z?: string }
+  /** New parts of this kind start as holes (sockets, screw holes). Missing means solid. */
+  readonly mode?: 'hole'
+  /** Which palette section lists it. 'hidden' parts are only added by a kit. Missing means 'shapes'. */
+  readonly palette?: 'shapes' | 'fit' | 'hidden'
   build(params: ParamValuesOf<P>, cad: CadToolkit): Shape3D
 }
 

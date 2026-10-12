@@ -12,6 +12,7 @@ export function spawnGeometryWorker(): WorkerHandle {
       export3mf: (doc, ids) => remote.export3mf(doc, ids),
       exportStep: (doc, ids) => remote.exportStep(doc, ids),
       edgeCandidates: (doc, nodeId, modifierId) => remote.edgeCandidates(doc, nodeId, modifierId),
+      overlap: (doc, a, b) => remote.overlap(doc, a, b),
     },
     terminate: () => worker.terminate(),
   }

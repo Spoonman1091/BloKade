@@ -1,5 +1,5 @@
 import type { BloKadeDocument, NodeId } from '../document/types'
-import type { BuildResult, EdgeCandidate, GeometryApi } from './types'
+import type { BuildResult, EdgeCandidate, GeometryApi, OverlapResult } from './types'
 
 export interface WorkerHandle {
   readonly api: GeometryApi
@@ -53,6 +53,10 @@ export class GeometryClient {
 
   edgeCandidates(doc: BloKadeDocument, nodeId: NodeId, modifierId: string): Promise<EdgeCandidate[]> {
     return this.call((api) => api.edgeCandidates(doc, nodeId, modifierId))
+  }
+
+  overlap(doc: BloKadeDocument, a: NodeId, b: NodeId): Promise<OverlapResult> {
+    return this.call((api) => api.overlap(doc, a, b))
   }
 
   dispose(): void {

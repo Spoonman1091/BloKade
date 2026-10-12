@@ -1,20 +1,21 @@
 import { useMemo } from 'react'
 import { createFieldNormalizer } from '../app/field-normalizer'
-import { formulaOf, paramField, positionField, rotationField } from '../document/fields'
+import { formulaOf, positionField, rotationField } from '../document/fields'
 import { formulaErrors, setFieldInput } from '../document/formula-ops'
 import { renameNode, setMode, updateNode } from '../document/ops'
 import type { FieldKey, SceneNode, ShapeNode } from '../document/types'
 import { resolveParams } from '../plugins/params'
 import type { PluginRegistry } from '../plugins/registry'
-import type { NumberParamType, ParamSpec } from '../plugins/types'
+import type { ParamSpec } from '../plugins/types'
 import { useBloKade } from '../store/context'
 import { AlignTools } from './AlignTools'
 import { TextField } from './NumberField'
 import { ModifierStack } from './ModifierStack'
+import { OverlapCheck } from './OverlapCheck'
+import { ParamField } from './ParamField'
 import { ValueField } from './ValueField'
 
 const AXES = [['x', 0], ['y', 1], ['z', 2]] as const
-const UNIT: Record<NumberParamType, string> = { mm: ' (mm)', angle: ' (°)', whole: '', number: '' }
 
 interface FieldsProps {
   node: SceneNode
@@ -26,22 +27,15 @@ function ShapeParams({ node, errors, setField, registry }: FieldsProps & { node:
   const apply = useBloKade((s) => s.apply)
   const plugin = registry.get(node.shapeType)
   if (!plugin) return <p className="error-text">This shape's plugin is missing, so its size can't be changed.</p>
-  const setText = (key: string, text: string): void => apply((d) => updateNode(d, node.id, (n) => (
-    n.kind === 'shape' ? { ...n, params: resolveParams(plugin, { ...n.params, [key]: text }) } : n
+  const setRaw = (key: string, value: string): void => apply((d) => updateNode(d, node.id, (n) => (
+    n.kind === 'shape' ? { ...n, params: resolveParams(plugin, { ...n.params, [key]: value }) } : n
   )))
   return (
     <>
       <h3>Size</h3>
-      {Object.entries<ParamSpec>(plugin.params).map(([key, spec]) => {
-        const raw = node.params[key]
-        if (spec.type === 'text') {
-          return <TextField key={key} label={spec.label} value={typeof raw === 'string' ? raw : spec.default}
-            testId={`param-${key}`} onCommit={(text) => setText(key, text)} />
-        }
-        const field = paramField(key)
-        return <ValueField key={key} label={`${spec.label}${UNIT[spec.type]}`} value={typeof raw === 'number' ? raw : spec.default}
-          formula={formulaOf(node, field)} error={errors[field]} testId={`param-${key}`} onCommit={(text) => setField(field, text)} />
-      })}
+      {Object.entries<ParamSpec>(plugin.params).map(([key, spec]) => (
+        <ParamField key={key} node={node} name={key} spec={spec} errors={errors} setField={setField} setRaw={setRaw} />
+      ))}
     </>
   )
 }
@@ -66,7 +60,7 @@ function Placement({ node, errors, setField }: FieldsProps) {
   )
 }
 
-export function PropertiesPanel({ registry }: { registry: PluginRegistry }) {
+export function PropertiesPanel({ registry, onCheckOverlap }: { registry: PluginRegistry; onCheckOverlap?(): void }) {
   const doc = useBloKade((s) => s.history.present)
   const selection = useBloKade((s) => s.selection)
   const errors = useBloKade((s) => s.errors)
@@ -81,6 +75,7 @@ export function PropertiesPanel({ registry }: { registry: PluginRegistry }) {
         <h2>Properties</h2>
         <p className="hint">{selection.length} parts selected. Group them, or pick one to change it.</p>
         <AlignTools />
+        {onCheckOverlap && <OverlapCheck onCheck={onCheckOverlap} />}
       </section>
     )
   }

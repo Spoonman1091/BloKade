@@ -1,16 +1,21 @@
-import { createShapeNode, pickColor } from '../document/factory'
+import { pickColor } from '../document/factory'
 import {
-  addNode, DocumentOpError, duplicateNodes, groupNodes, removeNodes, setGridSnap, setMode, ungroupNode,
+  DocumentOpError, duplicateNodes, groupNodes, removeNodes, setGridSnap, setMode, ungroupNode,
 } from '../document/ops'
 import type { BloKadeDocument, NodeId } from '../document/types'
-import { defaultParams } from '../plugins/params'
+import { KITS } from '../plugins/kits'
 import type { PluginRegistry } from '../plugins/registry'
 import type { BloKadeStore, ToolMode } from '../store/store'
+import { addKit as addKitParts } from './add-kit'
+import { addPart } from './add-part'
 import { createEdgeActions, type EdgeActions } from './edge-actions'
+import { createFieldNormalizer } from './field-normalizer'
 import { nextSelection } from './selection'
 
 export interface Actions extends EdgeActions {
   addShape(pluginId: string): void
+  /** Adds a matched set of parts (like a peg and its socket) as one undo step. */
+  addKit(kitId: string): void
   deleteSelection(): void
   duplicateSelection(): void
   groupSelection(): void
@@ -44,6 +49,7 @@ function run<T>(store: BloKadeStore, op: (doc: BloKadeDocument) => { doc: BloKad
 
 export function createActions(store: BloKadeStore, registry: PluginRegistry): Actions {
   const state = () => store.getState()
+  const normalize = createFieldNormalizer(registry)
   const selectIf = (ids: readonly NodeId[] | undefined): void => {
     if (ids) state().select(ids)
   }
@@ -58,11 +64,23 @@ export function createActions(store: BloKadeStore, registry: PluginRegistry): Ac
       }
       const color = pickColor(Object.keys(state().history.present.nodes).length)
       const workplane = state().workplane
-      const node = createShapeNode({
-        shapeType: plugin.id, name: plugin.name, params: defaultParams(plugin), color,
-        position: workplane?.origin, rotation: workplane?.rotation,
-      })
-      selectIf(run(store, (doc) => ({ doc: addNode(doc, node), value: [node.id] })))
+      selectIf(run(store, (doc) => {
+        const placement = { color, position: workplane?.origin, rotation: workplane?.rotation }
+        const { doc: next, id } = addPart(doc, plugin, placement, normalize)
+        return { doc: next, value: [id] }
+      }))
+    },
+    addKit: (kitId) => {
+      const kit = KITS.find((k) => k.id === kitId)
+      if (!kit) {
+        state().notify(`BloKade doesn't have a "${kitId}" kit.`)
+        return
+      }
+      const firstColor = Object.keys(state().history.present.nodes).length
+      selectIf(run(store, (doc) => {
+        const { doc: next, ids } = addKitParts(doc, kit, registry, normalize, state().workplane, firstColor)
+        return { doc: next, value: ids }
+      }))
     },
     deleteSelection: () => {
       const ids = state().selection
@@ -104,7 +122,10 @@ export function createActions(store: BloKadeStore, registry: PluginRegistry): Ac
       const s = state()
       if (s.pickingEdges) s.setPickingEdges(null)
       else if (s.pickingWorkplane) s.setPickingWorkplane(false)
-      else s.select([])
+      else {
+        s.select([])
+        s.setOverlap(null)
+      }
     },
     setTool: (tool) => state().setTool(tool),
     setGridSnap: (gridSnap) => state().apply((doc) => setGridSnap(doc, gridSnap)),
