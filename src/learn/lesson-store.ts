@@ -36,7 +36,7 @@ function sanitize(progress: LessonProgress, tutorials: readonly Tutorial[]): Les
   return {
     ...progress,
     done: progress.done.filter((id) => known.has(id)),
-    active: active && tutorial ? { ...active, step: Math.min(active.step, tutorial.steps.length - 1) } : null,
+    active: active && tutorial ? { ...active, step: Math.max(0, Math.min(active.step, tutorial.steps.length - 1)) } : null,
   }
 }
 
@@ -78,7 +78,7 @@ export function createLessonStore(storage: KeyValueStorage | null, tutorials: re
   }))
   let warned = false
   store.subscribe((state, previous) => {
-    if (state.progress === previous.progress || saveProgress(storage, state.progress) || warned) return
+    if (!storage || state.progress === previous.progress || saveProgress(storage, state.progress) || warned) return
     warned = true
     console.error('Lesson progress could not be saved in this browser. It will be forgotten when the page closes.')
   })

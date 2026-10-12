@@ -61,6 +61,16 @@ describe('lesson store', () => {
     expect(tooFar.getState().progress.active?.step).toBe(1)
   })
 
+  it('logs nothing when there is no storage at all', () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const lessons = createLessonStore(null, [tiny])
+    lessons.getState().begin('tiny', 'd')
+    lessons.getState().next()
+    expect(lessons.getState().progress.active?.step).toBe(1)
+    expect(logged).not.toHaveBeenCalled()
+    logged.mockRestore()
+  })
+
   it('keeps working and logs once when saving fails (Review Focus 4)', () => {
     const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const broken: KeyValueStorage = { getItem: () => null, setItem: () => { throw new Error('full') } }
