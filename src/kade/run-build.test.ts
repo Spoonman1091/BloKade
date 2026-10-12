@@ -4,6 +4,7 @@ import { readShapeDefinition, type ShapeBuild } from './definition'
 import { ShapeTracker } from './part'
 import { MISSING_RETURN, RETURNED_OUTLINE, runKadeBuild } from './run-build'
 import { fileModuleLoader } from './testing/file-loader'
+import { ASYNC_BUILD, KEPT_PART } from './messages'
 
 beforeAll(initTestOC)
 
@@ -46,5 +47,38 @@ describe('runKadeBuild', () => {
     const tracker = new ShapeTracker()
     expect(() => runKadeBuild(build, { w: 1 }, source, undefined, tracker)).toThrow('Line 6: .move needs 3 numbers')
     expect(tracker.counts()).toEqual({ made: 2, held: 0 })
+  })
+  it('says build() can\'t be async, and frees what an async build makes later', async () => {
+    const code = ['export default {', "  name: 'Test',", '  async build({ w }, cad) {', '    await null', '    return cad.box(w, 10, 10)', '  },', '}'].join('\n')
+    const { build, source } = await load(code)
+    const tracker = new ShapeTracker()
+    expect(() => runKadeBuild(build, { w: 20 }, source, undefined, tracker)).toThrow(ASYNC_BUILD)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(tracker.counts()).toEqual({ made: 1, held: 0 })
+  })
+  it('lets an async build that fails go quietly', async () => {
+    const code = ['export default {', "  name: 'Test',", '  async build() {', "    throw new Error('oops')", '  },', '}'].join('\n')
+    const { build, source } = await load(code)
+    expect(() => runKadeBuild(build, {}, source)).toThrow(ASYNC_BUILD)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  })
+  it('gives each build its own copy of a part kept from an earlier build', async () => {
+    const code = ['let kept = null', 'export default {', "  name: 'Test',", '  build({ w }, cad) {', '    kept = kept ?? cad.box(w, 10, 10)', '    return kept', '  },', '}'].join('\n')
+    const { build, source } = await load(code)
+    const first = runKadeBuild(build, { w: 20 }, source)
+    const tracker = new ShapeTracker()
+    const second = runKadeBuild(build, { w: 20 }, source, undefined, tracker)
+    expect(second).not.toBe(first)
+    expect(tracker.counts()).toEqual({ made: 1, held: 0 })
+    first.delete()
+    expect(second.boundingBox.bounds[1]?.[0]).toBeCloseTo(10)
+    second.delete()
+  })
+  it('says to make parts inside build() when a kept part is changed in a later build', async () => {
+    const code = ['let kept = null', 'export default {', "  name: 'Test',", '  build({ w }, cad) {', '    const first = !kept', '    kept = kept ?? cad.box(w, 10, 10)', '    return first ? kept : kept.move(1, 0, 0)', '  },', '}'].join('\n')
+    const { build, source } = await load(code)
+    const first = runKadeBuild(build, { w: 20 }, source)
+    expect(() => runKadeBuild(build, { w: 20 }, source)).toThrow(`Line 7: ${KEPT_PART}`)
+    first.delete()
   })
 })

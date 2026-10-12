@@ -1,22 +1,37 @@
 import type { Shape3D } from 'replicad'
 import type { CadToolkit, Point2 } from '../plugins/cad-types'
 import { axisArg, CadError, distanceArg, needArgs, numberArg, sizeArg, type Axis } from './args'
+import { KEPT_PART } from './messages'
 
-/** Remembers every solid one build makes, so all but the result can be freed when it ends. */
+/**
+ * Remembers every solid one build makes, so all but the result can be freed when it ends.
+ * Once the build has ended, a shape made late (after an await, or from a part kept for later) is freed at once.
+ */
 export class ShapeTracker {
   private readonly live = new Set<Shape3D>()
   private made = 0
+  private closed = false
 
   track(shape: Shape3D): Shape3D {
-    this.live.add(shape)
     this.made += 1
+    if (this.closed) {
+      shape.delete()
+      throw new CadError(KEPT_PART)
+    }
+    this.live.add(shape)
     return shape
   }
 
-  /** Frees every shape made so far except `keep` (the build's result, which the caller now owns). */
+  /** Frees every shape made so far except `keep` (the build's result, which the caller now owns), and closes the tracker. */
   freeAllBut(keep: Shape3D | null): void {
     for (const shape of this.live) if (shape !== keep) shape.delete()
     this.live.clear()
+    this.closed = true
+  }
+
+  /** True if `part` was made during this build. */
+  owns(part: Part): boolean {
+    return Part.trackerOf(part) === this
   }
 
   /** How many shapes were made and how many are still held. For leak tests. */
@@ -47,6 +62,11 @@ function otherPart(command: string, value: unknown): Part {
 /** A solid in Kade's code. Every step makes a new part, and the old one never changes. */
 export class Part {
   constructor(private readonly tracker: ShapeTracker, readonly shape: Shape3D) {}
+
+  /** The tracker of the build that made `part`. */
+  static trackerOf(part: Part): ShapeTracker {
+    return part.tracker
+  }
 
   move(...args: unknown[]): Part {
     needArgs(args, 3, { command: '.move', what: '3 numbers', example: '.move(10, 0, 0)' })
