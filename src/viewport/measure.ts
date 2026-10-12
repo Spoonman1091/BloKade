@@ -17,16 +17,17 @@ export function measure(target: Box, others: readonly NamedBox[]): Measurement {
   return { size: boxSize(target), nearest }
 }
 
-const mm = (value: number): string => {
+/** A length rounded to 0.1 mm, without a minus sign on zero. */
+export const formatMm = (value: number): string => {
   const rounded = Math.round(value * 10) / 10
   return String(Object.is(rounded, -0) ? 0 : rounded)
 }
 
 /** "20 × 20 × 40 mm · 5.5 mm from Cylinder", "… · touching Cylinder", or just the size. */
 export function formatMeasurement(m: Measurement): string {
-  const size = `${m.size.map(mm).join(' × ')} mm`
+  const size = `${m.size.map(formatMm).join(' × ')} mm`
   if (!m.nearest) return size
   return m.nearest.distance < TOUCHING
     ? `${size} · touching ${m.nearest.name}`
-    : `${size} · ${mm(m.nearest.distance)} mm from ${m.nearest.name}`
+    : `${size} · ${formatMm(m.nearest.distance)} mm from ${m.nearest.name}`
 }
