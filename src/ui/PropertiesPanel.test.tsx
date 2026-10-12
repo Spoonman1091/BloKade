@@ -122,4 +122,11 @@ describe('PropertiesPanel', () => {
     await setField('rot-z', '90 / wall')
     expect(selected()?.transform).toEqual({ position: [4, 0, 0], rotation: [0, 0, 30] })
   })
+
+  it("edits a Text shape's letters", async () => {
+    const { actions, selected } = setup()
+    act(() => actions.addShape('text'))
+    await setField('param-text', 'Hi Kade')
+    expect(selected()).toMatchObject({ params: { text: 'Hi Kade' } })
+  })
 })

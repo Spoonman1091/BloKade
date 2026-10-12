@@ -16,4 +16,6 @@ export interface CadToolkit {
   revolve(profile: readonly Point2[]): Shape3D
   /** Draw an [x, z] outline and push it out across Y, centered. */
   extrudeSide(profile: readonly Point2[], width: number): Shape3D
+  /** Raised letters, centered on X/Y and sitting on z = 0. `size` is the font size in mm. */
+  text(text: string, size: number, depth: number, fontFamily?: string): Shape3D
 }
