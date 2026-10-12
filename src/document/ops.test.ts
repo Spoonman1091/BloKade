@@ -1,6 +1,6 @@
 import { Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
-import { createEmptyDocument, createShapeNode } from './factory'
+import { createEmptyDocument, createGroupNode, createShapeNode } from './factory'
 import {
   addNode, DocumentOpError, DUPLICATE_OFFSET, duplicateNodes, groupNodes, moveNode, removeNodes,
   renameDocument, renameNode, setGridSnap, setHidden, setMode, ungroupNode, updateNode,
@@ -188,5 +188,37 @@ describe('group id validation', () => {
 
   it('treats repeated ids as one part', () => {
     expect(() => groupNodes(threeBoxes(), ['a', 'a'])).toThrow('Pick at least two parts to group.')
+  })
+})
+
+describe('formulas survive only the edits that keep their value', () => {
+  const withFormulas = {
+    ...createShapeNode({ id: 'b', shapeType: 'box', name: 'Box', params: { width: 30 }, color: '#f00', position: [3, 0, 0] }),
+    formulas: { 'position.0': 'wall', 'param.width': 'wall * 10' },
+  }
+
+  it('a drag that moves a part drops its position formula only', () => {
+    const doc = addNode(createEmptyDocument(), withFormulas)
+    const moved = updateNode(doc, 'b', (n) => ({ ...n, transform: { ...n.transform, position: [12, 0, 0] } }))
+    expect(moved.nodes.b?.formulas).toEqual({ 'param.width': 'wall * 10' })
+  })
+
+  it('renaming keeps every formula', () => {
+    const doc = renameNode(addNode(createEmptyDocument(), withFormulas), 'b', 'Wall')
+    expect(doc.nodes.b?.formulas).toEqual(withFormulas.formulas)
+  })
+
+  it('ungrouping a moved group drops the position formulas it changed', () => {
+    const group = { ...createGroupNode({ id: 'g', children: ['b'] }), transform: { position: [10, 0, 0] as const, rotation: [0, 0, 0] as const } }
+    const doc = { ...createEmptyDocument(), root: ['g'], nodes: { g: group, b: withFormulas } }
+    const { doc: flat } = ungroupNode(doc, 'g')
+    expect(flat.nodes.b?.formulas).toEqual({ 'param.width': 'wall * 10' })
+  })
+
+  it("a duplicate's offset drops its position formula and leaves the original alone", () => {
+    const doc = addNode(createEmptyDocument(), withFormulas)
+    const { doc: copied, newIds } = duplicateNodes(doc, ['b'])
+    expect(copied.nodes[newIds[0] ?? '']?.formulas).toEqual({ 'param.width': 'wall * 10' })
+    expect(copied.nodes.b?.formulas).toEqual(withFormulas.formulas)
   })
 })

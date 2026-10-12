@@ -1,4 +1,5 @@
 import { Matrix4 } from 'three'
+import { dropStaleFormulas } from './fields'
 import { createGroupNode, newId } from './factory'
 import { matrixToTransform, transformToMatrix, worldMatrix } from './transform-math'
 import { descendantsOf, isDescendant, parentOf, siblingsOf } from './tree'
@@ -36,8 +37,9 @@ export function updateNode(
   doc: BloKadeDocument, id: NodeId, fn: (node: SceneNode) => SceneNode,
 ): BloKadeDocument {
   const node = requireNode(doc, id)
-  const next = fn(node)
-  if (next.id !== id || next.kind !== node.kind) throw new DocumentOpError("A part's id and kind can't change.")
+  const edited = fn(node)
+  if (edited.id !== id || edited.kind !== node.kind) throw new DocumentOpError("A part's id and kind can't change.")
+  const next = dropStaleFormulas(node, edited)
   if (next === node) return doc
   return { ...doc, nodes: { ...doc.nodes, [id]: next } }
 }
@@ -112,7 +114,7 @@ export function ungroupNode(
     group.children.map((cid) => {
       const child = requireNode(doc, cid)
       const m = new Matrix4().multiplyMatrices(groupMatrix, transformToMatrix(child.transform))
-      return [cid, { ...child, transform: matrixToTransform(m) }] as const
+      return [cid, dropStaleFormulas(child, { ...child, transform: matrixToTransform(m) })] as const
     }),
   )
   const others = Object.fromEntries(Object.entries(doc.nodes).filter(([key]) => key !== id))
@@ -152,7 +154,7 @@ export function duplicateNodes(
       const { topId, nodes } = copySubtree(acc.doc, id)
       const parentId = parentOf(acc.doc, id) ?? null
       const offsetNodes = nodes.map((n): SceneNode => (n.id === topId
-        ? { ...n, transform: { ...n.transform, position: addVec(n.transform.position, DUPLICATE_OFFSET) } }
+        ? dropStaleFormulas(n, { ...n, transform: { ...n.transform, position: addVec(n.transform.position, DUPLICATE_OFFSET) } })
         : n))
       const copied = Object.fromEntries(offsetNodes.map((n) => [n.id, n] as const))
       const withNodes = { ...acc.doc, nodes: { ...acc.doc.nodes, ...copied } }
