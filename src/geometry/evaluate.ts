@@ -13,7 +13,7 @@ export class NodeBuildError extends Error {
 }
 
 const messageOf = (error: unknown): string => (error instanceof Error ? error.message : String(error))
-const stableKey = (values: Readonly<Record<string, number>>): string =>
+const stableKey = (values: Readonly<Record<string, unknown>>): string =>
   JSON.stringify(Object.entries(values).sort(([a], [b]) => a.localeCompare(b)))
 const lookup = (doc: BloKadeDocument, id: NodeId): SceneNode | undefined =>
   Object.hasOwn(doc.nodes, id) ? doc.nodes[id] : undefined

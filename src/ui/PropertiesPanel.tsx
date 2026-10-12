@@ -21,17 +21,20 @@ function ShapeParams({ node, registry }: { node: ShapeNode; registry: PluginRegi
   return (
     <>
       <h3>Size</h3>
-      {Object.entries<NumberParamSpec>(plugin.params).map(([key, spec]) => (
-        <NumberField
-          key={key}
-          label={`${spec.label}${UNIT[spec.type]}`}
-          value={node.params[key] ?? spec.default}
-          testId={`param-${key}`}
-          onCommit={(value) => apply((d) => updateNode(d, node.id, (n) => (
-            n.kind === 'shape' ? { ...n, params: resolveParams(plugin, { ...n.params, [key]: value }) } : n
-          )))}
-        />
-      ))}
+      {Object.entries<NumberParamSpec>(plugin.params).map(([key, spec]) => {
+        const raw = node.params[key]
+        return (
+          <NumberField
+            key={key}
+            label={`${spec.label}${UNIT[spec.type]}`}
+            value={typeof raw === 'number' ? raw : spec.default}
+            testId={`param-${key}`}
+            onCommit={(value) => apply((d) => updateNode(d, node.id, (n) => (
+              n.kind === 'shape' ? { ...n, params: resolveParams(plugin, { ...n.params, [key]: value }) } : n
+            )))}
+          />
+        )
+      })}
     </>
   )
 }

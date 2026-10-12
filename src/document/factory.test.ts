@@ -28,7 +28,8 @@ describe('factories', () => {
       schemaVersion: CURRENT_SCHEMA_VERSION,
       name: 'Phone Stand',
       units: 'mm',
-      settings: { gridSnap: 1 },
+      settings: { gridSnap: 1, fit: 0.2 },
+      variables: [],
       root: [],
       nodes: {},
     })
