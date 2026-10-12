@@ -23,11 +23,20 @@ interface FieldsProps {
   setField(key: FieldKey, text: string): void
 }
 
+/** Why a shape has no settings to show. One of Kade's shapes is still being checked, or its code has a problem. */
+function NoSettings({ node }: { node: ShapeNode }) {
+  const carried = useBloKade((s) => Object.hasOwn(s.history.present.plugins, node.shapeType))
+  const failed = useBloKade((s) => Object.hasOwn(s.errors, node.id))
+  if (!carried) return <p className="error-text">This shape's plugin is missing, so its size can't be changed.</p>
+  if (failed) return <p className="error-text">This shape's code has a problem, so its size can't change yet.</p>
+  return <p className="hint">BloKade is checking this shape's code. Its size shows up in a moment.</p>
+}
+
 /** A shape's own settings (its parameters). Also used by the My shapes preview. */
 export function ShapeSettings({ node, errors, setField, registry }: FieldsProps & { node: ShapeNode; registry: PluginRegistry }) {
   const apply = useBloKade((s) => s.apply)
   const plugin = registry.get(node.shapeType)
-  if (!plugin) return <p className="error-text">This shape's plugin is missing, so its size can't be changed.</p>
+  if (!plugin) return <NoSettings node={node} />
   const setRaw = (key: string, value: ParamValue): void => apply((d) => updateNode(d, node.id, (n) => (
     n.kind === 'shape' ? { ...n, params: resolveParams(plugin, { ...n.params, [key]: value }) } : n
   )))

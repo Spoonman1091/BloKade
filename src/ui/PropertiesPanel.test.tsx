@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest'
 import { createActions } from '../app/actions'
 import { boxMesh } from '../app/testing/meshes'
 import { renderWithStore } from '../app/testing/render'
-import { createEmptyDocument } from '../document/factory'
-import { updateNode } from '../document/ops'
+import { createEmptyDocument, createShapeNode } from '../document/factory'
+import { addNode, updateNode } from '../document/ops'
 import { MAX_MM, MIN_MM } from '../plugins/params'
 import { registry } from '../plugins/index'
 import { createBloKadeStore } from '../store/store'
@@ -28,6 +28,28 @@ async function setField(testId: string, text: string) {
   await userEvent.clear(input)
   await userEvent.type(input, `${text}{Enter}`)
 }
+
+describe("PropertiesPanel with one of Kade's shapes", () => {
+  function kadeSetup() {
+    const head = createShapeNode({ id: 'h', shapeType: 'my-0a1b2c3d4e', name: 'Robot head', params: {}, color: '#fff' })
+    const doc = addNode({ ...createEmptyDocument(), plugins: { 'my-0a1b2c3d4e': { name: 'Robot head', code: 'x' } } }, head)
+    const store = createBloKadeStore({ designId: 'd', doc })
+    renderWithStore(<PropertiesPanel registry={registry} />, store)
+    act(() => store.getState().select(['h']))
+    return store
+  }
+  it("says the shape's code is being checked", () => {
+    kadeSetup()
+    expect(screen.getByText("BloKade is checking this shape's code. Its size shows up in a moment.")).toBeInTheDocument()
+    expect(screen.queryByText(/plugin/)).toBeNull()
+  })
+  it("says the shape's code has a problem", () => {
+    const store = kadeSetup()
+    act(() => store.getState().applyBuild('d', { nodes: { h: { status: 'error', message: 'Robot head couldn\'t be built: Line 3: oops' } } }))
+    expect(screen.getByText("This shape's code has a problem, so its size can't change yet.")).toBeInTheDocument()
+    expect(screen.queryByText(/plugin/)).toBeNull()
+  })
+})
 
 describe('PropertiesPanel', () => {
   it('shows a hint when nothing is selected', () => {
