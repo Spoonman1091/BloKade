@@ -10,6 +10,8 @@ const asRecord = (value: unknown): Readonly<Record<string, unknown>> =>
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
   // Version 2 (Milestone 2) adds design variables and the `fit` gap.
   1: (doc) => ({ ...doc, variables: [], settings: { ...asRecord(doc.settings), fit: DEFAULT_FIT } }),
+  // Version 3 (Milestone 3) adds optional modifiers; older parts simply have none.
+  2: (doc) => ({ ...doc }),
 }
 
 const NOT_A_DESIGN = "This file isn't a BloKade design."

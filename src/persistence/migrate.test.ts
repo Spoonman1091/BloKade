@@ -3,13 +3,19 @@ import { migrateDocument } from './migrate'
 
 describe('migrateDocument', () => {
   it('passes current documents through', () => {
-    expect(migrateDocument({ schemaVersion: 2, name: 'x' })).toEqual({ ok: true, value: { schemaVersion: 2, name: 'x' } })
+    expect(migrateDocument({ schemaVersion: 3, name: 'x' })).toEqual({ ok: true, value: { schemaVersion: 3, name: 'x' } })
   })
 
   it('upgrades version 1 designs with no variables and the default fit gap', () => {
     expect(migrateDocument({ schemaVersion: 1, name: 'x', settings: { gridSnap: 0.5 } })).toEqual({
       ok: true,
-      value: { schemaVersion: 2, name: 'x', settings: { gridSnap: 0.5, fit: 0.2 }, variables: [] },
+      value: { schemaVersion: 3, name: 'x', settings: { gridSnap: 0.5, fit: 0.2 }, variables: [] },
+    })
+  })
+
+  it('upgrades version 2 designs without changing them', () => {
+    expect(migrateDocument({ schemaVersion: 2, name: 'x', variables: [] })).toEqual({
+      ok: true, value: { schemaVersion: 3, name: 'x', variables: [] },
     })
   })
 
