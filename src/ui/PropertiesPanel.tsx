@@ -10,6 +10,7 @@ import type { NumberParamType, ParamSpec } from '../plugins/types'
 import { useBloKade } from '../store/context'
 import { AlignTools } from './AlignTools'
 import { TextField } from './NumberField'
+import { ModifierStack } from './ModifierStack'
 import { ValueField } from './ValueField'
 
 const AXES = [['x', 0], ['y', 1], ['z', 2]] as const
@@ -107,6 +108,7 @@ export function PropertiesPanel({ registry }: { registry: PluginRegistry }) {
       {error && <p className="error-text" role="alert">⚠ {error}</p>}
       {node.kind === 'shape' && <ShapeParams key={`params-${node.id}`} node={node} errors={nodeErrors} setField={setField} registry={registry} />}
       <Placement key={`place-${node.id}`} node={node} errors={nodeErrors} setField={setField} />
+      <ModifierStack key={`mods-${node.id}`} node={node} errors={nodeErrors} setField={setField} />
     </section>
   )
 }

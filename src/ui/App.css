@@ -97,3 +97,12 @@ button { font: inherit; }
   position: absolute; left: 50%; top: 12px; transform: translateX(-50%); padding: 6px 12px; border-radius: 8px;
   background: #ff8a00; color: #fff; font-size: 0.9rem; pointer-events: none;
 }
+
+.modifier-list { list-style: none; margin: 6px 0; padding: 0; }
+.modifier-card { border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; margin-bottom: 6px; }
+.modifier-head { display: flex; align-items: center; gap: 4px; }
+.modifier-title { flex: 1; display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.modifier-stack h4 { margin: 6px 0 2px; font-size: 0.8rem; color: var(--muted); }
+.add-modifier { width: 100%; margin-top: 4px; }
+.checkbox-field { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
+.tree-mods { margin-left: 4px; color: var(--muted); font-size: 0.85rem; }

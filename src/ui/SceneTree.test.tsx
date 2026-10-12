@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { createActions } from '../app/actions'
 import { renderWithStore } from '../app/testing/render'
 import { createEmptyDocument } from '../document/factory'
+import { addModifier } from '../document/modifiers'
 import { registry } from '../plugins/index'
 import { createBloKadeStore } from '../store/store'
 import { SceneTree } from './SceneTree'
@@ -81,5 +82,14 @@ describe('SceneTree', () => {
     act(() => actions.addShape('torus'))
     act(() => store.getState().applyBuild('d', { nodes: { [doc().root[0] as string]: { status: 'error', message: 'Too thin' } } }))
     expect(screen.getByLabelText('Problem: Too thin')).toBeInTheDocument()
+  })
+
+  it('shows the modifiers a part has', () => {
+    const { store, actions } = setup()
+    act(() => actions.addShape('box'))
+    const id = store.getState().history.present.root[0]
+    if (!id) throw new Error('needs a part')
+    act(() => store.getState().apply((d) => addModifier(d, id, 'fillet').doc))
+    expect(screen.getByTestId(`tree-mods-${id}`)).toHaveAttribute('title', 'Round edges')
   })
 })
