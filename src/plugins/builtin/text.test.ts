@@ -1,8 +1,9 @@
 import { measureVolume } from 'replicad'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { loadTestFont } from '../../geometry/testing/font-node'
 import { initTestOC } from '../../geometry/testing/oc-node'
 import { createCadToolkit } from '../cad'
+import { setFontFailed } from '../font'
 import { registry } from '../index'
 import { resolveParams } from '../params'
 
@@ -10,6 +11,8 @@ beforeAll(async () => {
   await initTestOC()
   await loadTestFont()
 })
+
+afterEach(() => setFontFailed(false))
 
 function textPlugin() {
   const plugin = registry.get('text')
@@ -45,5 +48,11 @@ describe('Text shape', () => {
   it('explains when the font is not loaded yet', () => {
     const cad = createCadToolkit()
     expect(() => cad.text('Hi', 10, 2, 'not-a-font')).toThrow("The letter shapes aren't ready yet")
+  })
+
+  it('says to reload when the font failed to load for good', () => {
+    setFontFailed(true)
+    const cad = createCadToolkit()
+    expect(() => cad.text('Hi', 10, 2, 'not-a-font')).toThrow("The letter font couldn't load. Reload BloKade to try again.")
   })
 })

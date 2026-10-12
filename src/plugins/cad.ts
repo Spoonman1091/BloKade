@@ -11,7 +11,7 @@ import {
   type Shape3D,
 } from 'replicad'
 import type { CadToolkit, Point2 } from './cad-types'
-import { TEXT_FONT } from './font'
+import { fontFailed, TEXT_FONT } from './font'
 
 const EPS = 1e-9
 const samePoint = (a: Point2, b: Point2): boolean => Math.abs(a[0] - b[0]) < EPS && Math.abs(a[1] - b[1]) < EPS
@@ -41,7 +41,10 @@ function asSolid(shape: Shape3D | AnyShape): Shape3D {
 const CANT_DRAW = "BloKade can't make 3D letters from that text. Try plain letters and numbers."
 
 function letters(text: string, size: number, fontFamily: string): Drawing {
-  if (!getFont(fontFamily)) throw new Error("The letter shapes aren't ready yet. Try again in a moment.")
+  if (!getFont(fontFamily)) {
+    if (fontFailed()) throw new Error("The letter font couldn't load. Reload BloKade to try again.")
+    throw new Error("The letter shapes aren't ready yet. Try again in a moment.")
+  }
   try {
     return drawText(text, { fontSize: size, fontFamily })
   } catch {

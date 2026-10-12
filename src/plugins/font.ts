@@ -7,3 +7,14 @@ export const TEXT_FONT = 'blokade'
 export async function registerFont(data: ArrayBuffer): Promise<void> {
   await loadFont(data, TEXT_FONT)
 }
+
+let failed = false
+
+/** Records that the font could not be loaded at all, so Text shapes can say "reload" instead of "wait". */
+export function setFontFailed(value: boolean): void {
+  failed = value
+}
+
+export function fontFailed(): boolean {
+  return failed
+}
