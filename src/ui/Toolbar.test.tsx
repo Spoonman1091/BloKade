@@ -15,8 +15,9 @@ function setup() {
   const onExport = vi.fn()
   const onOpenDesigns = vi.fn()
   const onLearn = vi.fn()
-  renderWithStore(<Toolbar actions={actions} onExport={onExport} onOpenDesigns={onOpenDesigns} learnOpen={false} onLearn={onLearn} />, store)
-  return { store, actions, onExport, onOpenDesigns, onLearn, doc: () => store.getState().history.present }
+  const onHelpMode = vi.fn()
+  renderWithStore(<Toolbar actions={actions} onExport={onExport} onOpenDesigns={onOpenDesigns} learnOpen={false} onLearn={onLearn} helpMode={false} onHelpMode={onHelpMode} />, store)
+  return { store, actions, onExport, onOpenDesigns, onLearn, onHelpMode, doc: () => store.getState().history.present }
 }
 
 describe('Toolbar', () => {
@@ -71,6 +72,12 @@ describe('Toolbar', () => {
     const { onLearn } = setup()
     await userEvent.click(screen.getByTestId('learn'))
     expect(onLearn).toHaveBeenCalled()
+  })
+
+  it('turns help mode on', async () => {
+    const { onHelpMode } = setup()
+    await userEvent.click(screen.getByTestId('help-mode'))
+    expect(onHelpMode).toHaveBeenCalled()
   })
 
   it('exports STEP', async () => {

@@ -23,9 +23,11 @@ interface ToolbarProps {
   onOpenDesigns(): void
   learnOpen: boolean
   onLearn(): void
+  helpMode: boolean
+  onHelpMode(): void
 }
 
-export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn }: ToolbarProps) {
+export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn, helpMode, onHelpMode }: ToolbarProps) {
   const undoable = useBloKade((s) => canUndo(s.history))
   const redoable = useBloKade((s) => canRedo(s.history))
   const count = useBloKade((s) => s.selection.length)
@@ -41,6 +43,8 @@ export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn }
       <button type="button" className="tool-button" data-testid="open-designs" onClick={onOpenDesigns}>📁 {designName}</button>
       <div className="toolbar-group">
         <button type="button" className="tool-button" data-testid="learn" aria-pressed={learnOpen} onClick={onLearn}>📘 Learn</button>
+        <button type="button" className="tool-button" data-testid="help-mode" data-help-toggle="" aria-pressed={helpMode}
+          aria-label="Help mode" onClick={onHelpMode}>❓</button>
       </div>
       <div className="toolbar-group">
         <button type="button" className="tool-button" data-testid="undo" title="Undo (Ctrl+Z)" disabled={!undoable} onClick={actions.undo}>↶ Undo</button>

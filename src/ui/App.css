@@ -137,3 +137,14 @@ button { font: inherit; }
   0%, 100% { box-shadow: 0 0 0 0 rgba(79, 157, 255, 0.6); }
   50% { box-shadow: 0 0 0 8px rgba(79, 157, 255, 0); }
 }
+
+.help-tooltip {
+  position: fixed; z-index: 2100; max-width: 260px; padding: 6px 8px; border-radius: 6px;
+  background: var(--ink); color: #fff; font-size: 0.85rem; pointer-events: none;
+}
+body.help-mode, body.help-mode * { cursor: help !important; }
+.help-card {
+  position: fixed; z-index: 2200; left: 50%; top: 20%; transform: translateX(-50%);
+  width: min(380px, 92vw); padding: 14px; border-radius: var(--radius);
+  background: var(--panel); border: 2px solid var(--accent); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+}
