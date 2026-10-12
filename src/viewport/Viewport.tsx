@@ -8,6 +8,7 @@ import type { PluginRegistry } from '../plugins/registry'
 import { useBloKade } from '../store/context'
 import { EdgeOverlay } from './EdgeOverlay'
 import { NodeMesh } from './NodeMesh'
+import { OverlapMesh } from './OverlapMesh'
 import { TransformHandles } from './TransformHandles'
 import { WorkplaneMarker } from './WorkplaneMarker'
 import { workplaneFromHit } from './workplane'
@@ -54,6 +55,7 @@ export function Viewport({ registry, onToggleEdge }: { registry: PluginRegistry;
           ) : null
         })}
         <EdgeOverlay onToggle={onToggleEdge} />
+        <OverlapMesh />
         {workplane && <WorkplaneMarker workplane={workplane} />}
         {!pickingEdges && <TransformHandles registry={registry} onMeasure={setMeasurement} />}
         <OrbitControls makeDefault />

@@ -122,7 +122,10 @@ export function createActions(store: BloKadeStore, registry: PluginRegistry): Ac
       const s = state()
       if (s.pickingEdges) s.setPickingEdges(null)
       else if (s.pickingWorkplane) s.setPickingWorkplane(false)
-      else s.select([])
+      else {
+        s.select([])
+        s.setOverlap(null)
+      }
     },
     setTool: (tool) => state().setTool(tool),
     setGridSnap: (gridSnap) => state().apply((doc) => setGridSnap(doc, gridSnap)),

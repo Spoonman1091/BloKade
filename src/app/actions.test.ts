@@ -161,4 +161,12 @@ describe('actions', () => {
     expect(store.getState().selection).toEqual([])
     expect(typeof actions.togglePickedEdge).toBe('function')
   })
+
+  it('Escape clears an overlap result when it deselects', () => {
+    const { store, actions } = setup()
+    const s = store.getState()
+    s.setOverlap({ doc: s.history.present, selection: s.selection, result: { status: 'none' } })
+    actions.cancel()
+    expect(store.getState().overlap).toBeNull()
+  })
 })

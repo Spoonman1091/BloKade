@@ -11,6 +11,7 @@ import { useBloKade } from '../store/context'
 import { AlignTools } from './AlignTools'
 import { TextField } from './NumberField'
 import { ModifierStack } from './ModifierStack'
+import { OverlapCheck } from './OverlapCheck'
 import { ParamField } from './ParamField'
 import { ValueField } from './ValueField'
 
@@ -59,7 +60,7 @@ function Placement({ node, errors, setField }: FieldsProps) {
   )
 }
 
-export function PropertiesPanel({ registry }: { registry: PluginRegistry }) {
+export function PropertiesPanel({ registry, onCheckOverlap }: { registry: PluginRegistry; onCheckOverlap?(): void }) {
   const doc = useBloKade((s) => s.history.present)
   const selection = useBloKade((s) => s.selection)
   const errors = useBloKade((s) => s.errors)
@@ -74,6 +75,7 @@ export function PropertiesPanel({ registry }: { registry: PluginRegistry }) {
         <h2>Properties</h2>
         <p className="hint">{selection.length} parts selected. Group them, or pick one to change it.</p>
         <AlignTools />
+        {onCheckOverlap && <OverlapCheck onCheck={onCheckOverlap} />}
       </section>
     )
   }

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { checkOverlap } from '../app/check-overlap'
 import { createActions } from '../app/actions'
 import type { AppDeps } from '../app/deps'
 import { exportDesign, type ExportFormat } from '../app/export'
@@ -38,7 +39,7 @@ export function Workspace({ deps }: { deps: AppDeps }) {
         <Viewport registry={deps.registry} onToggleEdge={actions.togglePickedEdge} />
       </main>
       <aside className="right-panel">
-        <PropertiesPanel registry={deps.registry} />
+        <PropertiesPanel registry={deps.registry} onCheckOverlap={() => void checkOverlap(store, deps.client)} />
         <VariablesPanel registry={deps.registry} />
       </aside>
       {showDesigns && <DesignsDialog repo={deps.repo} flushAutosave={flushAutosave} onClose={() => setShowDesigns(false)} />}

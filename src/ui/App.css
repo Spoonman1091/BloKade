@@ -106,3 +106,5 @@ button { font: inherit; }
 .add-modifier { width: 100%; margin-top: 4px; }
 .checkbox-field { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
 .tree-mods { margin-left: 4px; color: var(--muted); font-size: 0.85rem; }
+
+.overlap-check { margin-top: 8px; }
