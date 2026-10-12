@@ -6,11 +6,12 @@ import type { NodeId } from '../document/types'
 import type { PluginRegistry } from '../plugins/registry'
 import { useBloKade } from '../store/context'
 import { NodeMesh } from './NodeMesh'
+import { TransformHandles } from './TransformHandles'
 
 // BloKade is Z-up like slicers. This must run before the camera is created.
 Object3D.DEFAULT_UP.set(0, 0, 1)
 
-export function Viewport(_props: { registry: PluginRegistry }) {
+export function Viewport({ registry }: { registry: PluginRegistry }) {
   const doc = useBloKade((s) => s.history.present)
   const meshes = useBloKade((s) => s.meshes)
   const selection = useBloKade((s) => s.selection)
@@ -33,6 +34,7 @@ export function Viewport(_props: { registry: PluginRegistry }) {
             <NodeMesh key={id} node={node} displayed={displayed} selected={selection.includes(id)} onSelect={onSelect} />
           ) : null
         })}
+        <TransformHandles registry={registry} />
         <OrbitControls makeDefault />
         <GizmoHelper alignment="bottom-right" margin={[70, 70]}>
           <GizmoViewport />
