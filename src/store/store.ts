@@ -83,7 +83,11 @@ export function createBloKadeStore(init: { designId: string; doc: BloKadeDocumen
         set({ notice: error.message })
       }
     },
-    select: (ids) => set((s) => ({ selection: pruneSelection(s.history.present, ids) })),
+    select: (ids) => set((s) => {
+      const selection = pruneSelection(s.history.present, ids)
+      const leaving = s.pickingEdges !== null && !(selection.length === 1 && selection[0] === s.pickingEdges.nodeId)
+      return leaving ? { selection, pickingEdges: null, edgeCandidates: null } : { selection }
+    }),
     setTool: (tool) => set({ tool }),
     setWorkplane: (workplane) => set({ workplane, pickingWorkplane: false }),
     setPickingEdges: (pickingEdges) =>

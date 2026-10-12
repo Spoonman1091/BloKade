@@ -11,7 +11,7 @@ function pickingStillValid(store: BloKadeStore): boolean {
   const nodes = history.present.nodes
   const node = Object.hasOwn(nodes, pickingEdges.nodeId) ? nodes[pickingEdges.nodeId] : undefined
   const modifier = node ? modifiersOf(node).find((m) => m.id === pickingEdges.modifierId) : undefined
-  return modifier?.type === 'fillet' || modifier?.type === 'chamfer'
+  return modifier?.enabled === true && (modifier.type === 'fillet' || modifier.type === 'chamfer')
 }
 
 /** While Kade is picking edges, asks the worker for the clickable edges (again after every design change). */

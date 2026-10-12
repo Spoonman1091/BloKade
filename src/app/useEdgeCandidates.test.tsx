@@ -2,7 +2,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { createEmptyDocument, createShapeNode } from '../document/factory'
-import { addModifier, removeModifier } from '../document/modifiers'
+import { addModifier, removeModifier, setModifierEnabled } from '../document/modifiers'
 import { addNode } from '../document/ops'
 import type { EdgeCandidate } from '../geometry/types'
 import { createBloKadeStore } from '../store/store'
@@ -31,6 +31,13 @@ describe('useEdgeCandidates', () => {
     const { store, modifierId } = setup()
     store.getState().setPickingEdges({ nodeId: 'b', modifierId })
     store.getState().apply((d) => removeModifier(d, 'b', modifierId))
+    await waitFor(() => expect(store.getState().pickingEdges).toBeNull())
+  })
+
+  it('stops picking when the modifier is switched off', async () => {
+    const { store, modifierId } = setup()
+    store.getState().setPickingEdges({ nodeId: 'b', modifierId })
+    store.getState().apply((d) => setModifierEnabled(d, 'b', modifierId, false))
     await waitFor(() => expect(store.getState().pickingEdges).toBeNull())
   })
 

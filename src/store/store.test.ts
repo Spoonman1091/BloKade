@@ -95,4 +95,18 @@ describe('store', () => {
     store.getState().openDesign('other', createEmptyDocument())
     expect(store.getState()).toMatchObject({ pickingEdges: null, edgeCandidates: null, modifierWarnings: {} })
   })
+
+  it('stops picking edges when the selection moves off that part', () => {
+    const store = setup()
+    store.getState().apply((d) => addNode(addNode(d, box('a')), box('c')))
+    store.getState().select(['a'])
+    store.getState().setPickingEdges({ nodeId: 'a', modifierId: 'm' })
+    store.getState().setEdgeCandidates([])
+    store.getState().select(['a'])
+    expect(store.getState().pickingEdges).not.toBeNull()
+    expect(store.getState().edgeCandidates).not.toBeNull()
+    store.getState().select(['c'])
+    expect(store.getState().pickingEdges).toBeNull()
+    expect(store.getState().edgeCandidates).toBeNull()
+  })
 })

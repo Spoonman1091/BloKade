@@ -47,6 +47,8 @@ function TreeItem({ id, registry, drag }: { id: NodeId; registry: PluginRegistry
 
   const { apply } = store.getState()
   const isGroup = node.kind === 'group'
+  const modifiers = modifiersOf(node)
+  const modifierLabels = modifiers.map((m) => MODIFIER_LABELS[m.type]).join(', ')
   const icon = isGroup ? '📦' : registry.get(node.shapeType)?.icon ?? '❓'
   const canDropHere = isGroup && drag.dragging !== null && drag.dragging !== id
   const onClick = (event: MouseEvent): void => {
@@ -94,10 +96,9 @@ function TreeItem({ id, registry, drag }: { id: NodeId; registry: PluginRegistry
       >
         <span aria-hidden="true">{icon}</span>
         {editing ? <RenameInput initial={node.name} onDone={finishRename} /> : <span className="tree-name">{node.name}</span>}
-        {modifiersOf(node).length > 0 && (
-          <span className="tree-mods" data-testid={`tree-mods-${id}`}
-            title={modifiersOf(node).map((m) => MODIFIER_LABELS[m.type]).join(', ')}>
-            {modifiersOf(node).filter((m) => m.enabled).map((m) => MODIFIER_ICONS[m.type]).join('')}
+        {modifiers.length > 0 && (
+          <span className="tree-mods" data-testid={`tree-mods-${id}`} title={modifierLabels} aria-label={`Modifiers: ${modifierLabels}`}>
+            {modifiers.filter((m) => m.enabled).map((m) => MODIFIER_ICONS[m.type]).join('')}
           </span>
         )}
         {error && <span className="badge" title={error} aria-label={`Problem: ${error}`}>⚠</span>}
