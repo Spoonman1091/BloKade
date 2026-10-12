@@ -29,10 +29,16 @@ export interface BuildResult {
   readonly warnings?: ModifierWarnings
 }
 
+/** Where two parts take up the same space: its volume (mm³) and shape, in world coordinates. */
+export type OverlapResult =
+  | { readonly status: 'none' }
+  | { readonly status: 'overlap'; readonly volume: number; readonly mesh: MeshData }
+
 export interface GeometryApi {
   rebuild(doc: BloKadeDocument): Promise<BuildResult>
   exportStl(doc: BloKadeDocument, ids?: readonly NodeId[]): Promise<ArrayBuffer>
   export3mf(doc: BloKadeDocument, ids?: readonly NodeId[]): Promise<ArrayBuffer>
   exportStep(doc: BloKadeDocument, ids?: readonly NodeId[]): Promise<ArrayBuffer>
   edgeCandidates(doc: BloKadeDocument, nodeId: NodeId, modifierId: string): Promise<EdgeCandidate[]>
+  overlap(doc: BloKadeDocument, a: NodeId, b: NodeId): Promise<OverlapResult>
 }

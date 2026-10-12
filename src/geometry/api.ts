@@ -2,6 +2,8 @@ import type { Shape3D } from 'replicad'
 import type { BloKadeDocument, NodeId } from '../document/types'
 import { NodeBuildError, type Evaluator } from './evaluate'
 import { exportTargets } from './export-targets'
+import { UNEXPECTED } from './messages'
+import { findOverlap, OverlapError } from './overlap'
 import { write3mf } from './export-3mf'
 import { EXPORT_QUALITY, toMeshData } from './tessellate'
 import type { BuildResult, GeometryApi, NodeBuild } from './types'
@@ -21,8 +23,6 @@ export function closedMeshFor3mf(
   if (countOpenEdges(welded.triangles) > 0) throw new ExportError(HAS_GAPS)
   return welded
 }
-
-const UNEXPECTED = 'Something went wrong building this part. Try changing its size a little, or undo.'
 
 function buildNode(evaluator: Evaluator, doc: BloKadeDocument, id: NodeId): NodeBuild {
   try {
@@ -99,6 +99,15 @@ export function createGeometryApi(evaluator: Evaluator): GeometryApi {
       } catch (error) {
         if (error instanceof NodeBuildError) throw new Error(error.message)
         console.error('Unexpected edge-picking failure', error)
+        throw new Error(UNEXPECTED)
+      }
+    },
+    overlap: async (doc, a, b) => {
+      try {
+        return findOverlap(evaluator, doc, a, b)
+      } catch (error) {
+        if (error instanceof OverlapError) throw new Error(error.message)
+        console.error('Unexpected overlap failure', error)
         throw new Error(UNEXPECTED)
       }
     },
