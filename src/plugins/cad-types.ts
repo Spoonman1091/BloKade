@@ -18,4 +18,8 @@ export interface CadToolkit {
   extrudeSide(profile: readonly Point2[], width: number): Shape3D
   /** Raised letters, centered on X/Y and sitting on z = 0. `size` is the font size in mm. */
   text(text: string, size: number, depth: number, fontFamily?: string): Shape3D
+  /** Push a flat [x, y] outline straight up from z = 0 (hexagons, slots…). */
+  prism(outline: readonly Point2[], height: number): Shape3D
+  /** Metric-style threaded rod, centered on X/Y, sitting on z = 0. Up to 40 turns long. */
+  thread(diameter: number, pitch: number, length: number): Shape3D
 }

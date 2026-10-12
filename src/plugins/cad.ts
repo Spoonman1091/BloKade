@@ -11,6 +11,7 @@ import {
   type Shape3D,
 } from 'replicad'
 import type { CadToolkit, Point2 } from './cad-types'
+import { makeThread } from './cad-thread'
 import { fontFailed, TEXT_FONT } from './font'
 
 const EPS = 1e-9
@@ -79,6 +80,8 @@ export function createCadToolkit(): CadToolkit {
     },
     extrudeSide: (profile, width) =>
       asSolid(profileDrawing(profile).sketchOnPlane('XZ', [0, width / 2, 0]).extrude(width)),
+    prism: (outline, height) => asSolid(profileDrawing(outline).sketchOnPlane('XY').extrude(height) as Shape3D),
+    thread: (diameter, pitch, length) => makeThread(diameter, pitch, length),
     text: (text, size, depth, fontFamily = TEXT_FONT) => {
       const clean = text.trim()
       if (!clean) throw new Error('Type some letters first.')
