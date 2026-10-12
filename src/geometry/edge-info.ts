@@ -48,6 +48,11 @@ export function edgePolyline(edge: Edge): number[] {
 }
 
 export function shapeBox(shape: Shape3D): Box {
-  const [[x0, y0, z0], [x1, y1, z1]] = shape.boundingBox.bounds
-  return { min: [x0, y0, z0], max: [x1, y1, z1] }
+  const bb = shape.boundingBox
+  try {
+    const [[x0, y0, z0], [x1, y1, z1]] = bb.bounds
+    return { min: [x0, y0, z0], max: [x1, y1, z1] }
+  } finally {
+    bb.delete()
+  }
 }

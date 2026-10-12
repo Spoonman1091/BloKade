@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { createModifier } from '../document/modifiers'
 import type { EdgeSelection, Modifier } from '../document/types'
 import { createCadToolkit } from '../plugins/cad'
-import { edgeInfos, shapeBox } from './edge-info'
+import { edgeInfos, edgePolyline, shapeBox } from './edge-info'
 import { fingerprintOf, matchesDescription } from './edge-select'
 import { applyModifiers, ModifierError } from './modifiers'
 import { initTestOC } from './testing/oc-node'
@@ -33,7 +33,9 @@ describe('Round edges and Bevel edges', () => {
   it('rounds the top edges of a box and leaves the bottom square', () => {
     const { shape, warnings } = applyModifiers(cad().box(20, 20, 20), [round(2)])
     expect(warnings).toEqual({})
-    const [[, , z0]] = shape.boundingBox.bounds
+    const bb = shape.boundingBox
+    const [[, , z0]] = bb.bounds
+    bb.delete()
     expect(z0).toBeCloseTo(0, 5)
     const v = volumeOf(shape)
     expect(v).toBeGreaterThan(7900)
@@ -83,5 +85,20 @@ describe('Round edges and Bevel edges', () => {
 
   it('skips disabled modifiers', () => {
     expect(volumeOf(applyModifiers(cad().box(20, 20, 20), [{ ...round(2), enabled: false } as Modifier]).shape)).toBeCloseTo(8000, 3)
+  })
+
+  it('draws edges as 2 points for a line and 17 for a curve', () => {
+    const lengths = (shape: Shape3D, kind: string) =>
+      shape.edges.flatMap((edge) => {
+        const out = edge.geomType === kind ? [edgePolyline(edge).length] : []
+        edge.delete()
+        return out
+      })
+    const box = cad().box(20, 20, 20)
+    const cylinder = cad().cylinder(20, 20)
+    expect(lengths(box, 'LINE')[0]).toBe(6)
+    expect(lengths(cylinder, 'CIRCLE')[0]).toBe(51)
+    box.delete()
+    cylinder.delete()
   })
 })
