@@ -28,7 +28,8 @@ describe('factories', () => {
       schemaVersion: CURRENT_SCHEMA_VERSION,
       name: 'Phone Stand',
       units: 'mm',
-      settings: { gridSnap: 1 },
+      settings: { gridSnap: 1, fit: 0.2 },
+      variables: [],
       root: [],
       nodes: {},
     })
@@ -59,5 +60,10 @@ describe('factories', () => {
   it('cycles through shape colors', () => {
     expect(pickColor(0)).toBe(SHAPE_COLORS[0])
     expect(pickColor(SHAPE_COLORS.length + 1)).toBe(SHAPE_COLORS[1])
+  })
+
+  it('can place a new shape with a rotation', () => {
+    const node = createShapeNode({ shapeType: 'box', name: 'Box', params: {}, color: '#f00', position: [1, 2, 3], rotation: [0, 90, 0] })
+    expect(node.transform).toEqual({ position: [1, 2, 3], rotation: [0, 90, 0] })
   })
 })

@@ -51,7 +51,7 @@ describe('validateDocument', () => {
   })
 
   it('rejects an unknown schema version', () => {
-    expect(errorOf({ ...createEmptyDocument(), schemaVersion: 2 })).toContain('damaged')
+    expect(errorOf({ ...createEmptyDocument(), schemaVersion: 3 })).toContain('damaged')
   })
 
   it('rejects things that are not designs at all', () => {
@@ -69,5 +69,28 @@ describe('validateDocument prototype-named ids', () => {
   it('rejects a group child id named like an Object.prototype member', () => {
     const doc = docWith([createGroupNode({ id: 'g', children: ['toString'] })], ['g'])
     expect(errorOf(doc)).toContain('Missing part')
+  })
+
+  it('accepts variables, field formulas and text params', () => {
+    const shape = { ...box('a'), params: { width: 10, text: 'Kade' }, formulas: { 'param.width': 'wall * 2', 'position.0': 'wall' } }
+    const doc = { ...docWith([shape], ['a']), variables: [{ name: 'wall', expr: '5' }] }
+    expect(validateDocument(doc).ok).toBe(true)
+  })
+
+  it('rejects formulas on unknown fields', () => {
+    const shape = { ...box('a'), formulas: { colour: 'red' } }
+    expect(errorOf(docWith([shape], ['a']))).toContain('damaged')
+  })
+
+  it('rejects duplicate or reserved variable names', () => {
+    const base = docWith([], [])
+    expect(errorOf({ ...base, variables: [{ name: 'wall', expr: '1' }, { name: 'wall', expr: '2' }] }))
+      .toContain('already a variable called "wall"')
+    expect(errorOf({ ...base, variables: [{ name: 'fit', expr: '1' }] })).toContain('BloKade already uses "fit"')
+  })
+
+  it('rejects an impossible fit gap', () => {
+    const doc = docWith([], [])
+    expect(errorOf({ ...doc, settings: { ...doc.settings, fit: 5 } })).toContain('damaged')
   })
 })

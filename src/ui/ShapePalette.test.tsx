@@ -9,7 +9,7 @@ describe('ShapePalette', () => {
   it('shows one button per shape and adds the clicked one', async () => {
     const onAdd = vi.fn()
     render(<ShapePalette registry={registry} onAdd={onAdd} />)
-    expect(screen.getAllByRole('button')).toHaveLength(6)
+    expect(screen.getAllByRole('button')).toHaveLength(7)
     await userEvent.click(screen.getByRole('button', { name: /Cylinder/ }))
     expect(onAdd).toHaveBeenCalledWith('cylinder')
   })

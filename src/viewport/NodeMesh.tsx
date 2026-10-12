@@ -2,8 +2,9 @@ import type { ThreeEvent } from '@react-three/fiber'
 import { useEffect, useMemo } from 'react'
 import { MathUtils } from 'three'
 import { HOLE_COLOR } from '../document/factory'
-import type { NodeId, SceneNode } from '../document/types'
+import type { NodeId, SceneNode, Vec3 } from '../document/types'
 import type { DisplayedMesh } from '../store/merge-build'
+import { pickFromIntersections } from './workplane'
 import { toBufferGeometry, toEdgeGeometry } from './three-geometry'
 
 const EDGE_COLOR = '#2b3445'
@@ -14,9 +15,11 @@ interface NodeMeshProps {
   displayed: DisplayedMesh
   selected: boolean
   onSelect(id: NodeId, additive: boolean): void
+  /** Set while choosing a workplane: clicking a face reports it instead of selecting the part. */
+  onPickFace?(point: Vec3, normal: Vec3): void
 }
 
-export function NodeMesh({ node, displayed, selected, onSelect }: NodeMeshProps) {
+export function NodeMesh({ node, displayed, selected, onSelect, onPickFace }: NodeMeshProps) {
   const geometry = useMemo(() => toBufferGeometry(displayed.mesh), [displayed.mesh])
   const edges = useMemo(() => toEdgeGeometry(displayed.mesh), [displayed.mesh])
   useEffect(() => () => {
@@ -30,6 +33,11 @@ export function NodeMesh({ node, displayed, selected, onSelect }: NodeMeshProps)
   const opacity = isHole ? 0.35 : displayed.stale ? 0.5 : 1
   const handleClick = (event: ThreeEvent<MouseEvent>): void => {
     event.stopPropagation()
+    if (onPickFace) {
+      const picked = pickFromIntersections(event.intersections, event.eventObject)
+      if (picked) onPickFace(picked.point, picked.normal)
+      return
+    }
     onSelect(node.id, event.shiftKey || event.metaKey || event.ctrlKey)
   }
 
@@ -55,7 +63,7 @@ export function NodeMesh({ node, displayed, selected, onSelect }: NodeMeshProps)
           emissiveIntensity={selected ? 0.25 : 0}
         />
       </mesh>
-      <lineSegments geometry={edges}>
+      <lineSegments geometry={edges} raycast={() => null}>
         <lineBasicMaterial color={selected ? SELECTED_EDGE_COLOR : EDGE_COLOR} />
       </lineSegments>
     </group>

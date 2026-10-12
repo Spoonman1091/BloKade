@@ -3,7 +3,7 @@ import { createRegistry } from './registry'
 const builtin = import.meta.glob<unknown>(['./builtin/*.ts', '!./builtin/*.test.ts'], { eager: true, import: 'default' })
 const kades = import.meta.glob<unknown>(['../../plugins/**/*.{js,ts}', '!../../plugins/**/*.test.{js,ts}'], { eager: true, import: 'default' })
 
-const BUILTIN_ORDER = ['box', 'cylinder', 'sphere', 'cone', 'wedge', 'torus']
+const BUILTIN_ORDER = ['box', 'cylinder', 'sphere', 'cone', 'wedge', 'torus', 'text']
 const orderOf = (path: string): number => {
   const index = BUILTIN_ORDER.findIndex((name) => path.endsWith(`/${name}.ts`))
   return index === -1 ? BUILTIN_ORDER.length : index

@@ -1,10 +1,16 @@
-import { CURRENT_SCHEMA_VERSION } from '../document/types'
+import { CURRENT_SCHEMA_VERSION, DEFAULT_FIT } from '../document/types'
 import { fail, ok, type Result } from '../shared/result'
 
 export type Migration = (doc: Readonly<Record<string, unknown>>) => Record<string, unknown>
 
+const asRecord = (value: unknown): Readonly<Record<string, unknown>> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Readonly<Record<string, unknown>>) : {}
+
 /** MIGRATIONS[n] upgrades a version-n document to version n + 1. */
-export const MIGRATIONS: Readonly<Record<number, Migration>> = {}
+export const MIGRATIONS: Readonly<Record<number, Migration>> = {
+  // Version 2 (Milestone 2) adds design variables and the `fit` gap.
+  1: (doc) => ({ ...doc, variables: [], settings: { ...asRecord(doc.settings), fit: DEFAULT_FIT } }),
+}
 
 const NOT_A_DESIGN = "This file isn't a BloKade design."
 

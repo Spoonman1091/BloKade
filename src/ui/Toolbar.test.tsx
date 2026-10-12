@@ -65,4 +65,14 @@ describe('Toolbar', () => {
     expect(onOpenDesigns).toHaveBeenCalledOnce()
     expect(screen.getByTestId('open-designs')).toHaveTextContent('My Robot')
   })
+
+  it('picks a workplane and goes back to the ground', async () => {
+    const { store } = setup()
+    await userEvent.click(screen.getByTestId('workplane'))
+    expect(store.getState().pickingWorkplane).toBe(true)
+    expect(screen.queryByTestId('workplane-reset')).toBeNull()
+    act(() => store.getState().setWorkplane({ origin: [0, 0, 5], rotation: [0, 0, 0] }))
+    await userEvent.click(screen.getByTestId('workplane-reset'))
+    expect(store.getState().workplane).toBeNull()
+  })
 })

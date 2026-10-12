@@ -1,4 +1,4 @@
-import { useEffect, useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { formatNumber, parseNumberInput } from './number-input'
 
 interface DraftFieldProps<T> {
@@ -15,7 +15,12 @@ function DraftField<T>({ label, value, onCommit, testId, format, parse }: DraftF
   const [draft, setDraft] = useState(format(value))
   useEffect(() => setDraft(format(value)), [value, format])
 
+  // True only while the user has typed something that hasn't been committed yet, so a blur right after Enter can't re-commit.
+  const dirty = useRef(false)
+
   const commit = (): void => {
+    if (!dirty.current) return
+    dirty.current = false
     const shown = format(value)
     if (draft === shown) return
     const parsed = parse(draft)
@@ -25,7 +30,10 @@ function DraftField<T>({ label, value, onCommit, testId, format, parse }: DraftF
   }
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
     if (event.key === 'Enter') commit()
-    if (event.key === 'Escape') setDraft(format(value))
+    if (event.key === 'Escape') {
+      dirty.current = false
+      setDraft(format(value))
+    }
   }
 
   return (
@@ -36,7 +44,10 @@ function DraftField<T>({ label, value, onCommit, testId, format, parse }: DraftF
         inputMode="decimal"
         data-testid={testId}
         value={draft}
-        onChange={(event) => setDraft(event.target.value)}
+        onChange={(event) => {
+          dirty.current = true
+          setDraft(event.target.value)
+        }}
         onBlur={commit}
         onKeyDown={onKeyDown}
       />

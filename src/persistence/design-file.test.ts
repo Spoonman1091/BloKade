@@ -23,4 +23,25 @@ describe('design files', () => {
     expect(fileNameFor(createEmptyDocument("Kade's Phone Stand!"), 'stl')).toBe('kade-s-phone-stand.stl')
     expect(fileNameFor(createEmptyDocument('***'), '3mf')).toBe('design.3mf')
   })
+
+  it('opens a design saved by Milestone 1 and keeps every part', () => {
+    const v1 = JSON.stringify({
+      schemaVersion: 1, name: 'Old robot', units: 'mm', settings: { gridSnap: 0.5 }, root: ['a'],
+      nodes: {
+        a: {
+          id: 'a', kind: 'shape', name: 'Box', shapeType: 'box', params: { width: 30, depth: 20, height: 10 },
+          mode: 'solid', transform: { position: [1, 2, 0], rotation: [0, 0, 45] }, hidden: false, color: '#ff6b6b',
+        },
+      },
+    })
+    const result = parseDesignFile(v1)
+    if (!result.ok) throw new Error(result.error)
+    expect(result.value.schemaVersion).toBe(2)
+    expect(result.value.settings).toEqual({ gridSnap: 0.5, fit: 0.2 })
+    expect(result.value.variables).toEqual([])
+    expect(result.value.nodes.a).toMatchObject({
+      params: { width: 30, depth: 20, height: 10 },
+      transform: { position: [1, 2, 0], rotation: [0, 0, 45] },
+    })
+  })
 })

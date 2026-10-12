@@ -3,8 +3,10 @@ import { act, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { createActions } from '../app/actions'
+import { boxMesh } from '../app/testing/meshes'
 import { renderWithStore } from '../app/testing/render'
 import { createEmptyDocument } from '../document/factory'
+import { updateNode } from '../document/ops'
 import { MAX_MM, MIN_MM } from '../plugins/params'
 import { registry } from '../plugins/index'
 import { createBloKadeStore } from '../store/store'
@@ -94,5 +96,54 @@ describe('PropertiesPanel', () => {
       store.getState().select(store.getState().history.present.root)
     })
     expect(screen.getByText(/2 parts selected/)).toBeInTheDocument()
+  })
+
+  it('takes a formula, shows its result, and keeps the formula text', async () => {
+    const { store, actions, selected } = setup()
+    act(() => store.getState().apply((d) => ({ ...d, variables: [{ name: 'wall', expr: '3' }] })))
+    act(() => actions.addShape('box'))
+    await setField('param-width', 'wall * 10')
+    expect(selected()).toMatchObject({ params: { width: 30 }, formulas: { 'param.width': 'wall * 10' } })
+    expect(screen.getByTestId('param-width')).toHaveValue('wall * 10')
+    expect(screen.getByTestId('param-width-value')).toHaveTextContent('= 30')
+  })
+
+  it("shows a broken formula's problem and keeps the old size (Review Focus 1)", async () => {
+    const { actions, selected } = setup()
+    act(() => actions.addShape('box'))
+    await setField('param-width', 'wal * 10')
+    expect(selected()).toMatchObject({ params: { width: 20 } })
+    expect(screen.getByTestId('param-width-error')).toHaveTextContent(`"wal" isn't a variable`)
+  })
+
+  it('takes formulas for position and rotation', async () => {
+    const { store, actions, selected } = setup()
+    act(() => store.getState().apply((d) => ({ ...d, variables: [{ name: 'wall', expr: '3' }] })))
+    act(() => actions.addShape('box'))
+    await setField('pos-x', 'wall + 1')
+    await setField('rot-z', '90 / wall')
+    expect(selected()?.transform).toEqual({ position: [4, 0, 0], rotation: [0, 0, 30] })
+  })
+
+  it("edits a Text shape's letters", async () => {
+    const { actions, selected } = setup()
+    act(() => actions.addShape('text'))
+    await setField('param-text', 'Hi Kade')
+    expect(selected()).toMatchObject({ params: { text: 'Hi Kade' } })
+  })
+
+  it('shows line-up buttons for two or more parts and uses them', async () => {
+    const { store, actions } = setup()
+    act(() => actions.addShape('box'))
+    act(() => actions.addShape('box'))
+    const [a, b] = store.getState().history.present.root
+    if (!a || !b) throw new Error('missing parts')
+    act(() => {
+      store.getState().apply((d) => updateNode(d, b, (n) => ({ ...n, transform: { ...n.transform, position: [30, 0, 0] } })))
+      store.getState().applyBuild('d', { nodes: { [a]: { status: 'ok', mesh: boxMesh(20, 20, 20) }, [b]: { status: 'ok', mesh: boxMesh(20, 20, 20) } } })
+      store.getState().select([a, b])
+    })
+    await userEvent.click(screen.getByTestId('align-x-min'))
+    expect(store.getState().history.present.nodes[b]?.transform.position[0]).toBe(0)
   })
 })

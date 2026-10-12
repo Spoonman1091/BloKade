@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { defaultParams, MAX_MM, MIN_MM, normalizeParam, resolveParams } from './params'
-import { definePlugin } from './types'
+import { defaultParams, MAX_MM, MIN_MM, normalizeParam, normalizeTextParam, resolveParams } from './params'
+import { definePlugin, type TextParamSpec } from './types'
 
 const plugin = definePlugin({
   id: 'thing', name: 'Thing', icon: '⭐', version: 1,
@@ -43,5 +43,30 @@ describe('resolveParams', () => {
   })
   it('gives all defaults', () => {
     expect(defaultParams(plugin)).toEqual({ width: 20, teeth: 12, tilt: 0 })
+  })
+})
+
+describe('text params', () => {
+  const spec: TextParamSpec = { type: 'text', default: 'Hi', label: 'Text' }
+
+  it('falls back to the default for things that are not text', () => {
+    expect(normalizeTextParam(spec, 42)).toBe('Hi')
+    expect(normalizeTextParam(spec, undefined)).toBe('Hi')
+  })
+
+  it('keeps text on one line and within its limit (Review Focus 4)', () => {
+    expect(normalizeTextParam(spec, 'a\nb\tc')).toBe('a b c')
+    expect(normalizeTextParam(spec, 'x'.repeat(100))).toHaveLength(40)
+    expect(normalizeTextParam({ ...spec, maxLength: 3 }, 'abcdef')).toBe('abc')
+    expect(normalizeTextParam({ ...spec, maxLength: 1 }, '🙂🙂')).toBe('🙂')
+  })
+
+  it('resolves a mix of number and text params', () => {
+    const plugin = definePlugin({
+      id: 'sign', name: 'Sign', icon: 's', version: 1,
+      params: { label: { type: 'text', default: 'Kade', label: 'Label' }, size: { type: 'mm', default: 10, label: 'Size' } },
+      build: ({ size }, cad) => cad.box(size, size, size),
+    })
+    expect(resolveParams(plugin, { label: 'Hey', size: -1 })).toEqual({ label: 'Hey', size: 0.01 })
   })
 })

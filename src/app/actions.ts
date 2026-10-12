@@ -17,8 +17,12 @@ export interface Actions {
   toggleHole(): void
   selectNode(id: NodeId, additive: boolean): void
   clearSelection(): void
+  /** Esc: stop choosing a workplane if that's happening (keeping the current one), otherwise deselect. */
+  cancel(): void
   setTool(tool: ToolMode): void
   setGridSnap(gridSnap: number): void
+  toggleWorkplanePicking(): void
+  resetWorkplane(): void
   undo(): void
   redo(): void
 }
@@ -51,7 +55,11 @@ export function createActions(store: BloKadeStore, registry: PluginRegistry): Ac
         return
       }
       const color = pickColor(Object.keys(state().history.present.nodes).length)
-      const node = createShapeNode({ shapeType: plugin.id, name: plugin.name, params: defaultParams(plugin), color })
+      const workplane = state().workplane
+      const node = createShapeNode({
+        shapeType: plugin.id, name: plugin.name, params: defaultParams(plugin), color,
+        position: workplane?.origin, rotation: workplane?.rotation,
+      })
       selectIf(run(store, (doc) => ({ doc: addNode(doc, node), value: [node.id] })))
     },
     deleteSelection: () => {
@@ -90,8 +98,11 @@ export function createActions(store: BloKadeStore, registry: PluginRegistry): Ac
     },
     selectNode: (id, additive) => state().select(nextSelection(state().selection, id, additive)),
     clearSelection: () => state().select([]),
+    cancel: () => (state().pickingWorkplane ? state().setPickingWorkplane(false) : state().select([])),
     setTool: (tool) => state().setTool(tool),
     setGridSnap: (gridSnap) => state().apply((doc) => setGridSnap(doc, gridSnap)),
+    toggleWorkplanePicking: () => state().setPickingWorkplane(!state().pickingWorkplane),
+    resetWorkplane: () => state().setWorkplane(null),
     undo: () => state().undo(),
     redo: () => state().redo(),
   }

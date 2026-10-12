@@ -1,5 +1,17 @@
-import { draw, drawCircle, makeBaseBox, makeCylinder, makeSphere, type AnyShape, type Shape3D } from 'replicad'
+import {
+  draw,
+  drawCircle,
+  drawText,
+  getFont,
+  makeBaseBox,
+  makeCylinder,
+  makeSphere,
+  type AnyShape,
+  type Drawing,
+  type Shape3D,
+} from 'replicad'
 import type { CadToolkit, Point2 } from './cad-types'
+import { fontFailed, TEXT_FONT } from './font'
 
 const EPS = 1e-9
 const samePoint = (a: Point2, b: Point2): boolean => Math.abs(a[0] - b[0]) < EPS && Math.abs(a[1] - b[1]) < EPS
@@ -26,6 +38,28 @@ function asSolid(shape: Shape3D | AnyShape): Shape3D {
   throw new Error("That outline didn't make a solid shape.")
 }
 
+const CANT_DRAW = "BloKade can't make 3D letters from that text. Try plain letters and numbers."
+
+function letters(text: string, size: number, fontFamily: string): Drawing {
+  if (!getFont(fontFamily)) {
+    if (fontFailed()) throw new Error("The letter font couldn't load. Reload BloKade to try again.")
+    throw new Error("The letter shapes aren't ready yet. Try again in a moment.")
+  }
+  try {
+    return drawText(text, { fontSize: size, fontFamily })
+  } catch {
+    throw new Error(CANT_DRAW)
+  }
+}
+
+function raise(drawing: Drawing, depth: number): Shape3D {
+  try {
+    return asSolid(drawing.sketchOnPlane('XY').extrude(depth) as Shape3D)
+  } catch {
+    throw new Error(CANT_DRAW)
+  }
+}
+
 export function createCadToolkit(): CadToolkit {
   return {
     box: (x, y, z) => makeBaseBox(x, y, z),
@@ -45,5 +79,12 @@ export function createCadToolkit(): CadToolkit {
     },
     extrudeSide: (profile, width) =>
       asSolid(profileDrawing(profile).sketchOnPlane('XZ', [0, width / 2, 0]).extrude(width)),
+    text: (text, size, depth, fontFamily = TEXT_FONT) => {
+      const clean = text.trim()
+      if (!clean) throw new Error('Type some letters first.')
+      const solid = raise(letters(clean, size, fontFamily), depth)
+      const [[x0, y0], [x1, y1]] = solid.boundingBox.bounds
+      return solid.translate([-(x0 + x1) / 2, -(y0 + y1) / 2, 0])
+    },
   }
 }

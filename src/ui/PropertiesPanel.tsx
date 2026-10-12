@@ -1,61 +1,66 @@
+import { useMemo } from 'react'
+import { createFieldNormalizer } from '../app/field-normalizer'
+import { formulaOf, paramField, positionField, rotationField } from '../document/fields'
+import { formulaErrors, setFieldInput } from '../document/formula-ops'
 import { renameNode, setMode, updateNode } from '../document/ops'
-import type { SceneNode, ShapeNode, Vec3 } from '../document/types'
-import { MAX_MM, resolveParams } from '../plugins/params'
+import type { FieldKey, SceneNode, ShapeNode } from '../document/types'
+import { resolveParams } from '../plugins/params'
 import type { PluginRegistry } from '../plugins/registry'
-import type { NumberParamSpec } from '../plugins/types'
+import type { NumberParamType, ParamSpec } from '../plugins/types'
 import { useBloKade } from '../store/context'
-import { NumberField, TextField } from './NumberField'
+import { AlignTools } from './AlignTools'
+import { TextField } from './NumberField'
+import { ValueField } from './ValueField'
 
-const AXES = ['x', 'y', 'z'] as const
-const UNIT: Record<NumberParamSpec['type'], string> = { mm: ' (mm)', angle: ' (°)', whole: '', number: '' }
+const AXES = [['x', 0], ['y', 1], ['z', 2]] as const
+const UNIT: Record<NumberParamType, string> = { mm: ' (mm)', angle: ' (°)', whole: '', number: '' }
 
-const clampPosition = (value: number): number => Math.min(MAX_MM, Math.max(-MAX_MM, value))
+interface FieldsProps {
+  node: SceneNode
+  errors: Readonly<Record<string, string>>
+  setField(key: FieldKey, text: string): void
+}
 
-const withAxis = (v: Vec3, index: number, value: number): Vec3 =>
-  [index === 0 ? value : v[0], index === 1 ? value : v[1], index === 2 ? value : v[2]]
-
-function ShapeParams({ node, registry }: { node: ShapeNode; registry: PluginRegistry }) {
+function ShapeParams({ node, errors, setField, registry }: FieldsProps & { node: ShapeNode; registry: PluginRegistry }) {
   const apply = useBloKade((s) => s.apply)
   const plugin = registry.get(node.shapeType)
   if (!plugin) return <p className="error-text">This shape's plugin is missing, so its size can't be changed.</p>
+  const setText = (key: string, text: string): void => apply((d) => updateNode(d, node.id, (n) => (
+    n.kind === 'shape' ? { ...n, params: resolveParams(plugin, { ...n.params, [key]: text }) } : n
+  )))
   return (
     <>
       <h3>Size</h3>
-      {Object.entries<NumberParamSpec>(plugin.params).map(([key, spec]) => (
-        <NumberField
-          key={key}
-          label={`${spec.label}${UNIT[spec.type]}`}
-          value={node.params[key] ?? spec.default}
-          testId={`param-${key}`}
-          onCommit={(value) => apply((d) => updateNode(d, node.id, (n) => (
-            n.kind === 'shape' ? { ...n, params: resolveParams(plugin, { ...n.params, [key]: value }) } : n
-          )))}
-        />
-      ))}
+      {Object.entries<ParamSpec>(plugin.params).map(([key, spec]) => {
+        const raw = node.params[key]
+        if (spec.type === 'text') {
+          return <TextField key={key} label={spec.label} value={typeof raw === 'string' ? raw : spec.default}
+            testId={`param-${key}`} onCommit={(text) => setText(key, text)} />
+        }
+        const field = paramField(key)
+        return <ValueField key={key} label={`${spec.label}${UNIT[spec.type]}`} value={typeof raw === 'number' ? raw : spec.default}
+          formula={formulaOf(node, field)} error={errors[field]} testId={`param-${key}`} onCommit={(text) => setField(field, text)} />
+      })}
     </>
   )
 }
 
-function Placement({ node }: { node: SceneNode }) {
-  const apply = useBloKade((s) => s.apply)
-  const setPart = (part: 'position' | 'rotation', index: number, value: number): void =>
-    apply((d) => updateNode(d, node.id, (n) => ({
-      ...n, transform: { ...n.transform, [part]: withAxis(n.transform[part], index, value) },
-    })))
+function Placement({ node, errors, setField }: FieldsProps) {
+  const row = (part: 'position' | 'rotation', prefix: string) => (
+    <div className="field-row">
+      {AXES.map(([axis, index]) => {
+        const field = part === 'position' ? positionField(index) : rotationField(index)
+        return <ValueField key={axis} label={axis} value={node.transform[part][index]} formula={formulaOf(node, field)}
+          error={errors[field]} testId={`${prefix}-${axis}`} onCommit={(text) => setField(field, text)} />
+      })}
+    </div>
+  )
   return (
     <>
       <h3>Position (mm)</h3>
-      <div className="field-row">
-        {AXES.map((axis, i) => (
-          <NumberField key={axis} label={axis} value={node.transform.position[i] ?? 0} testId={`pos-${axis}`} onCommit={(v) => setPart('position', i, clampPosition(v))} />
-        ))}
-      </div>
+      {row('position', 'pos')}
       <h3>Rotation (°)</h3>
-      <div className="field-row">
-        {AXES.map((axis, i) => (
-          <NumberField key={axis} label={axis} value={node.transform.rotation[i] ?? 0} testId={`rot-${axis}`} onCommit={(v) => setPart('rotation', i, v)} />
-        ))}
-      </div>
+      {row('rotation', 'rot')}
     </>
   )
 }
@@ -65,6 +70,8 @@ export function PropertiesPanel({ registry }: { registry: PluginRegistry }) {
   const selection = useBloKade((s) => s.selection)
   const errors = useBloKade((s) => s.errors)
   const apply = useBloKade((s) => s.apply)
+  const normalize = useMemo(() => createFieldNormalizer(registry), [registry])
+  const fieldErrors = useMemo(() => formulaErrors(doc), [doc])
   const node = selection.length === 1 && selection[0] ? doc.nodes[selection[0]] : undefined
 
   if (selection.length > 1) {
@@ -72,6 +79,7 @@ export function PropertiesPanel({ registry }: { registry: PluginRegistry }) {
       <section className="panel" aria-label="Properties">
         <h2>Properties</h2>
         <p className="hint">{selection.length} parts selected. Group them, or pick one to change it.</p>
+        <AlignTools />
       </section>
     )
   }
@@ -84,6 +92,8 @@ export function PropertiesPanel({ registry }: { registry: PluginRegistry }) {
     )
   }
   const error = errors[node.id]
+  const setField = (key: FieldKey, text: string): void => apply((d) => setFieldInput(d, node.id, key, text, normalize))
+  const nodeErrors = fieldErrors[node.id] ?? {}
   return (
     <section className="panel" aria-label="Properties">
       <h2>Properties</h2>
@@ -95,8 +105,8 @@ export function PropertiesPanel({ registry }: { registry: PluginRegistry }) {
           onClick={() => apply((d) => setMode(d, [node.id], 'hole'))}>Hole</button>
       </div>
       {error && <p className="error-text" role="alert">⚠ {error}</p>}
-      {node.kind === 'shape' && <ShapeParams key={`params-${node.id}`} node={node} registry={registry} />}
-      <Placement key={`place-${node.id}`} node={node} />
+      {node.kind === 'shape' && <ShapeParams key={`params-${node.id}`} node={node} errors={nodeErrors} setField={setField} registry={registry} />}
+      <Placement key={`place-${node.id}`} node={node} errors={nodeErrors} setField={setField} />
     </section>
   )
 }

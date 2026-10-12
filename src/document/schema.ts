@@ -1,6 +1,10 @@
 import { z } from 'zod'
+import { MAX_FORMULA_LENGTH } from '../formulas/formula'
+import { variableNameProblem } from '../formulas/variables'
 import { fail, ok, type Result } from '../shared/result'
-import type { BloKadeDocument } from './types'
+import { MAX_FIT, MAX_TEXT_PARAM_LENGTH, MAX_VARIABLES, type BloKadeDocument } from './types'
+
+const FIELD_KEY = /^(?:param\.[A-Za-z0-9_]+|position\.[0-2]|rotation\.[0-2])$/
 
 const vec3 = z.tuple([z.number(), z.number(), z.number()])
 const transform = z.object({ position: vec3, rotation: vec3 })
@@ -11,21 +15,24 @@ const base = {
   transform,
   hidden: z.boolean(),
   color: z.string(),
+  formulas: z.record(z.string().regex(FIELD_KEY), z.string().max(MAX_FORMULA_LENGTH)).optional(),
 }
 const shapeNode = z.object({
   ...base,
   kind: z.literal('shape'),
   shapeType: z.string().min(1),
-  params: z.record(z.string(), z.number()),
+  params: z.record(z.string(), z.union([z.number(), z.string().max(MAX_TEXT_PARAM_LENGTH * 2)])),
 })
 const groupNode = z.object({ ...base, kind: z.literal('group'), children: z.array(z.string()) })
 const sceneNode = z.discriminatedUnion('kind', [shapeNode, groupNode])
+const variable = z.object({ name: z.string(), expr: z.string().max(MAX_FORMULA_LENGTH) })
 
 const documentShape = z.object({
-  schemaVersion: z.literal(1),
+  schemaVersion: z.literal(2),
   name: z.string(),
   units: z.literal('mm'),
-  settings: z.object({ gridSnap: z.number().min(0) }),
+  settings: z.object({ gridSnap: z.number().min(0), fit: z.number().min(0).max(MAX_FIT) }),
+  variables: z.array(variable).max(MAX_VARIABLES),
   root: z.array(z.string()),
   nodes: z.record(z.string(), sceneNode),
 })
@@ -57,7 +64,18 @@ function checkTree(doc: DocShape, ctx: z.RefinementCtx): void {
   }
 }
 
-export const documentSchema = documentShape.superRefine(checkTree)
+/** Variable names are valid, unreserved, and unique. */
+function checkVariables(doc: DocShape, ctx: z.RefinementCtx): void {
+  doc.variables.forEach((v, index) => {
+    const problem = variableNameProblem(v.name, doc.variables.slice(0, index).map((earlier) => earlier.name))
+    if (problem) ctx.addIssue({ code: 'custom', message: problem, path: ['variables', index, 'name'] })
+  })
+}
+
+export const documentSchema = documentShape.superRefine((doc, ctx) => {
+  checkTree(doc, ctx)
+  checkVariables(doc, ctx)
+})
 
 export function validateDocument(raw: unknown): Result<BloKadeDocument> {
   const parsed = documentSchema.safeParse(raw)

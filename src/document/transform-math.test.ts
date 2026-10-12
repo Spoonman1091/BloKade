@@ -1,7 +1,7 @@
 import { Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
 import { createEmptyDocument, createGroupNode, createShapeNode } from './factory'
-import { matrixToTransform, transformFromParts, transformToMatrix, worldMatrix } from './transform-math'
+import { keepUnchanged, matrixToTransform, transformFromParts, transformToMatrix, worldMatrix } from './transform-math'
 import type { BloKadeDocument, Transform } from './types'
 
 describe('transform math', () => {
@@ -29,5 +29,13 @@ describe('transform math', () => {
     expect(p.x).toBeCloseTo(10)
     expect(p.y).toBeCloseTo(5)
     expect(p.z).toBeCloseTo(0)
+  })
+
+  it('keeps old components that a new vector only nudged by rounding noise', () => {
+    const old = [10 / 3, 31.41592653589793, 5] as const
+    const next = keepUnchanged(old, [3.333333, 31.415927, 7])
+    expect(next[0]).toBe(10 / 3)
+    expect(next[1]).toBe(31.41592653589793)
+    expect(next[2]).toBe(7)
   })
 })

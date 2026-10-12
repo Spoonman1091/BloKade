@@ -99,4 +99,37 @@ describe('actions', () => {
     actions.redo()
     expect(doc().settings.gridSnap).toBe(0.5)
   })
+
+  it('puts new shapes on the workplane', () => {
+    const { store, actions, doc } = setup()
+    store.getState().setWorkplane({ origin: [1, 2, 3], rotation: [0, 90, 0] })
+    actions.addShape('box')
+    const [id] = doc().root
+    expect(doc().nodes[id as string]?.transform).toEqual({ position: [1, 2, 3], rotation: [0, 90, 0] })
+  })
+
+  it('toggles workplane picking and goes back to the ground', () => {
+    const { store, actions } = setup()
+    actions.toggleWorkplanePicking()
+    expect(store.getState().pickingWorkplane).toBe(true)
+    actions.toggleWorkplanePicking()
+    expect(store.getState().pickingWorkplane).toBe(false)
+    store.getState().setWorkplane({ origin: [0, 0, 5], rotation: [0, 0, 0] })
+    actions.resetWorkplane()
+    expect(store.getState().workplane).toBeNull()
+  })
+
+  it('Escape stops workplane picking first, and otherwise clears the selection', () => {
+    const { store, actions, doc } = setup()
+    actions.addShape('box')
+    const [id] = doc().root as [string]
+    store.getState().setWorkplane({ origin: [0, 0, 5], rotation: [0, 0, 0] })
+    actions.toggleWorkplanePicking()
+    actions.cancel()
+    expect(store.getState().pickingWorkplane).toBe(false)
+    expect(store.getState().workplane).toEqual({ origin: [0, 0, 5], rotation: [0, 0, 0] })
+    expect(store.getState().selection).toEqual([id])
+    actions.cancel()
+    expect(store.getState().selection).toEqual([])
+  })
 })

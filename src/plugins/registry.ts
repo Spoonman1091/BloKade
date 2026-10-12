@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { MAX_TEXT_PARAM_LENGTH } from '../document/types'
 import type { ShapePlugin } from './types'
 
 export interface PluginRegistry {
@@ -6,13 +7,20 @@ export interface PluginRegistry {
   list(): readonly ShapePlugin[]
 }
 
-const paramSpec = z.object({
+const numberSpec = z.object({
   type: z.enum(['mm', 'whole', 'number', 'angle']),
   default: z.number(),
   min: z.number().optional(),
   max: z.number().optional(),
   label: z.string().min(1),
 })
+const textSpec = z.object({
+  type: z.literal('text'),
+  default: z.string().max(MAX_TEXT_PARAM_LENGTH),
+  maxLength: z.number().int().min(1).max(MAX_TEXT_PARAM_LENGTH).optional(),
+  label: z.string().min(1),
+})
+const paramSpec = z.union([numberSpec, textSpec])
 
 const pluginSchema = z
   .object({
@@ -26,9 +34,10 @@ const pluginSchema = z
   })
   .superRefine((p, ctx) => {
     for (const target of Object.values(p.size ?? {})) {
-      if (target && !(target in p.params)) {
-        ctx.addIssue({ code: 'custom', message: `size handle points at missing parameter "${target}"` })
-      }
+      if (!target) continue
+      const spec = Object.hasOwn(p.params, target) ? p.params[target] : undefined
+      if (!spec) ctx.addIssue({ code: 'custom', message: `size handle points at missing parameter "${target}"` })
+      else if (spec.type === 'text') ctx.addIssue({ code: 'custom', message: `size handle can't change the text parameter "${target}"` })
     }
   })
 

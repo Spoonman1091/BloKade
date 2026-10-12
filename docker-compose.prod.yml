@@ -1,0 +1,8 @@
+# Production stack for Portainer (or any host that already has the image).
+# No build step: build the image first, then deploy this file. See "Deploy with Portainer" in README.md.
+services:
+  blokade:
+    image: ${BLOKADE_IMAGE:-blokade:latest}
+    ports:
+      - "${BLOKADE_PORT:-5233}:80"
+    restart: unless-stopped

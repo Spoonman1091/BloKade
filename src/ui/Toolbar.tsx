@@ -29,6 +29,8 @@ export function Toolbar({ actions, onExport, onOpenDesigns }: ToolbarProps) {
   const count = useBloKade((s) => s.selection.length)
   const tool = useBloKade((s) => s.tool)
   const gridSnap = useBloKade((s) => s.history.present.settings.gridSnap)
+  const picking = useBloKade((s) => s.pickingWorkplane)
+  const onFace = useBloKade((s) => s.workplane !== null)
   const designName = useBloKade((s) => s.history.present.name)
 
   return (
@@ -50,6 +52,12 @@ export function Toolbar({ actions, onExport, onOpenDesigns }: ToolbarProps) {
           <button key={t} type="button" className="tool-button" data-testid={`tool-${t}`} title={`${label.slice(2)} (${key})`}
             aria-pressed={tool === t} onClick={() => actions.setTool(t)}>{label}</button>
         ))}
+      </div>
+      <div className="toolbar-group" role="group" aria-label="Workplane">
+        <button type="button" className="tool-button" data-testid="workplane" aria-pressed={picking}
+          title="Build on a face: click this, then click a face" onClick={actions.toggleWorkplanePicking}>📐 Workplane</button>
+        {onFace && <button type="button" className="tool-button" data-testid="workplane-reset"
+          title="Build on the ground again" onClick={actions.resetWorkplane}>Ground</button>}
       </div>
       <label className="toolbar-group">
         Snap

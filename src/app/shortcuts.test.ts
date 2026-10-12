@@ -20,7 +20,7 @@ describe('matchShortcut', () => {
     [key('m'), 'toolMove'],
     [key('r'), 'toolRotate'],
     [key('s'), 'toolSize'],
-    [key('Escape'), 'clearSelection'],
+    [key('Escape'), 'cancel'],
   ] as const)('%o → %s', (input, expected) => {
     expect(matchShortcut(input)).toBe(expected)
   })
@@ -41,11 +41,13 @@ describe('runShortcut', () => {
     const actions = {
       deleteSelection: vi.fn(), duplicateSelection: vi.fn(), groupSelection: vi.fn(), ungroupSelection: vi.fn(),
       undo: vi.fn(), redo: vi.fn(), toggleHole: vi.fn(), setTool: vi.fn(), clearSelection: vi.fn(),
-      addShape: vi.fn(), selectNode: vi.fn(), setGridSnap: vi.fn(),
+      addShape: vi.fn(), selectNode: vi.fn(), setGridSnap: vi.fn(), toggleWorkplanePicking: vi.fn(), resetWorkplane: vi.fn(), cancel: vi.fn(),
     } satisfies Actions
     runShortcut('toolRotate', actions)
     runShortcut('group', actions)
+    runShortcut('cancel', actions)
     expect(actions.setTool).toHaveBeenCalledWith('rotate')
     expect(actions.groupSelection).toHaveBeenCalledOnce()
+    expect(actions.cancel).toHaveBeenCalledOnce()
   })
 })
