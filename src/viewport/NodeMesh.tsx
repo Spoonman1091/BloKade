@@ -4,6 +4,7 @@ import { MathUtils } from 'three'
 import { HOLE_COLOR } from '../document/factory'
 import type { NodeId, SceneNode, Vec3 } from '../document/types'
 import type { DisplayedMesh } from '../store/merge-build'
+import { pickFromIntersections } from './workplane'
 import { toBufferGeometry, toEdgeGeometry } from './three-geometry'
 
 const EDGE_COLOR = '#2b3445'
@@ -33,10 +34,8 @@ export function NodeMesh({ node, displayed, selected, onSelect, onPickFace }: No
   const handleClick = (event: ThreeEvent<MouseEvent>): void => {
     event.stopPropagation()
     if (onPickFace) {
-      if (event.face) {
-        const normal = event.face.normal.clone().transformDirection(event.object.matrixWorld)
-        onPickFace([event.point.x, event.point.y, event.point.z], [normal.x, normal.y, normal.z])
-      }
+      const picked = pickFromIntersections(event.intersections)
+      if (picked) onPickFace(picked.point, picked.normal)
       return
     }
     onSelect(node.id, event.shiftKey || event.metaKey || event.ctrlKey)
@@ -64,7 +63,7 @@ export function NodeMesh({ node, displayed, selected, onSelect, onPickFace }: No
           emissiveIntensity={selected ? 0.25 : 0}
         />
       </mesh>
-      <lineSegments geometry={edges}>
+      <lineSegments geometry={edges} raycast={() => null}>
         <lineBasicMaterial color={selected ? SELECTED_EDGE_COLOR : EDGE_COLOR} />
       </lineSegments>
     </group>

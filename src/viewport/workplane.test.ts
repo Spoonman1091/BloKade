@@ -1,7 +1,7 @@
-import { Vector3 } from 'three'
+import { Object3D, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
 import { transformToMatrix } from '../document/transform-math'
-import { workplaneFromHit } from './workplane'
+import { pickFromIntersections, workplaneFromHit } from './workplane'
 
 describe('workplaneFromHit', () => {
   it('keeps an upward face flat and rounds the point to 0.01 mm', () => {
@@ -16,5 +16,30 @@ describe('workplaneFromHit', () => {
 
   it('falls back to flat for a broken normal', () => {
     expect(workplaneFromHit([0, 0, 0], [0, 0, 0]).rotation).toEqual([0, 0, 0])
+  })
+})
+
+describe('pickFromIntersections', () => {
+  const plain = new Object3D()
+
+  it('skips line hits that have no face and uses the first face hit', () => {
+    const picked = pickFromIntersections([
+      { point: new Vector3(9, 9, 9), object: plain },
+      { point: new Vector3(1, 2, 3), face: { normal: new Vector3(0, 0, 1) }, object: plain },
+    ])
+    expect(picked).toEqual({ point: [1, 2, 3], normal: [0, 0, 1] })
+  })
+
+  it('turns the face normal into world space for a rotated part', () => {
+    const part = new Object3D()
+    part.rotation.x = Math.PI / 2
+    part.updateMatrixWorld()
+    const picked = pickFromIntersections([{ point: new Vector3(0, 0, 0), face: { normal: new Vector3(0, 0, 1) }, object: part }])
+    expect(new Vector3(...(picked?.normal ?? [0, 0, 0])).distanceTo(new Vector3(0, -1, 0))).toBeLessThan(1e-6)
+  })
+
+  it('gives nothing when no hit has a face', () => {
+    expect(pickFromIntersections([{ point: new Vector3(), object: plain }])).toBeNull()
+    expect(pickFromIntersections([])).toBeNull()
   })
 })

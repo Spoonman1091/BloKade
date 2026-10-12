@@ -1,4 +1,4 @@
-import { Euler, Quaternion, Vector3 } from 'three'
+import { Euler, Quaternion, Vector3, type Object3D } from 'three'
 import type { Vec3 } from '../document/types'
 import type { Workplane } from '../store/store'
 
@@ -16,4 +16,18 @@ export function workplaneFromHit(point: Vec3, normal: Vec3): Workplane {
   const e = new Euler().setFromQuaternion(turn, 'XYZ')
   const deg = (radians: number): number => tidy((radians * 180) / Math.PI, 0.001)
   return { origin, rotation: [deg(e.x), deg(e.y), deg(e.z)] }
+}
+
+export interface PickableHit {
+  readonly point: Vector3
+  readonly face?: { readonly normal: Vector3 } | null
+  readonly object: Object3D
+}
+
+/** The first hit that landed on a face, with its point and outward normal in world space. */
+export function pickFromIntersections(intersections: readonly PickableHit[]): { point: Vec3; normal: Vec3 } | null {
+  const hit = intersections.find((h) => h.face)
+  if (!hit?.face) return null
+  const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld)
+  return { point: [hit.point.x, hit.point.y, hit.point.z], normal: [normal.x, normal.y, normal.z] }
 }
