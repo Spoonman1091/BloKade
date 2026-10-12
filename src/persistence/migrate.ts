@@ -12,6 +12,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
   1: (doc) => ({ ...doc, variables: [], settings: { ...asRecord(doc.settings), fit: DEFAULT_FIT } }),
   // Version 3 (Milestone 3) adds optional modifiers; older parts simply have none.
   2: (doc) => ({ ...doc }),
+  // Version 4 (Milestone 6) lets a design carry the code of Kade's own shapes.
+  3: (doc) => ({ ...doc, plugins: {} }),
 }
 
 const NOT_A_DESIGN = "This file isn't a BloKade design."

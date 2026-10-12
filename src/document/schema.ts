@@ -4,8 +4,9 @@ import { variableNameProblem } from '../formulas/variables'
 import { fail, ok, type Result } from '../shared/result'
 import { FIELD_KEY_PATTERN, isFieldKey } from './fields'
 import {
-  MAX_EDGE_SIZE, MAX_FIT, MAX_MODIFIERS, MAX_OFFSET, MAX_PATTERN_ANGLE, MAX_PATTERN_COUNT, MAX_PICKED_EDGES,
-  MAX_TEXT_PARAM_LENGTH, MAX_VARIABLES, MIN_EDGE_SIZE, MIN_PATTERN_ANGLE, type BloKadeDocument,
+  MAX_CARRIED_SHAPES, MAX_EDGE_SIZE, MAX_FIT, MAX_MODIFIERS, MAX_OFFSET, MAX_PATTERN_ANGLE, MAX_PATTERN_COUNT,
+  MAX_PICKED_EDGES, MAX_SHAPE_CODE_LENGTH, MAX_SHAPE_NAME_LENGTH, MAX_TEXT_PARAM_LENGTH, MAX_VARIABLES,
+  MIN_EDGE_SIZE, MIN_PATTERN_ANGLE, SHAPE_ID_PATTERN, type BloKadeDocument,
 } from './types'
 
 const vec3 = z.tuple([z.number(), z.number(), z.number()])
@@ -55,14 +56,22 @@ const groupNode = z.object({ ...base, kind: z.literal('group'), children: z.arra
 const sceneNode = z.discriminatedUnion('kind', [shapeNode, groupNode])
 const variable = z.object({ name: z.string(), expr: z.string().max(MAX_FORMULA_LENGTH) })
 
+const carriedShape = z.object({
+  name: z.string().min(1).max(MAX_SHAPE_NAME_LENGTH),
+  code: z.string().max(MAX_SHAPE_CODE_LENGTH),
+})
+const carriedShapes = z.record(z.string().regex(SHAPE_ID_PATTERN), carriedShape)
+  .refine((shapes) => Object.keys(shapes).length <= MAX_CARRIED_SHAPES, `A design can carry up to ${MAX_CARRIED_SHAPES} of your shapes`)
+
 const documentShape = z.object({
-  schemaVersion: z.literal(3),
+  schemaVersion: z.literal(4),
   name: z.string(),
   units: z.literal('mm'),
   settings: z.object({ gridSnap: z.number().min(0), fit: z.number().min(0).max(MAX_FIT) }),
   variables: z.array(variable).max(MAX_VARIABLES),
   root: z.array(z.string()),
   nodes: z.record(z.string(), sceneNode),
+  plugins: carriedShapes,
 })
 
 type DocShape = z.infer<typeof documentShape>

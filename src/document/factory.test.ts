@@ -32,6 +32,7 @@ describe('factories', () => {
       variables: [],
       root: [],
       nodes: {},
+      plugins: {},
     })
   })
 

@@ -126,17 +126,32 @@ export interface DocumentSettings {
   readonly fit: number
 }
 
+/** One of Kade's shapes, carried inside a design so the design builds anywhere, even without Kade's library. */
+export interface CarriedShape {
+  readonly name: string
+  readonly code: string
+}
+
 export interface BloKadeDocument {
-  readonly schemaVersion: 3
+  readonly schemaVersion: 4
   readonly name: string
   readonly units: 'mm'
   readonly settings: DocumentSettings
   readonly variables: readonly Variable[]
   readonly root: readonly NodeId[]
   readonly nodes: Readonly<Record<NodeId, SceneNode>>
+  /** The code of every one of Kade's shapes this design uses, by shape id. */
+  readonly plugins: Readonly<Record<string, CarriedShape>>
 }
 
-export const CURRENT_SCHEMA_VERSION = 3
+export const CURRENT_SCHEMA_VERSION = 4
+/** Kade's shape code can be up to this many characters. */
+export const MAX_SHAPE_CODE_LENGTH = 50_000
+/** A design can carry up to this many of Kade's shapes. */
+export const MAX_CARRIED_SHAPES = 100
+export const MAX_SHAPE_NAME_LENGTH = 60
+/** Ids of Kade's shapes. BloKade makes them as `my-` plus 10 hex characters. */
+export const SHAPE_ID_PATTERN = /^[a-z][a-z0-9-]{0,63}$/
 export const DEFAULT_GRID_SNAP = 1
 export const DEFAULT_FIT = 0.2
 export const MAX_FIT = 2

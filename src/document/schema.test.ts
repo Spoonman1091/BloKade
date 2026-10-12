@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createEmptyDocument, createGroupNode, createShapeNode } from './factory'
 import { addNode } from './ops'
 import { validateDocument } from './schema'
-import type { BloKadeDocument, SceneNode } from './types'
+import { MAX_CARRIED_SHAPES, MAX_SHAPE_CODE_LENGTH, type BloKadeDocument, type SceneNode } from './types'
 
 const box = (id: string) =>
   createShapeNode({ id, shapeType: 'box', name: 'Box', params: { width: 10 }, color: '#ff0000' })
@@ -52,7 +52,7 @@ describe('validateDocument', () => {
   })
 
   it('rejects an unknown schema version', () => {
-    expect(errorOf({ ...createEmptyDocument(), schemaVersion: 4 })).toContain('damaged')
+    expect(errorOf({ ...createEmptyDocument(), schemaVersion: 5 })).toContain('damaged')
   })
 
   it('rejects things that are not designs at all', () => {
@@ -133,6 +133,35 @@ describe('validateDocument modifiers', () => {
   it('rejects formulas on unknown modifier fields', () => {
     const shape = { ...box('a'), modifiers: [fillet], formulas: { 'mod.ab12cd34.colour': '1' } }
     expect(errorOf(rawDoc(shape))).toContain('damaged')
+  })
+})
+
+describe('carried shapes', () => {
+  const code = "export default { name: 'Gear', build(s, cad) { return cad.box(1, 1, 1) } }"
+  const withShapes = (plugins: unknown) => ({ ...createEmptyDocument(), plugins })
+
+  it('accepts shapes with an id, a name and code', () => {
+    expect(validateDocument(withShapes({ 'my-0123456789': { name: 'Gear', code } })).ok).toBe(true)
+  })
+  it('rejects an id with capitals or spaces', () => {
+    expect(validateDocument(withShapes({ 'My Gear': { name: 'Gear', code } })).ok).toBe(false)
+  })
+  it('rejects code over the length limit', () => {
+    expect(validateDocument(withShapes({ 'my-a': { name: 'Gear', code: 'x'.repeat(MAX_SHAPE_CODE_LENGTH + 1) } })).ok).toBe(false)
+  })
+  it('rejects an empty name', () => {
+    expect(validateDocument(withShapes({ 'my-a': { name: '', code } })).ok).toBe(false)
+  })
+  it('rejects more than the carried shape limit', () => {
+    const many = Object.fromEntries(Array.from({ length: MAX_CARRIED_SHAPES + 1 }, (_, i) => [`my-${i}`, { name: 'S', code }]))
+    const result = validateDocument(withShapes(many))
+    expect(result.ok).toBe(false)
+    expect(!result.ok && result.error).toContain('up to 100 of your shapes')
+  })
+  it('needs the plugins field', () => {
+    const withoutShapes: Record<string, unknown> = { ...createEmptyDocument() }
+    delete withoutShapes.plugins
+    expect(validateDocument(withoutShapes).ok).toBe(false)
   })
 })
 

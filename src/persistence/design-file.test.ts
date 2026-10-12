@@ -19,6 +19,12 @@ describe('design files', () => {
     expect(!result.ok && result.error).toContain('damaged')
   })
 
+  it('keeps carried shapes through save and load', () => {
+    const doc = { ...createEmptyDocument('Gears'), plugins: { 'my-0123456789': { name: 'Gear', code: 'export default {}' } } }
+    const loaded = parseDesignFile(serializeDesign(doc))
+    expect(loaded.ok && loaded.value.plugins).toEqual(doc.plugins)
+  })
+
   it('makes friendly file names', () => {
     expect(fileNameFor(createEmptyDocument("Kade's Phone Stand!"), 'stl')).toBe('kade-s-phone-stand.stl')
     expect(fileNameFor(createEmptyDocument('***'), '3mf')).toBe('design.3mf')
@@ -36,7 +42,7 @@ describe('design files', () => {
     })
     const result = parseDesignFile(v1)
     if (!result.ok) throw new Error(result.error)
-    expect(result.value.schemaVersion).toBe(3)
+    expect(result.value.schemaVersion).toBe(4)
     expect(result.value.settings).toEqual({ gridSnap: 0.5, fit: 0.2 })
     expect(result.value.variables).toEqual([])
     expect(result.value.nodes.a).toMatchObject({
