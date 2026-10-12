@@ -1,5 +1,6 @@
 import { formulaOf, paramField } from '../document/fields'
 import type { FieldKey, ShapeNode } from '../document/types'
+import { normalizeChoiceParam } from '../plugins/params'
 import type { NumberParamType, ParamSpec } from '../plugins/types'
 import { TextField } from './NumberField'
 import { ValueField } from './ValueField'
@@ -27,7 +28,7 @@ export function ParamField({ node, name, spec, errors, setField, setRaw }: Param
     return (
       <label className="field">
         <span>{spec.label}</span>
-        <select data-testid={`param-${name}`} value={typeof raw === 'string' ? raw : spec.default}
+        <select data-testid={`param-${name}`} value={normalizeChoiceParam(spec, raw)}
           onChange={(e) => setRaw(name, e.target.value)}>
           {spec.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>

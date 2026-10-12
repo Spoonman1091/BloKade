@@ -18,7 +18,14 @@ const picker = definePlugin({
   },
   build: () => { throw new Error('unused') },
 })
-const { registry } = createRegistry([picker])
+const squareFirst = definePlugin({
+  id: 'square-first', name: 'Square first', icon: '🧪', version: 1,
+  params: {
+    kind: { type: 'choice', default: 'square', label: 'Shape', options: [{ value: 'round', label: 'Round' }, { value: 'square', label: 'Square' }] },
+  },
+  build: () => { throw new Error('unused') },
+})
+const { registry } = createRegistry([picker, squareFirst])
 
 function setup() {
   const node = createShapeNode({ id: 'p', shapeType: 'picker', name: 'Picker', params: { kind: 'round', size: 8 }, color: '#fff' })
@@ -36,6 +43,14 @@ describe('ParamField', () => {
     expect(screen.getByRole('option', { name: 'Square' })).toBeInTheDocument()
     await userEvent.selectOptions(select, 'square')
     expect(store.getState().history.present.nodes.p).toMatchObject({ params: { kind: 'square', size: 8 } })
+  })
+
+  it('shows the option that is really built (the default) when the stored choice is not in the list', () => {
+    const node = createShapeNode({ id: 'p', shapeType: 'square-first', name: 'Square first', params: { kind: 'hexagon' }, color: '#fff' })
+    const store = createBloKadeStore({ designId: 'd', doc: addNode(createEmptyDocument(), node) })
+    renderWithStore(<PropertiesPanel registry={registry} />, store)
+    act(() => store.getState().select(['p']))
+    expect(screen.getByTestId('param-kind')).toHaveValue('square')
   })
 
   it('still shows number params as value fields', () => {

@@ -34,6 +34,17 @@ describe('checkOverlap', () => {
     expect(overlap).not.toHaveBeenCalled()
   })
 
+  it('says so when both picks are in the same group', async () => {
+    const { store, client, overlap } = setup()
+    const grouped = groupNodes(doc, ['b', 'c'], 'g').doc
+    const grouping = createBloKadeStore({ designId: 'd', doc: grouped })
+    grouping.getState().select(['b', 'c'])
+    await checkOverlap(grouping, client)
+    expect(grouping.getState().notice).toBe('Those two are in the same group. Pick parts from different groups to check.')
+    expect(overlap).not.toHaveBeenCalled()
+    expect(store.getState().notice).toBeNull()
+  })
+
   it('stores the result for the checked design and selection', async () => {
     const { store, client } = setup(vi.fn(async () => ({ status: 'overlap' as const, volume: 12.34, mesh: {} as never })))
     store.getState().select(['a', 'b'])

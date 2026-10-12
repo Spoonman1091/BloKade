@@ -16,5 +16,6 @@ export default definePlugin({
   },
   size: { z: 'wall' },
   // 1 mm extra above and below the wall, so the slot always goes right through it.
-  build: ({ width, thickness, wall, clearance }, cad) => cad.box(thickness + 2 * clearance, width + 2 * clearance, wall + 2),
+  build: ({ width, thickness, wall, clearance }, cad) =>
+    cad.box(thickness + 2 * clearance, width + 2 * clearance, wall + 2).translate(0, 0, -1),
 })
