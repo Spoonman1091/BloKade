@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { createEmptyDocument, createShapeNode } from '../document/factory'
 import { addModifier, removeModifier } from '../document/modifiers'
@@ -39,5 +39,47 @@ describe('useEdgeCandidates', () => {
     store.getState().setPickingEdges({ nodeId: 'b', modifierId })
     await waitFor(() => expect(store.getState().notice).toBe('This part has a problem.'))
     expect(store.getState().pickingEdges).toBeNull()
+  })
+
+  describe('stale results', () => {
+    interface Deferred { resolve(v: EdgeCandidate[]): void; reject(e: Error): void }
+    function deferredSetup() {
+      const calls: Deferred[] = []
+      const fn = vi.fn(() => new Promise<EdgeCandidate[]>((resolve, reject) => { calls.push({ resolve, reject }) }))
+      return { ...setup(fn), calls }
+    }
+    const other: EdgeCandidate = { ...candidate, picked: false }
+
+    it('ignores a result from before the design changed', async () => {
+      const { store, modifierId, calls } = deferredSetup()
+      store.getState().setPickingEdges({ nodeId: 'b', modifierId })
+      await waitFor(() => expect(calls).toHaveLength(1))
+      store.getState().apply((d) => ({ ...d, name: 'Changed' }))
+      await waitFor(() => expect(calls).toHaveLength(2))
+      await act(async () => { calls[0]?.resolve([candidate]) })
+      expect(store.getState().edgeCandidates).toBeNull()
+      await act(async () => { calls[1]?.resolve([other]) })
+      expect(store.getState().edgeCandidates).toEqual([other])
+    })
+
+    it('ignores a result after picking stopped', async () => {
+      const { store, modifierId, calls } = deferredSetup()
+      store.getState().setPickingEdges({ nodeId: 'b', modifierId })
+      await waitFor(() => expect(calls).toHaveLength(1))
+      store.getState().setPickingEdges(null)
+      await act(async () => { calls[0]?.resolve([candidate]) })
+      expect(store.getState().edgeCandidates).toBeNull()
+    })
+
+    it('ignores a failure from a stale request', async () => {
+      const { store, modifierId, calls } = deferredSetup()
+      store.getState().setPickingEdges({ nodeId: 'b', modifierId })
+      await waitFor(() => expect(calls).toHaveLength(1))
+      store.getState().apply((d) => ({ ...d, name: 'Changed' }))
+      await waitFor(() => expect(calls).toHaveLength(2))
+      await act(async () => { calls[0]?.reject(new Error('Old problem')) })
+      expect(store.getState().notice).toBeNull()
+      expect(store.getState().pickingEdges).toEqual({ nodeId: 'b', modifierId })
+    })
   })
 })
