@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState, type ChangeEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react'
+import { openFreshDesign, openSavedDesign, switchToDesign } from '../app/design-session'
 import { downloadBytes } from '../app/download'
-import { createEmptyDocument, newId } from '../document/factory'
+import { newId } from '../document/factory'
 import { renameDocument } from '../document/ops'
 import type { BloKadeDocument } from '../document/types'
 import { STORAGE_UNAVAILABLE } from '../persistence/bootstrap'
@@ -22,6 +23,7 @@ const lastEdited = (summary: DesignSummary): string => new Date(summary.updatedA
 function useDesignActions({ repo, flushAutosave, onClose, confirm }: Required<DesignsDialogProps>) {
   const store = useBloKadeStore()
   const [designs, setDesigns] = useState<readonly DesignSummary[]>([])
+  const session = useMemo(() => ({ repo, store, flushAutosave }), [repo, store, flushAutosave])
   const notify = useCallback((message: string) => store.getState().notify(message), [store])
   const guarded = useCallback(async (task: () => Promise<void>): Promise<void> => {
     try {
@@ -38,22 +40,19 @@ function useDesignActions({ repo, flushAutosave, onClose, confirm }: Required<De
   useEffect(() => void refresh(), [refresh])
 
   const open = async (id: string, doc: BloKadeDocument): Promise<void> => {
-    await flushAutosave()
-    store.getState().openDesign(id, doc)
-    await repo.setLastOpened(id)
+    await switchToDesign(session, id, doc)
     onClose()
   }
   const createNew = async (): Promise<void> => {
     await flushAutosave()
     const names = (await repo.list()).map((d) => d.name)
-    const fresh = { id: newId(), doc: createEmptyDocument(nextUntitledName(names)) }
-    await repo.save(fresh.id, fresh.doc)
-    await open(fresh.id, fresh.doc)
+    await openFreshDesign(session, nextUntitledName(names))
+    onClose()
   }
   const openExisting = async (id: string): Promise<void> => {
-    const loaded = await repo.load(id)
-    if (loaded.ok) await open(id, loaded.value)
-    else notify(loaded.error)
+    const opened = await openSavedDesign(session, id)
+    if (opened.ok) onClose()
+    else notify(opened.error)
   }
   const remove = async (summary: DesignSummary): Promise<void> => {
     if (!confirm(`Delete "${summary.name}" (last edited ${lastEdited(summary)})? This can't be undone.`)) return
