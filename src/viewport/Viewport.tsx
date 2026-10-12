@@ -9,6 +9,7 @@ import { useBloKade } from '../store/context'
 import { EdgeOverlay } from './EdgeOverlay'
 import { NodeMesh } from './NodeMesh'
 import { OverlapMesh } from './OverlapMesh'
+import { sizeHintFor } from './size-drag'
 import { TransformHandles } from './TransformHandles'
 import { WorkplaneMarker } from './WorkplaneMarker'
 import { workplaneFromHit } from './workplane'
@@ -27,6 +28,8 @@ export function Viewport({ registry, onToggleEdge }: { registry: PluginRegistry;
   const setWorkplane = useBloKade((s) => s.setWorkplane)
   const pickingEdges = useBloKade((s) => s.pickingEdges)
   const setPickingEdges = useBloKade((s) => s.setPickingEdges)
+  const tool = useBloKade((s) => s.tool)
+  const sizeHint = sizeHintFor(doc, selection, tool)
   const [measurement, setMeasurement] = useState<string | null>(null)
   const onSelect = (id: NodeId, additive: boolean): void => select(nextSelection(selection, id, additive))
   const onPickFace = picking ? (point: Vec3, normal: Vec3): void => setWorkplane(workplaneFromHit(point, normal)) : undefined
@@ -66,6 +69,7 @@ export function Viewport({ registry, onToggleEdge }: { registry: PluginRegistry;
       {measurement && <div className="measure-overlay" data-testid="measurement">{measurement}</div>}
       {picking && <div className="viewport-hint" role="status">Click a face to build on it. Click empty space to build on the ground again.</div>}
       {pickingEdges && <div className="viewport-hint" role="status">Click edges to choose them. Click empty space or press Esc when you're done.</div>}
+      {sizeHint && !picking && !pickingEdges && <div className="viewport-hint" role="status" data-testid="size-hint">{sizeHint}</div>}
       {!engineReady && <div className="viewport-overlay">Warming up the geometry engine…</div>}
     </>
   )

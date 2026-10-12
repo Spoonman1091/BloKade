@@ -200,3 +200,6 @@ body.help-mode, body.help-mode * { cursor: help !important; }
   display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-radius: var(--radius);
   background: #fff8db; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
+
+/* The size-handle tip sits inside drei's <Html>, so it is placed next to the handle, not fixed to the window. */
+.help-tooltip.size-handle-tip { position: absolute; top: 12px; left: 12px; width: max-content; }

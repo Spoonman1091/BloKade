@@ -4,27 +4,21 @@ import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react'
 import { MathUtils, Vector3, type Object3D } from 'three'
 import { updateNode } from '../document/ops'
 import { keepUnchanged, transformFromParts } from '../document/transform-math'
-import type { SceneNode, Transform, Vec3 } from '../document/types'
+import type { SceneNode, Transform } from '../document/types'
 import type { PluginRegistry } from '../plugins/registry'
 import { useBloKade, useBloKadeStore } from '../store/context'
-import type { ToolMode } from '../store/store'
 import { meshBox, topLevelBoxes } from './bounds'
 import { dragFeedback } from './drag-feedback'
 import { axesOf } from './object-snap'
-import { paramsFromScale } from './sizing'
+import { resizesByHandle } from './size-drag'
+import { SizeHandles } from './SizeHandles'
 import { useShiftHeld } from './useShiftHeld'
 
 const ROTATION_SNAP = MathUtils.degToRad(15)
-const CONTROL_MODES = { move: 'translate', rotate: 'rotate', size: 'scale' } as const
+const CONTROL_MODES = { move: 'translate', rotate: 'rotate' } as const
 
 const sameTransform = (a: Transform, b: Transform): boolean =>
   a.position.every((v, i) => v === b.position[i]) && a.rotation.every((v, i) => v === b.rotation[i])
-
-function edited(node: SceneNode, tool: ToolMode, transform: Transform, scale: Vec3, registry: PluginRegistry): SceneNode {
-  if (node.kind !== 'shape' || tool !== 'size') return { ...node, transform }
-  const plugin = registry.get(node.shapeType)
-  return plugin ? { ...node, transform, params: paramsFromScale(plugin, node.params, scale) } : { ...node, transform }
-}
 
 // `axis` is public at runtime on TransformControls but declared private in three-stdlib's types.
 const draggedAxis = (c: unknown): string | null => {
@@ -32,11 +26,8 @@ const draggedAxis = (c: unknown): string | null => {
   return typeof a === 'string' ? a : null
 }
 
-/**
- * The finished drag as a transform and per-axis scale, or null when nothing moved. Resets the object's
- * scale: TransformControls scales the three.js object directly, but BloKade stores size in parameters.
- */
-function readDrag(target: Object3D, old: Transform): { transform: Transform; scale: Vec3 } | null {
+/** The finished move or turn as a transform, or null when nothing moved. */
+function readDrag(target: Object3D, old: Transform): Transform | null {
   const dragged = transformFromParts(
     [target.position.x, target.position.y, target.position.z],
     [target.rotation.x, target.rotation.y, target.rotation.z],
@@ -46,9 +37,7 @@ function readDrag(target: Object3D, old: Transform): { transform: Transform; sca
     position: keepUnchanged(old.position, dragged.position),
     rotation: keepUnchanged(old.rotation, dragged.rotation),
   }
-  const scale: Vec3 = [target.scale.x, target.scale.y, target.scale.z]
-  target.scale.set(1, 1, 1)
-  return scale.every((s) => s === 1) && sameTransform(transform, old) ? null : { transform, scale }
+  return sameTransform(transform, old) ? null : transform
 }
 
 /** The three.js object drawn for a part, found by name once its mesh is in the scene. */
@@ -85,9 +74,16 @@ export function TransformHandles({ registry, onMeasure }: TransformHandlesProps)
   // A drag cut short by unmounting (selection or tool change) must not leave the measurement stuck on screen.
   useEffect(() => () => onMeasure(null), [onMeasure])
 
-  if (!node || !target || (tool === 'size' && node.kind !== 'shape')) return null
-
+  if (!node || !target) return null
   const displayed = Object.hasOwn(meshes, node.id) ? meshes[node.id] : undefined
+
+  if (tool === 'size') {
+    const plugin = node.kind === 'shape' ? registry.get(node.shapeType) : undefined
+    return node.kind === 'shape' && plugin && displayed && resizesByHandle(node)
+      ? <SizeHandles node={node} plugin={plugin} displayed={displayed} target={target} onMeasure={onMeasure} />
+      : null
+  }
+
   const onObjectChange = (): void => {
     target.updateMatrixWorld()
     const box = displayed ? meshBox(displayed.mesh.positions, target.matrixWorld) : null
@@ -99,8 +95,8 @@ export function TransformHandles({ registry, onMeasure }: TransformHandlesProps)
   }
   const commit = (): void => {
     onMeasure(null)
-    const drag = readDrag(target, node.transform)
-    if (drag) store.getState().apply((d) => updateNode(d, node.id, (n) => edited(n, tool, drag.transform, drag.scale, registry)))
+    const transform = readDrag(target, node.transform)
+    if (transform) store.getState().apply((d) => updateNode(d, node.id, (n): SceneNode => ({ ...n, transform })))
   }
 
   const gridSnap = doc.settings.gridSnap
