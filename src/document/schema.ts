@@ -40,7 +40,7 @@ function checkTree(doc: DocShape, ctx: z.RefinementCtx): void {
   const seen = new Set<string>()
   const visit = (ids: readonly string[]): void => {
     for (const id of ids) {
-      const node = doc.nodes[id]
+      const node = Object.hasOwn(doc.nodes, id) ? doc.nodes[id] : undefined
       if (!node) {
         ctx.addIssue({ code: 'custom', message: `Missing part "${id}"` })
       } else if (seen.has(id)) {

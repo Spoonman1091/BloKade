@@ -59,3 +59,15 @@ describe('validateDocument', () => {
     expect(errorOf(null)).toContain('damaged')
   })
 })
+
+describe('validateDocument prototype-named ids', () => {
+  it('rejects a root id named like an Object.prototype member', () => {
+    const doc = docWith([box('a')], ['constructor'])
+    expect(errorOf(doc)).toContain('Missing part')
+  })
+
+  it('rejects a group child id named like an Object.prototype member', () => {
+    const doc = docWith([createGroupNode({ id: 'g', children: ['toString'] })], ['g'])
+    expect(errorOf(doc)).toContain('Missing part')
+  })
+})
