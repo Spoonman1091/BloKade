@@ -1,6 +1,6 @@
 import { createEmptyDocument, newId } from '../document/factory'
 import type { BloKadeDocument } from '../document/types'
-import type { DesignRepository } from './repository'
+import { NOT_FOUND, type DesignRepository } from './repository'
 
 export interface InitialDesign {
   readonly id: string
@@ -13,11 +13,18 @@ export const STORAGE_UNAVAILABLE =
   "Saving in this browser isn't working, so use Designs → Save to file to keep your work."
 
 async function firstLoadable(repo: DesignRepository, ids: readonly string[]) {
-  for (const [skipped, id] of ids.entries()) {
-    const loaded = await repo.load(id)
-    if (loaded.ok) return { id, doc: loaded.value, skipped }
+  let damaged = 0
+  for (const id of ids) {
+    try {
+      const loaded = await repo.load(id)
+      if (loaded.ok) return { id, doc: loaded.value, damaged }
+      if (loaded.error !== NOT_FOUND) damaged += 1
+    } catch (error) {
+      console.error('Could not load design', id, error)
+      damaged += 1
+    }
   }
-  return null
+  return { id: null, doc: null, damaged }
 }
 
 /** Opens the last design, else the newest loadable one, else a new one. Never rejects. */
@@ -27,10 +34,11 @@ export async function openInitialDesign(repo: DesignRepository): Promise<Initial
     const listed = (await repo.list()).map((d) => d.id)
     const ids = [...new Set([last, ...listed].filter((id): id is string => typeof id === 'string'))]
     const opened = await firstLoadable(repo, ids)
-    if (opened) return { id: opened.id, doc: opened.doc, notice: opened.skipped > 0 ? DAMAGED_DESIGN : null }
+    const notice = opened.damaged > 0 ? DAMAGED_DESIGN : null
+    if (opened.id !== null) return { id: opened.id, doc: opened.doc, notice }
     const fresh = { id: newId(), doc: createEmptyDocument() }
     await repo.save(fresh.id, fresh.doc)
-    return { ...fresh, notice: ids.length > 0 ? DAMAGED_DESIGN : null }
+    return { ...fresh, notice }
   } catch (error) {
     console.error('Design storage failed', error)
     return { id: newId(), doc: createEmptyDocument(), notice: STORAGE_UNAVAILABLE }

@@ -43,6 +43,14 @@ describe.each(implementations)('%s design repository', (_, make) => {
     expect(await repo.getLastOpened()).toBe('b')
   })
 
+  it('forgets the last opened design when it is removed', async () => {
+    const repo = make()
+    await repo.save('a', createEmptyDocument('A'))
+    await repo.setLastOpened('a')
+    await repo.remove('a')
+    expect(await repo.getLastOpened()).toBeNull()
+  })
+
   it('duplicates and renames designs', async () => {
     const repo = make()
     await repo.save('a', createEmptyDocument('Stand'))

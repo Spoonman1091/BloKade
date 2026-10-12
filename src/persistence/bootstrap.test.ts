@@ -44,4 +44,37 @@ describe('openInitialDesign', () => {
     expect(logged).toHaveBeenCalled()
     logged.mockRestore()
   })
+
+  it('says nothing when the last design was deleted', async () => {
+    const repo = createMemoryDesignRepository()
+    await repo.save('a', createEmptyDocument('A'))
+    await repo.setLastOpened('a')
+    await repo.remove('a')
+    expect((await openInitialDesign(repo)).notice).toBeNull()
+  })
+
+  it('says nothing when last-opened points at a design that does not exist', async () => {
+    const repo = createMemoryDesignRepository()
+    await repo.setLastOpened('ghost')
+    const opened = await openInitialDesign(repo)
+    expect(opened.notice).toBeNull()
+    expect(opened.doc.root).toEqual([])
+  })
+
+  it('skips a design whose load throws and opens the next one', async () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const inner = createMemoryDesignRepository()
+    await inner.save('good', createEmptyDocument('Good'))
+    await inner.save('boom', createEmptyDocument('Boom'))
+    await inner.setLastOpened('boom')
+    const repo: DesignRepository = {
+      ...inner,
+      load: (id) => (id === 'boom' ? Promise.reject(new Error('idb get failed')) : inner.load(id)),
+    }
+    const opened = await openInitialDesign(repo)
+    expect(opened.doc.name).toBe('Good')
+    expect(opened.notice).toBe(DAMAGED_DESIGN)
+    expect(logged).toHaveBeenCalled()
+    logged.mockRestore()
+  })
 })

@@ -26,6 +26,7 @@ export function createIdbDesignRepository(
     remove: async (id) => {
       await del(designKey(id), store)
       await update<DesignSummary[]>(INDEX_KEY, (old) => (old ?? []).filter((d) => d.id !== id), store)
+      if ((await get<string>(LAST_OPENED_KEY, store)) === id) await del(LAST_OPENED_KEY, store)
     },
     getLastOpened: async () => (await get<string>(LAST_OPENED_KEY, store)) ?? null,
     setLastOpened: async (id) => set(LAST_OPENED_KEY, id, store),

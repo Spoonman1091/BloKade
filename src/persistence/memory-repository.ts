@@ -21,6 +21,7 @@ export function createMemoryDesignRepository(
     remove: async (id) => {
       designs.delete(id)
       index = index.filter((d) => d.id !== id)
+      if (lastOpened === id) lastOpened = null
     },
     getLastOpened: async () => lastOpened,
     setLastOpened: async (id) => {

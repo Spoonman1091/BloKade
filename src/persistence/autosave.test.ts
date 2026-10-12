@@ -57,4 +57,20 @@ describe('autosaver', () => {
     await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS)
     expect(save).not.toHaveBeenCalled()
   })
+
+  it('flush waits for a save that is already in flight', async () => {
+    let finish: () => void = () => {}
+    const save = vi.fn().mockImplementation(() => new Promise<void>((resolve) => { finish = resolve }))
+    const saver = createAutosaver({ save, onError: vi.fn() })
+    saver.schedule('d', createEmptyDocument())
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS)
+    expect(save).toHaveBeenCalledOnce()
+    let flushed = false
+    const flushing = saver.flush().then(() => { flushed = true })
+    await vi.advanceTimersByTimeAsync(10)
+    expect(flushed).toBe(false)
+    finish()
+    await flushing
+    expect(flushed).toBe(true)
+  })
 })

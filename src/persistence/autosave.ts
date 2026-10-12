@@ -17,17 +17,14 @@ export function createAutosaver(options: {
   let timer: ReturnType<typeof setTimeout> | null = null
   let queued: { id: string; doc: BloKadeDocument } | null = null
   let failing = false
+  let inFlight: Promise<void> | null = null
 
   const clearTimer = (): void => {
     if (timer) clearTimeout(timer)
     timer = null
   }
 
-  const flush = async (): Promise<void> => {
-    clearTimer()
-    const job = queued
-    queued = null
-    if (!job) return
+  const save = async (job: { id: string; doc: BloKadeDocument }): Promise<void> => {
     try {
       await options.save(job.id, job.doc)
       failing = false
@@ -35,6 +32,19 @@ export function createAutosaver(options: {
       if (!failing) options.onError(error)
       failing = true
     }
+  }
+
+  /** Waits for any save already in flight, then saves the queued job (if any). Never rejects. */
+  const flush = (): Promise<void> => {
+    clearTimer()
+    const job = queued
+    queued = null
+    const next = (inFlight ?? Promise.resolve()).then(() => (job ? save(job) : undefined))
+    inFlight = next
+    void next.then(() => {
+      if (inFlight === next) inFlight = null
+    })
+    return next
   }
 
   return {
