@@ -5,6 +5,7 @@ import type { InspectResult } from '../../kade/meta'
 import { createMemoryDesignRepository } from '../../persistence/memory-repository'
 import { registry } from '../../plugins/index'
 import type { AppDeps } from '../deps'
+import { boxMesh } from './meshes'
 
 /**
  * Tests only: reads `name: '…'` and `icon: '…'` from the code and reports one Size setting. Code containing BROKEN
@@ -41,3 +42,12 @@ export function fakeDeps(overrides: Partial<AppDeps> = {}): AppDeps {
     ...overrides,
   }
 }
+
+/** A geometry api that builds every top-level part as a 20 mm box, so previews show and "it works" checks pass. */
+export function buildingGeometryApi(): GeometryApi {
+  return fakeGeometryApi({
+    rebuild: async (doc) => ({ nodes: Object.fromEntries(doc.root.map((id) => [id, { status: 'ok' as const, mesh: boxMesh(20, 20, 20) }])) }),
+  })
+}
+
+export const clientFor = (api: GeometryApi): GeometryClient => new GeometryClient(() => ({ api, terminate: () => undefined }))
