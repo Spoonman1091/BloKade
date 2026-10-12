@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { MAX_TEXT_PARAM_LENGTH } from '../document/types'
-import type { ShapePlugin } from './types'
+import { computeFormula, MAX_FORMULA_LENGTH } from '../formulas/formula'
+import { isNumberSpec, type ParamSpec, type ShapePlugin } from './types'
 
 export interface PluginRegistry {
   get(id: string): ShapePlugin | undefined
@@ -13,6 +14,7 @@ const numberSpec = z.object({
   min: z.number().optional(),
   max: z.number().optional(),
   label: z.string().min(1),
+  formula: z.string().min(1).max(MAX_FORMULA_LENGTH).optional(),
 })
 const textSpec = z.object({
   type: z.literal('text'),
@@ -20,7 +22,16 @@ const textSpec = z.object({
   maxLength: z.number().int().min(1).max(MAX_TEXT_PARAM_LENGTH).optional(),
   label: z.string().min(1),
 })
-const paramSpec = z.union([numberSpec, textSpec])
+const choiceSpec = z.object({
+  type: z.literal('choice'),
+  default: z.string(),
+  options: z.array(z.object({ value: z.string().min(1).max(40), label: z.string().min(1) })).min(2),
+  label: z.string().min(1),
+}).refine((s) => s.options.some((o) => o.value === s.default), 'a choice default must be one of its options')
+const paramSpec = z.union([numberSpec, textSpec, choiceSpec])
+
+/** Starting formulas may only use `fit`: it's the one variable every design has. */
+const FIT_ONLY = new Map([['fit', 0.2]])
 
 const pluginSchema = z
   .object({
@@ -29,6 +40,8 @@ const pluginSchema = z
     icon: z.string().min(1),
     version: z.number().int().positive(),
     params: z.record(z.string(), paramSpec),
+    mode: z.literal('hole').optional(),
+    palette: z.enum(['shapes', 'fit', 'hidden']).optional(),
     size: z.object({ x: z.string().optional(), y: z.string().optional(), z: z.string().optional() }).optional(),
     build: z.custom<ShapePlugin['build']>((v) => typeof v === 'function', 'build must be a function'),
   })
@@ -37,7 +50,13 @@ const pluginSchema = z
       if (!target) continue
       const spec = Object.hasOwn(p.params, target) ? p.params[target] : undefined
       if (!spec) ctx.addIssue({ code: 'custom', message: `size handle points at missing parameter "${target}"` })
-      else if (spec.type === 'text') ctx.addIssue({ code: 'custom', message: `size handle can't change the text parameter "${target}"` })
+      else if (!isNumberSpec(spec as ParamSpec)) ctx.addIssue({ code: 'custom', message: `size handle can't change the ${spec.type} parameter "${target}"` })
+    }
+    for (const [name, spec] of Object.entries(p.params)) {
+      if (!isNumberSpec(spec as ParamSpec) || !('formula' in spec) || spec.formula === undefined) continue
+      if (!computeFormula(spec.formula, FIT_ONLY).ok) {
+        ctx.addIssue({ code: 'custom', message: `the starting formula of "${name}" may only use fit` })
+      }
     }
   })
 

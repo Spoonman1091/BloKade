@@ -5,7 +5,7 @@ export function ShapePalette({ registry, onAdd }: { registry: PluginRegistry; on
     <section className="panel" aria-label="Shapes">
       <h2>Shapes</h2>
       <div className="palette-grid">
-        {registry.list().map((plugin) => (
+        {registry.list().filter((plugin) => (plugin.palette ?? 'shapes') === 'shapes').map((plugin) => (
           <button key={plugin.id} type="button" className="palette-button" data-testid={`add-${plugin.id}`} onClick={() => onAdd(plugin.id)}>
             <span className="palette-icon" aria-hidden="true">{plugin.icon}</span>
             {plugin.name}

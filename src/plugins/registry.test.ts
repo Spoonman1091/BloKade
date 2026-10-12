@@ -44,3 +44,29 @@ describe('createRegistry', () => {
     expect(createRegistry([plugin]).problems[0]).toContain('text')
   })
 })
+
+describe('fit tool plugin fields', () => {
+  const valid = good('thing')
+  const choice = { type: 'choice', default: 'a', label: 'Kind', options: [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }] }
+
+  it('accepts choice params, starting formulas that use fit, holes and palette sections', () => {
+    const plugin = {
+      ...valid, mode: 'hole', palette: 'fit',
+      params: { kind: choice, gap: { type: 'mm', default: 0.2, min: 0, max: 2, label: 'Extra room', formula: 'fit' } },
+      size: undefined,
+    }
+    expect(createRegistry([plugin]).problems).toEqual([])
+  })
+
+  it('rejects broken choice params and starting formulas', () => {
+    const problemOf = (params: object) => createRegistry([{ ...valid, params, size: undefined }]).problems[0] ?? ''
+    expect(problemOf({ kind: { ...choice, default: 'z' } })).toContain('one of its options')
+    expect(problemOf({ kind: { ...choice, options: [{ value: 'a', label: 'A' }] } })).toContain('has a problem')
+    expect(problemOf({ gap: { type: 'mm', default: 1, label: 'Gap', formula: 'wall * 2' } })).toContain('only use fit')
+  })
+
+  it("won't point a size handle at a choice", () => {
+    const plugin = { ...valid, params: { kind: choice }, size: { x: 'kind' } }
+    expect(createRegistry([plugin]).problems[0]).toContain("can't change")
+  })
+})

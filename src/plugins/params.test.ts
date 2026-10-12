@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { defaultParams, MAX_MM, MIN_MM, normalizeParam, normalizeTextParam, resolveParams } from './params'
-import { definePlugin, type TextParamSpec } from './types'
+import { defaultParams, MAX_MM, MIN_MM, normalizeChoiceParam, normalizeParam, normalizeTextParam, resolveParams } from './params'
+import { definePlugin, type ChoiceParamSpec, type ShapePlugin, type TextParamSpec } from './types'
 
 const plugin = definePlugin({
   id: 'thing', name: 'Thing', icon: '⭐', version: 1,
@@ -68,5 +68,24 @@ describe('text params', () => {
       build: ({ size }, cad) => cad.box(size, size, size),
     })
     expect(resolveParams(plugin, { label: 'Hey', size: -1 })).toEqual({ label: 'Hey', size: 0.01 })
+  })
+})
+
+describe('choice params', () => {
+  const sizeChoice: ChoiceParamSpec = {
+    type: 'choice', default: 'M3', label: 'Size',
+    options: [{ value: 'M2', label: 'M2' }, { value: 'M3', label: 'M3' }],
+  }
+
+  it('keeps known options and falls back to the default for anything else', () => {
+    expect(normalizeChoiceParam(sizeChoice, 'M2')).toBe('M2')
+    expect(normalizeChoiceParam(sizeChoice, 'M99')).toBe('M3')
+    expect(normalizeChoiceParam(sizeChoice, 3)).toBe('M3')
+    expect(normalizeChoiceParam(sizeChoice, undefined)).toBe('M3')
+  })
+
+  it('resolves choice params alongside numbers', () => {
+    const mixed = { params: { size: sizeChoice, depth: { type: 'mm', default: 10, label: 'Depth' } } } as unknown as ShapePlugin
+    expect(resolveParams(mixed, { size: 'nope', depth: 4 })).toEqual({ size: 'M3', depth: 4 })
   })
 })

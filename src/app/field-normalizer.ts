@@ -3,6 +3,7 @@ import { modifierFieldOf } from '../document/fields'
 import { clampModifierField } from '../document/modifiers'
 import { MAX_MM, normalizeParam } from '../plugins/params'
 import type { PluginRegistry } from '../plugins/registry'
+import { isNumberSpec } from '../plugins/types'
 
 const clamp = (value: number, low: number, high: number): number => Math.min(high, Math.max(low, value))
 
@@ -16,6 +17,6 @@ export function createFieldNormalizer(registry: PluginRegistry): NormalizeField 
     const name = key.slice('param.'.length)
     const plugin = registry.get(node.shapeType)
     const spec = plugin && Object.hasOwn(plugin.params, name) ? plugin.params[name] : undefined
-    return spec && spec.type !== 'text' ? normalizeParam(spec, value) : value
+    return spec && isNumberSpec(spec) ? normalizeParam(spec, value) : value
   }
 }
