@@ -1,0 +1,24 @@
+import { GeometryClient } from '../../geometry/client'
+import type { GeometryApi } from '../../geometry/types'
+import { createMemoryDesignRepository } from '../../persistence/memory-repository'
+import { registry } from '../../plugins/index'
+import type { AppDeps } from '../deps'
+
+export function fakeGeometryApi(overrides: Partial<GeometryApi> = {}): GeometryApi {
+  return {
+    rebuild: async () => ({ nodes: {} }),
+    exportStl: async () => new ArrayBuffer(84),
+    export3mf: async () => new ArrayBuffer(22),
+    ...overrides,
+  }
+}
+
+export function fakeDeps(overrides: Partial<AppDeps> = {}): AppDeps {
+  return {
+    repo: createMemoryDesignRepository(),
+    client: new GeometryClient(() => ({ api: fakeGeometryApi(), terminate: () => undefined })),
+    registry,
+    pluginProblems: [],
+    ...overrides,
+  }
+}

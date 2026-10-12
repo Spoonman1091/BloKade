@@ -1,0 +1,77 @@
+:root {
+  --bg: #f4f6fb;
+  --panel: #ffffff;
+  --ink: #1d2433;
+  --muted: #5b6475;
+  --accent: #4f9dff;
+  --accent-ink: #ffffff;
+  --danger: #e5484d;
+  --border: #dde3ee;
+  --radius: 10px;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+button { font: inherit; }
+.splash { display: grid; place-items: center; height: 100vh; font-size: 1.4rem; }
+.workspace {
+  display: grid;
+  grid-template-columns: 250px 1fr 290px;
+  grid-template-rows: auto 1fr;
+  grid-template-areas: 'toolbar toolbar toolbar' 'left viewport right';
+  height: 100vh;
+}
+.toolbar {
+  grid-area: toolbar; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--border);
+}
+.brand { font-weight: 800; font-size: 1.25rem; margin-right: 8px; }
+.toolbar-group { display: flex; gap: 4px; padding-right: 8px; border-right: 1px solid var(--border); }
+.left-panel { grid-area: left; overflow-y: auto; background: var(--panel); border-right: 1px solid var(--border); }
+.right-panel { grid-area: right; overflow-y: auto; background: var(--panel); border-left: 1px solid var(--border); }
+.viewport { grid-area: viewport; position: relative; min-height: 0; background: #e9eef7; }
+.viewport-overlay { position: absolute; left: 0; right: 0; bottom: 16px; text-align: center; color: var(--muted); pointer-events: none; }
+.panel { padding: 12px; }
+.panel h2 { margin: 0 0 8px; font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.panel h3 { margin: 12px 0 6px; font-size: 0.85rem; color: var(--muted); }
+.hint { color: var(--muted); font-size: 0.9rem; }
+.palette-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.palette-button {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); cursor: pointer;
+}
+.palette-button:hover { border-color: var(--accent); }
+.palette-icon { font-size: 1.6rem; }
+.tool-button { padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); cursor: pointer; }
+.tool-button[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.tool-button:disabled { opacity: 0.4; cursor: default; }
+.icon-button { border: none; background: none; cursor: pointer; padding: 2px 4px; }
+.field { display: grid; grid-template-columns: 1fr 96px; gap: 6px; align-items: center; margin-bottom: 6px; font-size: 0.9rem; }
+.field input { width: 100%; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; font: inherit; }
+.field-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.field-row .field { grid-template-columns: 14px 1fr; }
+.mode-toggle { display: flex; gap: 4px; margin: 8px 0; }
+.error-text { color: var(--danger); font-size: 0.9rem; }
+.tree { list-style: none; margin: 0; padding: 0; }
+.tree .tree { padding-left: 16px; }
+.tree-row { display: flex; align-items: center; gap: 4px; padding: 3px 6px; border-radius: 6px; cursor: pointer; }
+.tree-row[aria-selected='true'] { background: #dceaff; }
+.tree-row.drop-target { outline: 2px dashed var(--accent); }
+.tree-name { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.badge { color: var(--danger); }
+.drop-zone { margin-top: 8px; padding: 8px; border: 2px dashed var(--accent); border-radius: 8px; text-align: center; color: var(--muted); }
+.toast {
+  position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 20;
+  display: flex; gap: 12px; align-items: center; max-width: 80vw;
+  padding: 10px 16px; border-radius: var(--radius); background: var(--ink); color: #fff;
+}
+.toast button { border: none; background: none; color: inherit; cursor: pointer; }
+.dialog-backdrop { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(15, 20, 30, 0.45); }
+.dialog { width: min(480px, 92vw); padding: 16px; border-radius: var(--radius); background: var(--panel); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25); }
+.design-list { list-style: none; margin: 8px 0; padding: 0; max-height: 300px; overflow-y: auto; }
+.design-list li { display: flex; gap: 6px; align-items: center; padding: 4px 0; }
+.design-list li.current .design-name { font-weight: 700; }
+.design-name { flex: 1; }
+.dialog-actions { display: flex; flex-wrap: wrap; gap: 6px; }
