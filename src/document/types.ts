@@ -30,6 +30,12 @@ export interface GroupNode extends NodeBase {
 
 export type SceneNode = ShapeNode | GroupNode
 
+/** A named number for formulas. `expr` is a number or a formula, such as "wall * 2". */
+export interface Variable {
+  readonly name: string
+  readonly expr: string
+}
+
 export interface DocumentSettings {
   /** Grid snap in mm; 0 means snapping is off. */
   readonly gridSnap: number
