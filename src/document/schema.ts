@@ -49,7 +49,7 @@ const shapeNode = z.object({
   ...base,
   kind: z.literal('shape'),
   shapeType: z.string().min(1),
-  params: z.record(z.string(), z.union([z.number(), z.string().max(MAX_TEXT_PARAM_LENGTH * 2)])),
+  params: z.record(z.string(), z.union([z.number(), z.string().max(MAX_TEXT_PARAM_LENGTH * 2), z.boolean()])),
 })
 const groupNode = z.object({ ...base, kind: z.literal('group'), children: z.array(z.string()) })
 const sceneNode = z.discriminatedUnion('kind', [shapeNode, groupNode])

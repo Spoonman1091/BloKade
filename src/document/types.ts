@@ -1,8 +1,8 @@
 export type NodeId = string
 export type Vec3 = readonly [number, number, number]
 export type Mode = 'solid' | 'hole'
-/** A shape parameter: a number, or a line of text for the Text shape. */
-export type ParamValue = number | string
+/** A shape parameter: a number, a line of text, a picked option, or true/false for a tick box. */
+export type ParamValue = number | string | boolean
 
 /** Position in mm; rotation in degrees, Euler XYZ (three.js convention: matrix = Rx·Ry·Rz). */
 export interface Transform {

@@ -70,3 +70,19 @@ describe('fit tool plugin fields', () => {
     expect(createRegistry([plugin]).problems[0]).toContain("can't change")
   })
 })
+
+describe('yes/no settings', () => {
+  const plugin = (params: Record<string, unknown>) => ({ id: 'tick', name: 'Tick', icon: 'x', version: 1, params, build: () => null })
+  it('accepts a yes/no setting', () => {
+    const { problems } = createRegistry([plugin({ round: { type: 'yesno', default: false, label: 'Round' } })])
+    expect(problems).toEqual([])
+  })
+  it('rejects a yes/no default that is not true or false', () => {
+    const { problems } = createRegistry([plugin({ round: { type: 'yesno', default: 'no', label: 'Round' } })])
+    expect(problems).toHaveLength(1)
+  })
+  it('refuses a size handle on a yes/no setting', () => {
+    const { problems } = createRegistry([{ ...plugin({ round: { type: 'yesno', default: false, label: 'Round' } }), size: { x: 'round' } }])
+    expect(problems[0]).toContain("can't change the yesno parameter")
+  })
+})

@@ -1,5 +1,5 @@
 import { formulaOf, paramField } from '../document/fields'
-import type { FieldKey, ShapeNode } from '../document/types'
+import type { FieldKey, ParamValue, ShapeNode } from '../document/types'
 import { normalizeChoiceParam } from '../plugins/params'
 import type { NumberParamType, ParamSpec } from '../plugins/types'
 import { TextField } from './NumberField'
@@ -14,7 +14,7 @@ interface ParamFieldProps {
   errors: Readonly<Record<string, string>>
   setField(key: FieldKey, text: string): void
   /** Saves a text or choice parameter as-is. */
-  setRaw(name: string, value: string): void
+  setRaw(name: string, value: ParamValue): void
 }
 
 /** The right control for one shape parameter: a number/formula box, a line of text, or a list of options. */
@@ -23,6 +23,15 @@ export function ParamField({ node, name, spec, errors, setField, setRaw }: Param
   if (spec.type === 'text') {
     return <TextField label={spec.label} value={typeof raw === 'string' ? raw : spec.default} testId={`param-${name}`}
       onCommit={(text) => setRaw(name, text)} />
+  }
+  if (spec.type === 'yesno') {
+    return (
+      <label className="checkbox-field">
+        <input type="checkbox" data-testid={`param-${name}`} checked={typeof raw === 'boolean' ? raw : spec.default}
+          onChange={(e) => setRaw(name, e.target.checked)} />
+        <span>{spec.label}</span>
+      </label>
+    )
   }
   if (spec.type === 'choice') {
     return (

@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
-import { act, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { renderWithStore } from '../app/testing/render'
 import { createEmptyDocument, createShapeNode } from '../document/factory'
 import { addNode } from '../document/ops'
 import { createRegistry } from '../plugins/registry'
 import { definePlugin } from '../plugins/types'
 import { createBloKadeStore } from '../store/store'
+import { ParamField } from './ParamField'
 import { PropertiesPanel } from './PropertiesPanel'
 
 const picker = definePlugin({
@@ -57,4 +58,16 @@ describe('ParamField', () => {
     setup()
     expect(screen.getByTestId('param-size')).toHaveValue('8')
   })
+})
+
+it('shows a yes/no setting as a tick box and saves true or false', async () => {
+  const setRaw = vi.fn()
+  const node = createShapeNode({ id: 'n', shapeType: 'x', name: 'X', params: { round: false }, color: '#fff' })
+  render(<ParamField node={node} name="round" spec={{ type: 'yesno', default: false, label: 'Round' }} errors={{}}
+    setField={vi.fn()} setRaw={setRaw} />)
+  const box = screen.getByTestId('param-round')
+  expect(box).not.toBeChecked()
+  await userEvent.click(box)
+  expect(setRaw).toHaveBeenCalledWith('round', true)
+  expect(screen.getByLabelText('Round')).toBe(box)
 })

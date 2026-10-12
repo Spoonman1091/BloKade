@@ -1,5 +1,5 @@
 import { MAX_TEXT_PARAM_LENGTH, type ParamValue } from '../document/types'
-import type { ChoiceParamSpec, NumberParamSpec, ParamSpec, ParamValues, ShapePlugin, TextParamSpec } from './types'
+import type { ChoiceParamSpec, NumberParamSpec, ParamSpec, ParamValues, ShapePlugin, TextParamSpec, YesNoParamSpec } from './types'
 
 export const MIN_MM = 0.01
 export const MAX_MM = 2000
@@ -32,10 +32,16 @@ export function normalizeChoiceParam(spec: ChoiceParamSpec, raw: unknown): strin
   return typeof raw === 'string' && spec.options.some((o) => o.value === raw) ? raw : spec.default
 }
 
+/** true or false; anything else becomes the default. */
+export function normalizeYesNoParam(spec: YesNoParamSpec, raw: unknown): boolean {
+  return typeof raw === 'boolean' ? raw : spec.default
+}
+
 function normalizeAny(spec: ParamSpec, raw: unknown): ParamValue {
   switch (spec.type) {
     case 'text': return normalizeTextParam(spec, raw)
     case 'choice': return normalizeChoiceParam(spec, raw)
+    case 'yesno': return normalizeYesNoParam(spec, raw)
     default: return normalizeParam(spec, raw)
   }
 }

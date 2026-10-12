@@ -36,17 +36,28 @@ export interface ChoiceParamSpec {
   readonly label: string
 }
 
-export type ParamSpec = NumberParamSpec | TextParamSpec | ChoiceParamSpec
+/** A tick box. build() gets true or false. Never holds a formula. */
+export interface YesNoParamSpec {
+  readonly type: 'yesno'
+  readonly default: boolean
+  readonly label: string
+}
 
-export const isNumberSpec = (spec: ParamSpec): spec is NumberParamSpec => spec.type !== 'text' && spec.type !== 'choice'
+export type ParamSpec = NumberParamSpec | TextParamSpec | ChoiceParamSpec | YesNoParamSpec
+
+export const isNumberSpec = (spec: ParamSpec): spec is NumberParamSpec =>
+  spec.type !== 'text' && spec.type !== 'choice' && spec.type !== 'yesno'
 
 export type ParamSpecs = Readonly<Record<string, ParamSpec>>
 export type ParamValues = Readonly<Record<string, ParamValue>>
 
-/** Distributes over a union, so a general ParamSpec gives number | string. Choices give the union of their option values. */
-type ValueOf<S> = S extends ChoiceParamSpec ? S['options'][number]['value'] : S extends TextParamSpec ? string : number
+/** Distributes over a union, so a general ParamSpec gives number | string | boolean. Choices give the union of their option values. */
+type ValueOf<S> = S extends ChoiceParamSpec ? S['options'][number]['value']
+  : S extends TextParamSpec ? string
+    : S extends YesNoParamSpec ? boolean
+      : number
 
-/** What build() receives: numbers for number params, strings for text params. */
+/** What build() receives: numbers, strings for text and choices, booleans for tick boxes. */
 export type ParamValuesOf<P extends ParamSpecs> = { readonly [K in keyof P]: ValueOf<P[K]> }
 
 type NumberParamKey<P extends ParamSpecs> = { [K in keyof P]: P[K] extends NumberParamSpec ? K : never }[keyof P] & string

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { defaultParams, MAX_MM, MIN_MM, normalizeChoiceParam, normalizeParam, normalizeTextParam, resolveParams } from './params'
+import { defaultParams, MAX_MM, MIN_MM, normalizeChoiceParam, normalizeParam, normalizeTextParam, normalizeYesNoParam, resolveParams } from './params'
 import { definePlugin, type ChoiceParamSpec, type ShapePlugin, type TextParamSpec } from './types'
 
 const plugin = definePlugin({
@@ -87,5 +87,23 @@ describe('choice params', () => {
   it('resolves choice params alongside numbers', () => {
     const mixed = { params: { size: sizeChoice, depth: { type: 'mm', default: 10, label: 'Depth' } } } as unknown as ShapePlugin
     expect(resolveParams(mixed, { size: 'nope', depth: 4 })).toEqual({ size: 'M3', depth: 4 })
+  })
+})
+
+describe('yes/no settings', () => {
+  const spec = { type: 'yesno', default: true, label: 'Round' } as const
+  it('keeps true and false', () => {
+    expect(normalizeYesNoParam(spec, false)).toBe(false)
+    expect(normalizeYesNoParam(spec, true)).toBe(true)
+  })
+  it('uses the default for anything else', () => {
+    expect(normalizeYesNoParam(spec, 'false')).toBe(true)
+    expect(normalizeYesNoParam(spec, 0)).toBe(true)
+    expect(normalizeYesNoParam(spec, undefined)).toBe(true)
+  })
+  it('resolves with the rest of the params', () => {
+    const plugin = { id: 'p', name: 'P', icon: 'x', version: 1, params: { round: spec }, build: () => { throw new Error('unused') } }
+    expect(resolveParams(plugin, { round: false })).toEqual({ round: false })
+    expect(resolveParams(plugin, {})).toEqual({ round: true })
   })
 })

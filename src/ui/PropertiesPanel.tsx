@@ -3,7 +3,7 @@ import { createFieldNormalizer } from '../app/field-normalizer'
 import { formulaOf, positionField, rotationField } from '../document/fields'
 import { formulaErrors, setFieldInput } from '../document/formula-ops'
 import { renameNode, setMode, updateNode } from '../document/ops'
-import type { FieldKey, SceneNode, ShapeNode } from '../document/types'
+import type { FieldKey, ParamValue, SceneNode, ShapeNode } from '../document/types'
 import { resolveParams } from '../plugins/params'
 import type { PluginRegistry } from '../plugins/registry'
 import type { ParamSpec } from '../plugins/types'
@@ -27,7 +27,7 @@ function ShapeParams({ node, errors, setField, registry }: FieldsProps & { node:
   const apply = useBloKade((s) => s.apply)
   const plugin = registry.get(node.shapeType)
   if (!plugin) return <p className="error-text">This shape's plugin is missing, so its size can't be changed.</p>
-  const setRaw = (key: string, value: string): void => apply((d) => updateNode(d, node.id, (n) => (
+  const setRaw = (key: string, value: ParamValue): void => apply((d) => updateNode(d, node.id, (n) => (
     n.kind === 'shape' ? { ...n, params: resolveParams(plugin, { ...n.params, [key]: value }) } : n
   )))
   return (

@@ -28,10 +28,11 @@ const choiceSpec = z.object({
   options: z.array(z.object({ value: z.string().min(1).max(40), label: z.string().min(1) })).min(2),
   label: z.string().min(1),
 }).refine((s) => s.options.some((o) => o.value === s.default), 'a choice default must be one of its options')
-const paramSpec = z.union([numberSpec, textSpec, choiceSpec])
+const yesNoSpec = z.object({ type: z.literal('yesno'), default: z.boolean(), label: z.string().min(1) })
+const paramSpec = z.union([numberSpec, textSpec, choiceSpec, yesNoSpec])
 
 /** Starting formulas may only use `fit`: it's the one variable every design has. */
-const FIT_ONLY = new Map([['fit', 0.2]])
+export const FIT_ONLY = new Map([['fit', 0.2]])
 
 const pluginSchema = z
   .object({

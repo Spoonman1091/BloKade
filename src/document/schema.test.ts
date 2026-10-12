@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyDocument, createGroupNode, createShapeNode } from './factory'
+import { addNode } from './ops'
 import { validateDocument } from './schema'
 import type { BloKadeDocument, SceneNode } from './types'
 
@@ -133,4 +134,9 @@ describe('validateDocument modifiers', () => {
     const shape = { ...box('a'), modifiers: [fillet], formulas: { 'mod.ab12cd34.colour': '1' } }
     expect(errorOf(rawDoc(shape))).toContain('damaged')
   })
+})
+
+it('accepts true and false as part settings', () => {
+  const node = createShapeNode({ id: 'n', shapeType: 'x', name: 'X', params: { round: true, hollow: false }, color: '#fff' })
+  expect(validateDocument(addNode(createEmptyDocument('Test'), node)).ok).toBe(true)
 })
