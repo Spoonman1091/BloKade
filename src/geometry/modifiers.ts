@@ -86,20 +86,43 @@ function fuseTwo(a: Shape3D, b: Shape3D): Shape3D {
   }
 }
 
-/** Builds copy 0..count-1 and fuses them one at a time so at most two solids are alive; a throw frees them. */
-function fuseCopies(count: number, copy: (i: number) => Shape3D): Shape3D {
-  let acc = copy(0)
-  for (let i = 1; i < count; i++) {
-    let next: Shape3D
-    try {
-      next = copy(i)
-    } catch (error) {
-      acc.delete()
-      throw error
-    }
-    acc = fuseTwo(acc, next)
+/** Builds every copy; if one fails, frees the ones already made. */
+function buildCopies(count: number, copy: (i: number) => Shape3D): Shape3D[] {
+  const made: Shape3D[] = []
+  try {
+    for (let i = 0; i < count; i++) made.push(copy(i))
+    return made
+  } catch (error) {
+    made.forEach((s) => s.delete())
+    throw error
   }
-  return acc
+}
+
+/** Fuses neighbours in pairs, halving the list. Consumes `level`; a throw frees everything still alive. */
+function fusePairs(level: readonly Shape3D[]): Shape3D[] {
+  const next: Shape3D[] = []
+  let i = 0
+  try {
+    for (; i < level.length; i += 2) {
+      const [a, b] = [level[i] as Shape3D, level[i + 1]]
+      next.push(b ? fuseTwo(a, b) : a)
+    }
+    return next
+  } catch (error) {
+    // fuseTwo already freed the failed pair.
+    [...next, ...level.slice(i + 2)].forEach((s) => s.delete())
+    throw error
+  }
+}
+
+/**
+ * Builds copy 0..count-1 and fuses them as a balanced tree: each round fuses neighbours in pairs, so
+ * every fuse works on similar-sized pieces instead of one ever-growing shape (much faster for big repeats).
+ */
+function fuseCopies(count: number, copy: (i: number) => Shape3D): Shape3D {
+  let level = buildCopies(count, copy)
+  while (level.length > 1) level = fusePairs(level)
+  return level[0] as Shape3D
 }
 
 const scaled = (v: Vec3, k: number): [number, number, number] => [v[0] * k, v[1] * k, v[2] * k]
@@ -174,14 +197,46 @@ function applyOrFree(shape: Shape3D, modifier: Modifier): Applied {
   }
 }
 
+/**
+ * Most repeat work allowed: copies made × faces on the part being repeated. Fusing detailed copies gets slow
+ * fast — measured with real OpenCascade (Node, balanced-tree fuse): "HELLO WORLD" text (166 faces) ×20 with
+ * overlapping copies took ~24 s (3320 work), ×50 would be 8300 work and runs past the 30 s rebuild limit;
+ * 200 boxes (6 faces, 1200 work) take under 1 s. 3500 keeps 20 detailed copies and every simple repeat allowed.
+ */
+export const MAX_REPEAT_WORK = 3500
+
+function faceCount(shape: Shape3D): number {
+  const faces = shape.faces
+  faces.forEach((f) => f.delete())
+  return faces.length
+}
+
+/** Why a stack is too big to build in time, or null. Looks only at counts and the input's face count. */
+function tooBigReason(input: Shape3D, enabled: readonly Modifier[]): string | null {
+  const copies = copiesMade(enabled)
+  if (copies > MAX_COPIES) return `These modifiers make ${copies} copies. BloKade can make up to ${MAX_COPIES} at once — use smaller counts.`
+  if (copies > 1 && copies * faceCount(input) > MAX_REPEAT_WORK) return 'This part is too detailed to repeat that many times. Try fewer copies.'
+  return null
+}
+
+/** Refuses stacks too big to build in time, before any geometry work. Frees `input` when it refuses or fails. */
+function checkBudget(input: Shape3D, enabled: readonly Modifier[]): void {
+  let reason: string | null
+  try {
+    reason = tooBigReason(input, enabled)
+  } catch (error) {
+    input.delete()
+    throw error
+  }
+  if (reason === null) return
+  input.delete()
+  throw new ModifierError(reason)
+}
+
 /** Applies the enabled modifiers in order. Consumes `input`; the caller owns the result. */
 export function applyModifiers(input: Shape3D, modifiers: readonly Modifier[]): ModifiedShape {
   const enabled = modifiers.filter((m) => m.enabled)
-  const copies = copiesMade(enabled)
-  if (copies > MAX_COPIES) {
-    input.delete()
-    throw new ModifierError(`These modifiers make ${copies} copies. BloKade can make up to ${MAX_COPIES} at once — use smaller counts.`)
-  }
+  checkBudget(input, enabled)
   return enabled.reduce<ModifiedShape>((acc, modifier) => {
     const applied = applyOrFree(acc.shape, modifier)
     acc.shape.delete()

@@ -6,9 +6,13 @@ import { createCadToolkit } from '../plugins/cad'
 import { edgeInfos, edgePolyline, shapeBox } from './edge-info'
 import { fingerprintOf, matchesDescription } from './edge-select'
 import { applyModifiers, ModifierError } from './modifiers'
+import { loadTestFont } from './testing/font-node'
 import { initTestOC } from './testing/oc-node'
 
-beforeAll(initTestOC)
+beforeAll(async () => {
+  await initTestOC()
+  await loadTestFont()
+})
 
 const cad = () => createCadToolkit()
 const round = (radius: number, edges: EdgeSelection = { by: 'description', which: 'top' }): Modifier =>
@@ -158,4 +162,24 @@ describe('Repeat and Mirror', () => {
     expect(() => applyModifiers(cad().box(2, 2, 2), [row(50, [3, 0, 0]), row(3, [0, 3, 0], 'ffffffff'), mirror('XY', true)]))
       .toThrow('make 300 copies')
   })
+
+  it('refuses to repeat a very detailed part many times, instantly (Review Focus 2)', () => {
+    const started = Date.now()
+    const error = errorOf(() => applyModifiers(cad().text('HELLO WORLD', 10, 3), [row(50, [80, 0, 0])]))
+    expect(error.message).toBe('This part is too detailed to repeat that many times. Try fewer copies.')
+    expect(Date.now() - started).toBeLessThan(2000)
+  })
+
+  it('still repeats simple parts the full 200 times quickly', () => {
+    const started = Date.now()
+    const { shape } = applyModifiers(cad().box(2, 2, 2), [row(200, [3, 0, 0])])
+    expect(volumeOf(shape)).toBeCloseTo(1600, 0)
+    expect(Date.now() - started).toBeLessThan(5000)
+  }, 20_000)
+
+  it('repeats letters a sensible number of times', () => {
+    const { shape } = applyModifiers(cad().text('HI', 10, 3), [row(20, [30, 0, 0])])
+    expect(xRange(shape)[1]! - xRange(shape)[0]!).toBeGreaterThan(570)
+    shape.delete()
+  }, 20_000)
 })
