@@ -55,6 +55,24 @@ function listen(handlers: DragHandlers): () => void {
   }
 }
 
+/**
+ * The browser follows a pointer release with a click, and R3F hands it to the part under the pointer, so letting go
+ * over the part with Shift held would toggle it out of the selection. A drag is never a click: swallow that one.
+ */
+function swallowNextClick(): void {
+  const swallow = (event: MouseEvent): void => {
+    event.stopPropagation()
+    stop()
+  }
+  const stop = (): void => {
+    window.removeEventListener('click', swallow, true)
+    window.clearTimeout(timer)
+  }
+  window.addEventListener('click', swallow, true)
+  // The click comes straight after the release, before any timer, so this only drops a listener nothing used.
+  const timer = window.setTimeout(stop, 0)
+}
+
 /** Every key is swallowed while dragging, so design shortcuts can't change the part under the pointer. Esc cancels. */
 const keyHandler = (cancel: () => void) => (event: KeyboardEvent): void => {
   event.preventDefault()
@@ -110,7 +128,7 @@ export function useSizeDrag(
       onMeasure(null)
       if (edited) store.getState().apply((d) => updateNode(d, node.id, () => edited))
     }
-    const stop = listen({ move: (e) => show(start, e), up: () => end(true), cancel: () => end(false), key: keyHandler(() => end(false)) })
+    const stop = listen({ move: (e) => show(start, e), up: () => { end(true); swallowNextClick() }, cancel: () => end(false), key: keyHandler(() => end(false)) })
     cancelDrag.current = () => end(false)
     // OrbitControls saw this press first; turning it off now stops it from spinning the camera as the mouse moves.
     if (controls) controls.enabled = false

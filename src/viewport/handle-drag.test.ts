@@ -88,3 +88,24 @@ describe('movedSince and screenScale', () => {
     expect(screenScale(200, 90, 200, 10)).toBeCloseTo(20, 6)
   })
 })
+
+describe('tracks seen nearly end-on', () => {
+  const tilted = (degrees: number): Vec3 => {
+    const r = (degrees * Math.PI) / 180
+    return [Math.sin(r), 0, -Math.cos(r)]
+  }
+
+  it('ignores a top handle seen from almost straight above, instead of jumping', () => {
+    expect(closestOnAxis({ origin: [10, 0, 200], direction: tilted(3) }, [0, 0, 20], 2)).toBeNull()
+    expect(closestOnAxis({ origin: [-100, 0, 200], direction: tilted(30) }, [0, 0, 20], 2)).not.toBeNull()
+  })
+
+  it('ignores a point on the track behind the camera', () => {
+    expect(closestOnAxis({ origin: [0, 0, 10], direction: [0.6, 0, 0.8] }, [0, 0, 0], 0)).toBeNull()
+  })
+
+  it('ignores the bottom plane seen almost edge-on', () => {
+    expect(hitPlaneZ({ origin: [0, 0, 10], direction: tilted(87) }, 0)).toBeNull()
+    expect(hitPlaneZ({ origin: [0, 0, 10], direction: tilted(60) }, 0)).not.toBeNull()
+  })
+})

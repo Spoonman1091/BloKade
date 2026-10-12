@@ -25,8 +25,11 @@ interface Rect {
   readonly height: number
 }
 
-/** Below this, a ray counts as running along the line or plane it should cross. */
-const PARALLEL = 1e-6
+/**
+ * A ray within about 10° of a track (or of the bottom plane) counts as running along it. Closer than that, one
+ * pixel of mouse movement is tens of millimetres, so the size would jump.
+ */
+const MIN_SIN = Math.sin((10 * Math.PI) / 180)
 const UNIT: readonly Vec3[] = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 
 const vec = (v: Vector3): Vec3 => [v.x, v.y, v.z]
@@ -51,20 +54,22 @@ export function toLocalRay(ray: Ray, transform: Transform): Ray {
   }
 }
 
-/** How far along `axis` (from `through`) the point nearest the ray is, or null when the ray runs along that line. */
+/** How far along `axis` (from `through`) the point nearest the ray is, or null when the ray runs (nearly) along that line or the point is behind the camera. */
 export function closestOnAxis(ray: Ray, through: Vec3, axis: Axis): number | null {
   const u = UNIT[axis] ?? [1, 0, 0]
   const b = dot(u, ray.direction)
   const denom = 1 - b * b
-  if (denom < PARALLEL) return null
+  if (denom < MIN_SIN * MIN_SIN) return null
   const w = sub(through, ray.origin)
+  const alongRay = (dot(ray.direction, w) - b * dot(u, w)) / denom
+  if (alongRay < 0) return null
   return (b * dot(ray.direction, w) - dot(u, w)) / denom
 }
 
-/** Where the ray meets the flat plane at height `z`, or null when it runs along the plane or away from it. */
+/** Where the ray meets the flat plane at height `z`, or null when it runs (nearly) along the plane or away from it. */
 export function hitPlaneZ(ray: Ray, z: number): readonly [number, number] | null {
   const dz = ray.direction[2]
-  if (Math.abs(dz) < PARALLEL) return null
+  if (Math.abs(dz) < MIN_SIN) return null
   const t = (z - ray.origin[2]) / dz
   if (t < 0) return null
   return [ray.origin[0] + t * ray.direction[0], ray.origin[1] + t * ray.direction[1]]

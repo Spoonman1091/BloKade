@@ -38,8 +38,8 @@ test('dragging a side handle grows that side only, and one undo puts it back', a
     await expect(p.getByTestId('measurement')).toContainText('Width')
     await p.mouse.up()
   })
+  await expect.poll(() => value(page, 'param-width')).toBeGreaterThan(30)
   const width = await value(page, 'param-width')
-  expect(width).toBeGreaterThan(30)
   expect((await value(page, 'pos-x')) - width / 2).toBeCloseTo(-10, 1)
   await expect(page.getByTestId('measurement')).toBeHidden()
   await page.getByTestId('undo').click()
@@ -101,4 +101,22 @@ test('a handle shows a tip, and in help mode it explains itself without dragging
   await page.mouse.click(right.x + 1, right.y)
   await expect(page.getByTestId('help-card')).toContainText('The other side stays put')
   await page.keyboard.press('Escape')
+})
+
+test('letting go over the part with Shift held keeps it selected', async ({ page }) => {
+  await boxWithHandles(page)
+  const left = await pagePoint(page, 'x-')
+  const right = await pagePoint(page, 'x+')
+  await page.keyboard.down('Shift')
+  await page.mouse.move(right.x, right.y)
+  await page.mouse.down()
+  // Push the +x side out, then slide up the face so the pointer is over the part itself when it lets go.
+  const out = { x: right.x + (right.x - left.x) * 0.5, y: right.y + (right.y - left.y) * 0.5 }
+  await page.mouse.move(out.x, out.y, { steps: 6 })
+  await page.mouse.move(out.x, out.y - 12, { steps: 3 })
+  await page.mouse.up()
+  await page.keyboard.up('Shift')
+  await expect.poll(() => value(page, 'param-width')).toBeGreaterThan(20)
+  await expect(canvas(page)).toHaveAttribute('data-size-handles', /"x\+"/)
+  await expect(page.getByTestId('param-width')).toBeVisible()
 })
