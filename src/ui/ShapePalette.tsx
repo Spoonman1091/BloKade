@@ -26,11 +26,11 @@ export function ShapePalette({ registry, kits, onAdd, onAddKit }: ShapePalettePr
   return (
     <>
       <section className="panel" aria-label="Shapes">
-        <h2>Shapes</h2>
+        <h2 data-help="panel-shapes">Shapes</h2>
         <div className="palette-grid">{plugins.filter((p) => sectionOf(p) === 'shapes').map(pluginButton)}</div>
       </section>
       <section className="panel" aria-label="Fit tools">
-        <h2>Fit tools</h2>
+        <h2 data-help="panel-fit-tools">Fit tools</h2>
         <div className="palette-grid">
           {kits.map((k) => <PaletteButton key={k.id} testId={`add-kit-${k.id}`} icon={k.icon} name={k.name} onClick={() => onAddKit(k.id)} />)}
           {plugins.filter((p) => sectionOf(p) === 'fit').map(pluginButton)}

@@ -1,0 +1,66 @@
+import type { HelpEntry } from './types'
+
+/** Help for controls with a fixed data-testid or data-help id. Families like add-* are in help-patterns.ts. */
+export const HELP_TEXTS: Readonly<Record<string, HelpEntry>> = {
+  // Top bar
+  'open-designs': { tip: 'Opens Designs: rename, open, save to a file or start a new design.', card: 'Every design you make is kept in this browser. Designs lets you switch between them, give this one a name, save a copy to a file, or load one back.', tutorial: 'undo-save' },
+  undo: { tip: 'Takes back your last change.', card: 'Undo goes back one change each time you click it. Ctrl+Z does the same.', tryIt: 'Delete a part, then click Undo.', tutorial: 'undo-save' },
+  redo: { tip: 'Puts back a change you undid.', card: 'Redo does the change again after an Undo. Ctrl+Shift+Z does the same.', tutorial: 'undo-save' },
+  group: { tip: 'Joins the selected parts into one. Holes cut the solids in their group.', card: 'Select two or more parts (hold Shift to pick more), then click Group. Holes in a group cut away the solid parts in that group.', tryIt: 'Make a cylinder a hole, select it and a box, then Group.', tutorial: 'holes-groups' },
+  ungroup: { tip: 'Splits a group back into its parts.', card: 'Select a group and click Ungroup to change its pieces one by one again.', tutorial: 'holes-groups' },
+  duplicate: { tip: 'Makes a copy of the selected parts.', card: 'Duplicate copies the selected parts, right where they are. Move the copy away to see it. Ctrl+D does the same.' },
+  delete: { tip: 'Removes the selected parts.', card: 'Delete removes the selected parts. Changed your mind? Click Undo.', tutorial: 'undo-save' },
+  'tool-move': { tip: 'Shows arrows to slide the selected part.', card: 'With Move on, drag an arrow in the 3D view to slide the part along it. You can also type exact numbers into Position.', tutorial: 'move-turn-size' },
+  'tool-rotate': { tip: 'Shows rings to turn the selected part.', card: 'With Rotate on, drag a ring in the 3D view to turn the part. You can also type angles into Rotation.', tutorial: 'move-turn-size' },
+  'tool-size': { tip: 'Shows handles to stretch the selected part.', card: 'With Size on, drag a handle in the 3D view to make the part bigger or smaller. You can also type sizes under Size.', tutorial: 'move-turn-size' },
+  workplane: { tip: 'Click this, then click a face to build on it.', card: 'A workplane is where new shapes appear. Click Workplane, then click a face of a part. New shapes will stand on that face.', tryIt: 'Pick the top of a box, then add a cone.', tutorial: 'workplane' },
+  'workplane-reset': { tip: 'Builds on the floor again.', card: 'Ground puts the workplane back on the floor grid, where new shapes normally appear.', tutorial: 'workplane' },
+  'grid-snap': { tip: 'How far parts jump when you drag them.', card: 'Snap makes dragged parts jump in steps, like 1 mm, so they line up neatly. Pick Off to drag smoothly.' },
+  'export-stl': { tip: 'Downloads an STL file for your 3D printer’s slicer.', card: 'STL is the file most slicers open. It holds the shape of everything that isn’t a loose hole.', tutorial: 'ready-to-print' },
+  'export-3mf': { tip: 'Downloads a 3MF file, which keeps colours too.', card: '3MF is a newer printer file. Slicers like PrusaSlicer and Bambu Studio open it and keep your colours.', tutorial: 'ready-to-print' },
+  'export-step': { tip: 'Downloads a STEP file for other CAD programs.', card: 'STEP keeps exact curves. Use it to open your design in programs like Fusion or FreeCAD. Printers need STL or 3MF.' },
+  learn: { tip: 'Opens the lessons: step-by-step guides to BloKade.', card: 'Lessons walk you through BloKade one step at a time. Each lesson uses its own practice design, so your work stays safe.' },
+  'help-mode': { tip: 'Help mode: click anything to learn what it does.', card: 'In help mode, clicking a button shows what it does instead of doing it. Press Esc or ❓ again to stop.' },
+  // Panel headings
+  'panel-shapes': { tip: 'Shapes you can add. Click one to add it.', card: 'Click a shape to add it to your design. It appears in the middle, or on your workplane.', tutorial: 'first-shape' },
+  'panel-fit-tools': { tip: 'Parts that fit together: pegs, screws, threads and clips.', card: 'Fit tools make parts that go together after printing. They all leave a little extra room, set by the Fit gap.', tutorial: 'perfect-fit' },
+  'panel-parts': { tip: 'Every part in your design. Click one to select it.', card: 'Parts lists everything in your design. Click to select, Shift-click to select more, double-click to rename, and drag a part onto a group to put it inside.' },
+  'panel-properties': { tip: 'Settings for the selected part.', card: 'Properties shows the name, size, position and modifiers of the selected part. Select two parts to line them up or check if they overlap.' },
+  'panel-variables': { tip: 'Named numbers you can use in any box.', card: 'A variable is a number with a name, like wall = 3. Type its name into any size box, and change it here to change every part that uses it.', tutorial: 'smart-sizes' },
+  'panel-lessons': { tip: 'Step-by-step lessons.', card: 'Pick a lesson and press Start. Each step tells you what to do and ticks itself off when you have done it.' },
+  // Parts list
+  'tree-row': { tip: 'Click to select. Shift-click to select more. Double-click to rename.', card: 'Click a row to select that part. Hold Shift to add more parts. Double-click the name to rename it. Drag it onto a group to move it inside.' },
+  'tree-mode': { tip: 'Switches this part between solid and hole.', card: 'A solid is a real part. A hole is empty space that cuts the solids in its group.', tutorial: 'holes-groups' },
+  'tree-hide': { tip: 'Hides or shows this part in the 3D view.', card: 'Hidden parts are still in your design and still print. Hiding just gets them out of the way while you work.' },
+  'tree-rename': { tip: 'Type a new name, then press Enter.', card: 'Press Enter to keep the new name, or Esc to keep the old one.' },
+  'drop-top-level': { tip: 'Drop a part here to take it out of its group.', card: 'Dragging a part here moves it out of its group to the top of the list.' },
+  // Properties
+  'prop-name': { tip: 'The name of this part.', card: 'Names help you find parts in the Parts list. Type a new one and press Enter.' },
+  'mode-solid': { tip: 'Makes this part a real, solid part.', card: 'Solid parts are what gets printed. Holes only cut away from them.', tutorial: 'holes-groups' },
+  'mode-hole': { tip: 'Turns this part into empty space. Group it with a solid to cut it out.', card: 'A hole cuts away the solid parts in its group. Make a cylinder a hole and group it with a box to drill through the box.', tryIt: 'Add a box and a cylinder, make the cylinder a hole, and Group them.', tutorial: 'holes-groups' },
+  'pos-x': { tip: 'How far left or right the part is, in mm.', card: 'x moves the part left (smaller) or right (bigger). 0 is the middle of the grid.', tutorial: 'move-turn-size' },
+  'pos-y': { tip: 'How far forward or back the part is, in mm.', card: 'y moves the part toward you (smaller) or away (bigger).', tutorial: 'move-turn-size' },
+  'pos-z': { tip: 'How high the part is, in mm.', card: 'z lifts the part up. 0 means it sits on the floor.', tutorial: 'move-turn-size' },
+  'rot-x': { tip: 'Tips the part forward or back, in degrees.', card: 'Rotation x turns the part around the left-right line. 90 lays it on its side.', tutorial: 'move-turn-size' },
+  'rot-y': { tip: 'Tips the part left or right, in degrees.', card: 'Rotation y turns the part around the front-back line.', tutorial: 'move-turn-size' },
+  'rot-z': { tip: 'Spins the part like a turntable, in degrees.', card: 'Rotation z turns the part around the up line, like spinning a top.', tutorial: 'move-turn-size' },
+  'add-modifier': { tip: 'Adds a change to this part: round edges, repeat or mirror.', card: 'Modifiers change a part after it is made. They run from top to bottom, and you can turn each one off with its checkbox.', tutorial: 'round-repeat' },
+  'check-overlap': { tip: 'Checks if the two selected parts bump into each other.', card: 'Check overlap shows in red where two parts take up the same space. Parts that should slide together must not overlap.', tutorial: 'perfect-fit' },
+  // Variables
+  fit: { tip: 'Extra room so printed parts slide together. Bigger = looser.', card: 'Fit gap is how much bigger holes are than the parts that go in them. If your printed parts are too tight, make it bigger.', tutorial: 'perfect-fit' },
+  'add-variable': { tip: 'Adds a named number you can use in any box.', card: 'After adding one, give it a name like wall. Then type wall into any size box. Change it once, and every part using it changes.', tutorial: 'smart-sizes' },
+  // Messages and nudges
+  'toast-dismiss': { tip: 'Hides this message.', card: 'Messages go away by themselves after a few seconds. Click ✕ to hide one now.' },
+  'nudge-start': { tip: 'Starts the first lesson.', card: 'The first lesson shows you how to add a shape and change its size.', tutorial: 'first-shape' },
+  'nudge-hide': { tip: 'Stops showing this tip.', card: 'You can still find every lesson under 📘 Learn in the top bar.' },
+  // Lessons panel
+  'lessons-close': { tip: 'Closes the lessons. Your place is kept.', card: 'Closing the lessons keeps your place. Click 📘 Learn to come back.' },
+  'lesson-next': { tip: 'Goes to the next step.', card: 'Next goes on to the next step of the lesson.' },
+  'lesson-skip': { tip: 'Skips this step.', card: 'Skip moves on without doing this step. You can always do the lesson again.' },
+  'lesson-back': { tip: 'Goes back one step.', card: 'Back shows the step before this one.' },
+  'lesson-hint': { tip: 'Shows a hint for this step.', card: 'Show me gives a longer hint, with where to find the button you need.' },
+  'lesson-quit': { tip: 'Stops this lesson.', card: 'Stopping keeps the practice design. Start the lesson again any time.' },
+  'lesson-go-back': { tip: 'Opens this lesson’s practice design again.', card: 'Each lesson has its own design. Go back opens it so you can keep going.' },
+  'lesson-restart': { tip: 'Starts this lesson again in a new practice design.', card: 'The old practice design is gone, so this makes a fresh one.' },
+  'lessons-list-back': { tip: 'Shows all the lessons again.', card: 'Back to all lessons shows the list, with a ✓ next to the ones you finished.' },
+}

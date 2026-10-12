@@ -72,7 +72,7 @@ export function PropertiesPanel({ registry, onCheckOverlap }: { registry: Plugin
   if (selection.length > 1) {
     return (
       <section className="panel" aria-label="Properties">
-        <h2>Properties</h2>
+        <h2 data-help="panel-properties">Properties</h2>
         <p className="hint">{selection.length} parts selected. Group them, or pick one to change it.</p>
         <AlignTools />
         {onCheckOverlap && <OverlapCheck onCheck={onCheckOverlap} />}
@@ -82,7 +82,7 @@ export function PropertiesPanel({ registry, onCheckOverlap }: { registry: Plugin
   if (!node) {
     return (
       <section className="panel" aria-label="Properties">
-        <h2>Properties</h2>
+        <h2 data-help="panel-properties">Properties</h2>
         <p className="hint">Click a shape to change it. Add shapes from the left.</p>
       </section>
     )
@@ -92,7 +92,7 @@ export function PropertiesPanel({ registry, onCheckOverlap }: { registry: Plugin
   const nodeErrors = fieldErrors[node.id] ?? {}
   return (
     <section className="panel" aria-label="Properties">
-      <h2>Properties</h2>
+      <h2 data-help="panel-properties">Properties</h2>
       <TextField key={`name-${node.id}`} label="Name" value={node.name} testId="prop-name" onCommit={(name) => apply((d) => renameNode(d, node.id, name))} />
       <div className="mode-toggle" role="group" aria-label="Solid or hole">
         <button type="button" className="tool-button" data-testid="mode-solid" aria-pressed={node.mode === 'solid'}

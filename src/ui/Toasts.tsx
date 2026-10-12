@@ -20,7 +20,7 @@ export function Toasts() {
       {notice && (
         <div className="toast" role="status">
           <span>{notice}</span>
-          <button type="button" aria-label="Dismiss message" onClick={() => notify(null)}>✕</button>
+          <button type="button" data-help="toast-dismiss" aria-label="Dismiss message" onClick={() => notify(null)}>✕</button>
         </div>
       )}
     </>

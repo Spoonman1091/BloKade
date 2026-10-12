@@ -25,6 +25,7 @@ function RenameInput({ initial, onDone }: { initial: string; onDone(name: string
     <input
       autoFocus
       aria-label="Part name"
+      data-help="tree-rename"
       defaultValue={initial}
       onClick={(event) => event.stopPropagation()}
       onBlur={(event) => finish(event.currentTarget.value)}
@@ -74,6 +75,7 @@ function TreeItem({ id, registry, drag }: { id: NodeId; registry: PluginRegistry
     <li role="none">
       <div
         role="treeitem"
+        data-help="tree-row"
         aria-label={node.name}
         aria-selected={selected}
         aria-expanded={isGroup ? true : undefined}
@@ -102,12 +104,12 @@ function TreeItem({ id, registry, drag }: { id: NodeId; registry: PluginRegistry
           </span>
         )}
         {error && <span className="badge" title={error} aria-label={`Problem: ${error}`}>⚠</span>}
-        <button type="button" className="icon-button"
+        <button type="button" className="icon-button" data-help="tree-mode"
           aria-label={node.mode === 'hole' ? `Make ${node.name} solid` : `Make ${node.name} a hole`}
           onClick={stopThen(() => apply((d) => setMode(d, [id], node.mode === 'hole' ? 'solid' : 'hole')))}>
           {node.mode === 'hole' ? '⬚' : '◼'}
         </button>
-        <button type="button" className="icon-button"
+        <button type="button" className="icon-button" data-help="tree-hide"
           aria-label={node.hidden ? `Show ${node.name}` : `Hide ${node.name}`}
           onClick={stopThen(() => apply((d) => setHidden(d, [id], !node.hidden)))}>
           {node.hidden ? '🚫' : '👁'}
@@ -134,7 +136,7 @@ export function SceneTree({ registry }: { registry: PluginRegistry }) {
 
   return (
     <section className="panel" aria-label="Parts">
-      <h2>Parts</h2>
+      <h2 data-help="panel-parts">Parts</h2>
       {root.length === 0 ? (
         <p className="hint">No parts yet. Click a shape above to add one.</p>
       ) : (

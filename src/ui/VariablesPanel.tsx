@@ -16,7 +16,7 @@ export function VariablesPanel({ registry }: { registry: PluginRegistry }) {
 
   return (
     <section className="panel" aria-label="Variables">
-      <h2>Variables</h2>
+      <h2 data-help="panel-variables">Variables</h2>
       <NumberField label="Fit gap (mm)" value={doc.settings.fit} testId="fit" onCommit={(fit) => apply((d) => setFit(d, fit, normalize))} />
       <p className="hint">Extra room for parts that slot together. Formulas can use it as <code>fit</code>.</p>
       <ul className="variable-list">

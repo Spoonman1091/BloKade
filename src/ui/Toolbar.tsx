@@ -66,7 +66,7 @@ export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn }
       </div>
       <label className="toolbar-group">
         Snap
-        <select aria-label="Grid snap" value={gridSnap} onChange={(event) => actions.setGridSnap(Number(event.target.value))}>
+        <select data-help="grid-snap" aria-label="Grid snap" value={gridSnap} onChange={(event) => actions.setGridSnap(Number(event.target.value))}>
           {SNAP_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
       </label>
