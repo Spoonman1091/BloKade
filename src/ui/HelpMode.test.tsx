@@ -1,17 +1,26 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { HelpMode } from './HelpMode'
+
+let spy: ((e: Event) => void) | null = null
+afterEach(() => {
+  if (spy) document.removeEventListener('keydown', spy)
+  spy = null
+})
 
 function setup(active = true) {
   const onAction = vi.fn()
   const onExit = vi.fn()
   const onLearnMore = vi.fn()
   const keydown = vi.fn()
+  spy = keydown
   document.addEventListener('keydown', keydown)
   render(<>
     <button type="button" data-testid="mode-hole" onClick={onAction} onPointerDown={onAction}>Hole</button>
     <button type="button" data-testid="mystery" onClick={onAction}>?</button>
+    <input data-testid="field" onKeyDown={onAction} onChange={onAction} onInput={onAction} />
+    <div draggable data-testid="row" onDragStart={onAction} onDrop={onAction}>Row</div>
     <button type="button" data-testid="help-mode" data-help-toggle="" onClick={onExit}>❓</button>
     <HelpMode active={active} onExit={onExit} onLearnMore={onLearnMore} />
   </>)
@@ -59,5 +68,34 @@ describe('HelpMode (Review Focus 3)', () => {
     expect(onAction).toHaveBeenCalled()
     expect(screen.queryByTestId('help-card')).toBeNull()
     expect(document.body.classList.contains('help-mode')).toBe(false)
+  })
+
+  it('keeps typing out of fields', () => {
+    const { onAction } = setup()
+    const field = screen.getByTestId('field')
+    fireEvent.keyDown(field, { key: 'a' })
+    fireEvent.keyDown(field, { key: 'Enter' })
+    fireEvent.input(field, { target: { value: 'x' } })
+    fireEvent.change(field, { target: { value: 'y' } })
+    expect(onAction).not.toHaveBeenCalled()
+  })
+
+  it('lets Tab move focus and takes focus out of a field on entry', () => {
+    const onAction = vi.fn()
+    const ui = (active: boolean) => <><input data-testid="f" onKeyDown={onAction} /><HelpMode active={active} onExit={vi.fn()} onLearnMore={vi.fn()} /></>
+    const { rerender } = render(ui(false))
+    screen.getByTestId('f').focus()
+    expect(document.activeElement).toBe(screen.getByTestId('f'))
+    rerender(ui(true))
+    expect(document.activeElement).toBe(document.body)
+    fireEvent.keyDown(screen.getByTestId('f'), { key: 'Tab' })
+    expect(onAction).toHaveBeenCalledTimes(1)
+  })
+
+  it('stops drags from reparenting', () => {
+    const { onAction } = setup()
+    fireEvent.dragStart(screen.getByTestId('row'))
+    fireEvent.drop(screen.getByTestId('row'))
+    expect(onAction).not.toHaveBeenCalled()
   })
 })

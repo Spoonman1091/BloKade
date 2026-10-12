@@ -3,7 +3,10 @@ import { helpFor, helpKeyOf, NO_HELP } from '../help/lookup'
 import type { HelpEntry } from '../help/types'
 import { RichText } from './RichText'
 
-const BLOCKED = ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu'] as const
+const BLOCKED = ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'dragstart', 'dragover', 'drop'] as const
+/** Keyboard and edit events that could change the design from a focused field. Tab only moves focus, so it stays. */
+const KEY_EDITS = ['keydown', 'keypress', 'beforeinput', 'input', 'change'] as const
+const SAFE_TARGET = '.help-card, [data-help-toggle]'
 
 interface HelpModeProps {
   active: boolean
@@ -35,25 +38,34 @@ export function HelpMode({ active, onExit, onLearnMore }: HelpModeProps) {
     if (!active) return undefined
     const block = (event: Event): void => {
       const target = event.target
-      if (!(target instanceof Element) || target.closest('.help-card, [data-help-toggle]')) return
+      if (!(target instanceof Element) || target.closest(SAFE_TARGET)) return
       event.preventDefault()
       event.stopPropagation()
       if (event.type !== 'click') return
       const found = helpKeyOf(target)
       setCard((found && helpFor(found.key, found.label)) ?? NO_HELP)
     }
-    const onKey = (event: KeyboardEvent): void => {
-      if (event.key !== 'Escape') return
+    const onKey = (event: Event): void => {
+      const key = event instanceof KeyboardEvent ? event.key : null
+      if (key === 'Escape') {
+        event.preventDefault()
+        event.stopPropagation()
+        onExit()
+        return
+      }
+      const target = event.target
+      if (key === 'Tab' || (target instanceof Element && target.closest(SAFE_TARGET))) return
       event.preventDefault()
       event.stopPropagation()
-      onExit()
     }
+    const focused = document.activeElement
+    if (focused instanceof HTMLElement && !focused.closest('[data-help-toggle]')) focused.blur()
     for (const type of BLOCKED) window.addEventListener(type, block, true)
-    window.addEventListener('keydown', onKey, true)
+    for (const type of KEY_EDITS) window.addEventListener(type, onKey, true)
     document.body.classList.add('help-mode')
     return () => {
       for (const type of BLOCKED) window.removeEventListener(type, block, true)
-      window.removeEventListener('keydown', onKey, true)
+      for (const type of KEY_EDITS) window.removeEventListener(type, onKey, true)
       document.body.classList.remove('help-mode')
     }
   }, [active, onExit])
