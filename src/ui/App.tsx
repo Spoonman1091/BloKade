@@ -3,6 +3,7 @@ import type { AppDeps } from '../app/deps'
 import { openInitialDesign, type InitialDesign } from '../persistence/bootstrap'
 import { StoreProvider } from '../store/context'
 import { createBloKadeStore, type BloKadeStore } from '../store/store'
+import { ErrorBoundary } from './ErrorBoundary'
 import { Workspace } from './Workspace'
 
 // React StrictMode runs effects twice in development; start each app only once
@@ -38,7 +39,9 @@ export function App({ deps }: { deps: AppDeps }) {
   if (!store) return <div className="splash">Starting BloKade…</div>
   return (
     <StoreProvider store={store}>
-      <Workspace deps={deps} />
+      <ErrorBoundary>
+        <Workspace deps={deps} />
+      </ErrorBoundary>
     </StoreProvider>
   )
 }
