@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { createEmptyDocument, createShapeNode } from '../document/factory'
 import { addModifier, removeModifier, setModifierEnabled } from '../document/modifiers'
-import { addNode } from '../document/ops'
+import { addNode, setHidden } from '../document/ops'
 import type { EdgeCandidate } from '../geometry/types'
 import { createBloKadeStore } from '../store/store'
 import { useEdgeCandidates } from './useEdgeCandidates'
@@ -41,6 +41,13 @@ describe('useEdgeCandidates', () => {
     await waitFor(() => expect(store.getState().pickingEdges).toBeNull())
   })
 
+  it('stops picking when the part is hidden', async () => {
+    const { store, modifierId } = setup()
+    store.getState().setPickingEdges({ nodeId: 'b', modifierId })
+    store.getState().apply((d) => setHidden(d, ['b'], true))
+    await waitFor(() => expect(store.getState().pickingEdges).toBeNull())
+  })
+
   it('explains a failure and stops picking', async () => {
     const { store, modifierId } = setup(vi.fn(async () => { throw new Error('This part has a problem.') }))
     store.getState().setPickingEdges({ nodeId: 'b', modifierId })
@@ -65,6 +72,19 @@ describe('useEdgeCandidates', () => {
       await waitFor(() => expect(calls).toHaveLength(2))
       await act(async () => { calls[0]?.resolve([candidate]) })
       expect(store.getState().edgeCandidates).toBeNull()
+      await act(async () => { calls[1]?.resolve([other]) })
+      expect(store.getState().edgeCandidates).toEqual([other])
+    })
+
+    it('clears the old edges as soon as the design changes', async () => {
+      const { store, modifierId, calls } = deferredSetup()
+      store.getState().setPickingEdges({ nodeId: 'b', modifierId })
+      await waitFor(() => expect(calls).toHaveLength(1))
+      await act(async () => { calls[0]?.resolve([candidate]) })
+      expect(store.getState().edgeCandidates).toEqual([candidate])
+      store.getState().apply((d) => ({ ...d, name: 'Changed' }))
+      expect(store.getState().edgeCandidates).toBeNull()
+      await waitFor(() => expect(calls).toHaveLength(2))
       await act(async () => { calls[1]?.resolve([other]) })
       expect(store.getState().edgeCandidates).toEqual([other])
     })

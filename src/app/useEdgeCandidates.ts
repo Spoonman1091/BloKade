@@ -11,6 +11,7 @@ function pickingStillValid(store: BloKadeStore): boolean {
   const nodes = history.present.nodes
   const node = Object.hasOwn(nodes, pickingEdges.nodeId) ? nodes[pickingEdges.nodeId] : undefined
   const modifier = node ? modifiersOf(node).find((m) => m.id === pickingEdges.modifierId) : undefined
+  if (!node || node.hidden) return false
   return modifier?.enabled === true && (modifier.type === 'fillet' || modifier.type === 'chamfer')
 }
 
@@ -36,7 +37,10 @@ export function useEdgeCandidates(store: BloKadeStore, client: Pick<GeometryClie
     }
     refresh()
     return store.subscribe((next, prev) => {
-      if (next.pickingEdges !== prev.pickingEdges || (next.pickingEdges && next.history.present !== prev.history.present)) refresh()
+      const designChanged = next.pickingEdges !== null && next.history.present !== prev.history.present
+      // Old edges may mark the wrong ones as picked, so hide them until the new ones arrive.
+      if (designChanged && next.edgeCandidates !== null) next.setEdgeCandidates(null)
+      if (next.pickingEdges !== prev.pickingEdges || designChanged) refresh()
     })
   }, [store, client])
 }
