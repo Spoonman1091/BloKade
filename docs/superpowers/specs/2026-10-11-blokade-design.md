@@ -308,8 +308,8 @@ Each milestone is independently usable and gets its own implementation plan.
 
 | # | Name | Scope |
 |---|---|---|
-| 1 | **First Print** | Project scaffold; document model + store; geometry worker; plugin loader; basic shapes (box, cylinder, sphere, cone, wedge, torus, text) as plugins; solid/hole; groups; selection; move/rotate/size handles; grid snap; properties panel (numbers only); scene tree; undo/redo; autosave + file save/load; STL/3MF export; Dockerfile + compose. |
-| 2 | **Smart Sizes** | Variables panel and formulas in every field; `fit` setting; align tool; object snapping; workplane on face; live measurements. |
+| 1 | **First Print** | Project scaffold; document model + store; geometry worker; plugin loader; basic shapes (box, cylinder, sphere, cone, wedge, torus) as plugins; solid/hole; groups; selection; move/rotate/size handles; grid snap; properties panel (numbers only); scene tree; undo/redo; autosave + file save/load; STL/3MF export; Dockerfile + compose. |
+| 2 | **Smart Sizes** | Text shape (with a bundled font file); variables panel and formulas in every field; `fit` setting; align tool; object snapping; workplane on face; live measurements. |
 | 3 | **Round & Repeat** | Modifier stack UI; fillet/chamfer (by description, then picked edges with fingerprints); linear and circular patterns; mirror; STEP export. |
 | 4 | **Perfect Fit** | Peg & socket, screw holes, threads, snap-fit clip, overlap check. |
 | 5 | **Kade's Plugins** | Documented `cad` toolkit; plugin guide and "make your first shape" tutorial; `plugins/` folder for Kade's shapes; example gear plugin. |
