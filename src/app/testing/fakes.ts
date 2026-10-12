@@ -1,5 +1,6 @@
 import { GeometryClient } from '../../geometry/client'
 import type { GeometryApi } from '../../geometry/types'
+import { createMemoryShapeLibrary } from '../../kade/library'
 import type { InspectResult } from '../../kade/meta'
 import { createMemoryDesignRepository } from '../../persistence/memory-repository'
 import { registry } from '../../plugins/index'
@@ -35,6 +36,7 @@ export function fakeDeps(overrides: Partial<AppDeps> = {}): AppDeps {
     client: new GeometryClient(() => ({ api: fakeGeometryApi(), terminate: () => undefined })),
     registry,
     pluginProblems: [],
+    shapes: createMemoryShapeLibrary(),
     openTabChannel: () => null,
     ...overrides,
   }
