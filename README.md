@@ -151,6 +151,8 @@ npm run e2e           # end-to-end tests in a real browser
 - **📘 Learn** (top bar) opens the lessons: nine short step-by-step guides, from "Your first shape" to "Ready to
   print". Each lesson opens its own practice design, so your real designs stay safe. Steps tick themselves off
   when you do them, and every step has **💡 Show me** if you get stuck. Finished lessons get a ✓.
+- **Coding lessons:** open **🧩 My shapes**, then **📘 Lessons**. Ten short lessons teach coding with shapes, from
+  changing a number to building a gear. Each lesson makes its own practice shape.
 - **Tooltips:** rest the mouse on any button or box for half a second to see what it does.
 - **❓ Help mode:** click ❓ in the top bar, then click anything to read what it does (nothing changes while
   help mode is on). Press Esc to stop.
@@ -223,6 +225,39 @@ Tip: printed threads usually need a bigger fit gap. If the rod won't screw in, t
 
 Every fit tool's **Extra room** starts as the formula `fit`. Type a number there to give one part its own gap.
 
+### My shapes (shapes you write in code)
+
+**🧩 My shapes** (top bar) opens the shape editor. **⬅ Back to my design** returns, with the design unchanged.
+
+- **Left:** your shapes, with **+ New shape**, **Duplicate**, **Delete**, **💾 Save to file** and **📂 Load from file**.
+  Below them are **📘 Lessons** and **❓ Commands** (every `cad` command with an example, plus a ready-made ⚙️ Gear).
+- **Middle:** the code. It saves as you type. If something is wrong, the message under it says which line to look at;
+  click the message to jump there.
+- **Right:** a live preview, updated half a second after you stop typing, with the shape's settings to try.
+  **➕ Add to my design** puts the shape in your design.
+
+A shape is a file like this:
+
+```js
+export default {
+  name: 'Robot head',
+  icon: '🤖',
+  settings: { size: { type: 'mm', default: 20, label: 'Size' } },
+  build({ size }, cad) {
+    return cad.box(size, size, size).cut(cad.cylinder(6, size + 2).move(0, 0, -1))
+  },
+}
+```
+
+Setting types are `mm`, `whole`, `number`, `angle`, `text`, `choice` and `yesno` (a tick box).
+
+Designs carry the code of every shape they use, so a design file works on any computer. When you change a shape
+after adding it, the design offers **Use my newest version** (one undo step). Your shapes are kept in this browser,
+separate from your designs: use **💾 Save to file** to keep a copy.
+
+Kade's code runs only inside the geometry engine's worker, never on the page. A shape that never finishes building
+(an endless loop) is stopped after 30 seconds and shows "This shape took too long to build".
+
 ## How it's built
 
 - `src/document`: the design "recipe" (shapes, groups, transforms) and immutable edits
@@ -230,10 +265,12 @@ Every fit tool's **Extra room** starts as the formula `fit`. Type a number there
 - `src/geometry`: the OpenCascade engine (in a Web Worker) that turns the recipe into solids, meshes, and STL/3MF files
 - `src/viewport`: the 3D view (Three.js)
 - `src/ui`, `src/app`: panels, toolbar, shortcuts, and wiring
+- `src/kade`: Kade's own shapes: the friendly `cad` toolkit, the code checks, the shape library, the editor and the coding lessons
 - `src/persistence`: autosave, design files, and the designs list
 
 Design spec: `docs/superpowers/specs/2026-10-11-blokade-design.md`.
 
-## Making your own shapes
+## Shape files in the plugins/ folder
 
-See [`plugins/README.md`](plugins/README.md). The full plugin guide arrives in Milestone 5.
+Most shapes are made in **🧩 My shapes**. Shape files can also live in the `plugins/` folder, where they are built into
+the app for everyone. See [`plugins/README.md`](plugins/README.md).
