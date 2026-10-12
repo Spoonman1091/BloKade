@@ -1,7 +1,14 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
+// Where the app is served from: '/' for Docker and dev; GitHub Pages sets BLOKADE_BASE=/BloKade/.
+const base = process.env.BLOKADE_BASE ?? '/'
+if (!base.startsWith('/') || !base.endsWith('/')) {
+  throw new Error(`BLOKADE_BASE must start and end with "/", got "${base}"`)
+}
+
 export default defineConfig({
+  base,
   plugins: [react()],
   worker: { format: 'es' },
   // The OpenCascade WASM loader must not be pre-bundled; it locates its .wasm via an explicit URL.
