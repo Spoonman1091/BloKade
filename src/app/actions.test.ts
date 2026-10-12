@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createEmptyDocument } from '../document/factory'
+import { createEmptyDocument, createShapeNode } from '../document/factory'
+import { addNode } from '../document/ops'
 import { registry } from '../plugins/index'
 import { createBloKadeStore } from '../store/store'
 import { createActions } from './actions'
@@ -131,5 +132,22 @@ describe('actions', () => {
     expect(store.getState().selection).toEqual([id])
     actions.cancel()
     expect(store.getState().selection).toEqual([])
+  })
+
+  it('Escape stops edge picking first, then workplane picking, then deselects', () => {
+    const { store, actions } = setup()
+    store.getState().setPickingEdges({ nodeId: 'a', modifierId: 'aaaaaaaa' })
+    store.getState().apply((d) => addNode(d, createShapeNode({ id: 'a', shapeType: 'box', name: 'Box', params: {}, color: '#f00' })))
+    store.getState().select(['a'])
+    actions.cancel()
+    expect(store.getState().pickingEdges).toBeNull()
+    expect(store.getState().selection).toEqual(['a'])
+    store.getState().setPickingWorkplane(true)
+    actions.cancel()
+    expect(store.getState().pickingWorkplane).toBe(false)
+    expect(store.getState().selection).toEqual(['a'])
+    actions.cancel()
+    expect(store.getState().selection).toEqual([])
+    expect(typeof actions.togglePickedEdge).toBe('function')
   })
 })

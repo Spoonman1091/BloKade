@@ -42,6 +42,7 @@ describe('runShortcut', () => {
       deleteSelection: vi.fn(), duplicateSelection: vi.fn(), groupSelection: vi.fn(), ungroupSelection: vi.fn(),
       undo: vi.fn(), redo: vi.fn(), toggleHole: vi.fn(), setTool: vi.fn(), clearSelection: vi.fn(),
       addShape: vi.fn(), selectNode: vi.fn(), setGridSnap: vi.fn(), toggleWorkplanePicking: vi.fn(), resetWorkplane: vi.fn(), cancel: vi.fn(),
+      startPickingEdges: vi.fn(), stopPickingEdges: vi.fn(), togglePickedEdge: vi.fn(),
     } satisfies Actions
     runShortcut('toolRotate', actions)
     runShortcut('group', actions)

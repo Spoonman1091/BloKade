@@ -10,6 +10,8 @@ export function spawnGeometryWorker(): WorkerHandle {
       rebuild: (doc) => remote.rebuild(doc),
       exportStl: (doc, ids) => remote.exportStl(doc, ids),
       export3mf: (doc, ids) => remote.export3mf(doc, ids),
+      exportStep: (doc, ids) => remote.exportStep(doc, ids),
+      edgeCandidates: (doc, nodeId, modifierId) => remote.edgeCandidates(doc, nodeId, modifierId),
     },
     terminate: () => worker.terminate(),
   }

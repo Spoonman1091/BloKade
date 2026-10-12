@@ -23,6 +23,8 @@ function fakeWorker() {
       },
       exportStl: async () => new ArrayBuffer(84),
       export3mf: async () => new ArrayBuffer(10),
+      exportStep: async () => new ArrayBuffer(5),
+      edgeCandidates: async () => [],
     },
     terminate: vi.fn(),
   }
@@ -92,5 +94,16 @@ describe('GeometryClient', () => {
     const client = new GeometryClient(() => handle)
     expect((await client.exportStl(doc('x'))).byteLength).toBe(84)
     expect((await client.export3mf(doc('x'), ['a'])).byteLength).toBe(10)
+  })
+
+  it('forwards STEP export and edge candidates to the worker', async () => {
+    const step = new ArrayBuffer(3)
+    const base = fakeWorker().handle
+    const client = new GeometryClient(() => ({
+      api: { ...base.api, exportStep: async () => step, edgeCandidates: async () => [] },
+      terminate: () => undefined,
+    }))
+    await expect(client.exportStep(doc('x'))).resolves.toBe(step)
+    await expect(client.edgeCandidates(doc('x'), 'a', 'deadbeef')).resolves.toEqual([])
   })
 })

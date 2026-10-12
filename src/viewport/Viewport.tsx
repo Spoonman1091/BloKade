@@ -3,9 +3,10 @@ import { Canvas } from '@react-three/fiber'
 import { useState } from 'react'
 import { Object3D } from 'three'
 import { nextSelection } from '../app/selection'
-import type { NodeId, Vec3 } from '../document/types'
+import type { EdgeFingerprint, NodeId, Vec3 } from '../document/types'
 import type { PluginRegistry } from '../plugins/registry'
 import { useBloKade } from '../store/context'
+import { EdgeOverlay } from './EdgeOverlay'
 import { NodeMesh } from './NodeMesh'
 import { TransformHandles } from './TransformHandles'
 import { WorkplaneMarker } from './WorkplaneMarker'
@@ -14,7 +15,7 @@ import { workplaneFromHit } from './workplane'
 // BloKade is Z-up like slicers. This must run before the camera is created.
 Object3D.DEFAULT_UP.set(0, 0, 1)
 
-export function Viewport({ registry }: { registry: PluginRegistry }) {
+export function Viewport({ registry, onToggleEdge }: { registry: PluginRegistry; onToggleEdge(fingerprint: EdgeFingerprint): void }) {
   const doc = useBloKade((s) => s.history.present)
   const meshes = useBloKade((s) => s.meshes)
   const selection = useBloKade((s) => s.selection)
@@ -23,10 +24,16 @@ export function Viewport({ registry }: { registry: PluginRegistry }) {
   const picking = useBloKade((s) => s.pickingWorkplane)
   const workplane = useBloKade((s) => s.workplane)
   const setWorkplane = useBloKade((s) => s.setWorkplane)
+  const pickingEdges = useBloKade((s) => s.pickingEdges)
+  const setPickingEdges = useBloKade((s) => s.setPickingEdges)
   const [measurement, setMeasurement] = useState<string | null>(null)
   const onSelect = (id: NodeId, additive: boolean): void => select(nextSelection(selection, id, additive))
   const onPickFace = picking ? (point: Vec3, normal: Vec3): void => setWorkplane(workplaneFromHit(point, normal)) : undefined
   const onPointerMissed = (event: MouseEvent): void => {
+    if (pickingEdges) {
+      setPickingEdges(null)
+      return
+    }
     if (picking) setWorkplane(null)
     else if (!(event.shiftKey || event.metaKey || event.ctrlKey)) select([])
   }
@@ -43,11 +50,12 @@ export function Viewport({ registry }: { registry: PluginRegistry }) {
           const node = doc.nodes[id]
           const displayed = meshes[id]
           return node && displayed && !node.hidden ? (
-            <NodeMesh key={id} node={node} displayed={displayed} selected={selection.includes(id)} onSelect={onSelect} onPickFace={onPickFace} />
+            <NodeMesh key={id} node={node} displayed={displayed} selected={selection.includes(id)} onSelect={onSelect} onPickFace={onPickFace} passive={pickingEdges !== null} />
           ) : null
         })}
+        <EdgeOverlay onToggle={onToggleEdge} />
         {workplane && <WorkplaneMarker workplane={workplane} />}
-        <TransformHandles registry={registry} onMeasure={setMeasurement} />
+        {!pickingEdges && <TransformHandles registry={registry} onMeasure={setMeasurement} />}
         <OrbitControls makeDefault />
         <GizmoHelper alignment="bottom-right" margin={[70, 70]}>
           <GizmoViewport />
@@ -55,6 +63,7 @@ export function Viewport({ registry }: { registry: PluginRegistry }) {
       </Canvas>
       {measurement && <div className="measure-overlay" data-testid="measurement">{measurement}</div>}
       {picking && <div className="viewport-hint" role="status">Click a face to build on it. Click empty space to build on the ground again.</div>}
+      {pickingEdges && <div className="viewport-hint" role="status">Click edges to choose them. Click empty space or press Esc when you're done.</div>}
       {!engineReady && <div className="viewport-overlay">Warming up the geometry engine…</div>}
     </>
   )

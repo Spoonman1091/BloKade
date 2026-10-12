@@ -68,6 +68,7 @@ export function Toolbar({ actions, onExport, onOpenDesigns }: ToolbarProps) {
       <div className="toolbar-group">
         <button type="button" className="tool-button" data-testid="export-stl" onClick={() => onExport('stl')}>⬇ STL</button>
         <button type="button" className="tool-button" data-testid="export-3mf" onClick={() => onExport('3mf')}>⬇ 3MF</button>
+        <button type="button" className="tool-button" data-testid="export-step" title="STEP: for other CAD programs" onClick={() => onExport('step')}>⬇ STEP</button>
       </div>
     </header>
   )

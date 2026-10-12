@@ -51,7 +51,7 @@ describe('validateDocument', () => {
   })
 
   it('rejects an unknown schema version', () => {
-    expect(errorOf({ ...createEmptyDocument(), schemaVersion: 3 })).toContain('damaged')
+    expect(errorOf({ ...createEmptyDocument(), schemaVersion: 4 })).toContain('damaged')
   })
 
   it('rejects things that are not designs at all', () => {
@@ -92,5 +92,45 @@ describe('validateDocument prototype-named ids', () => {
   it('rejects an impossible fit gap', () => {
     const doc = docWith([], [])
     expect(errorOf({ ...doc, settings: { ...doc.settings, fit: 5 } })).toContain('damaged')
+  })
+})
+
+describe('validateDocument modifiers', () => {
+  const fillet = { id: 'ab12cd34', type: 'fillet', enabled: true, radius: 2, edges: { by: 'description', which: 'top' } }
+  // Raw JSON-shaped designs: the point is what validateDocument accepts, so skip the SceneNode typing.
+  const rawDoc = (shape: unknown): unknown => ({ ...createEmptyDocument('Test'), root: ['a'], nodes: { a: shape } })
+  const withMods = (modifiers: unknown[]) => rawDoc({ ...box('a'), modifiers })
+
+  it('accepts parts with modifiers and formulas on modifier fields', () => {
+    const shape = {
+      ...box('a'),
+      modifiers: [
+        fillet,
+        { id: 'ef56ab78', type: 'linearPattern', enabled: false, count: 3, spacing: [25, 0, 0] },
+        { id: '0011aabb', type: 'circularPattern', enabled: true, count: 6, axis: 'z', angle: 360, center: [0, 0, 0] },
+        { id: '22334455', type: 'mirror', enabled: true, plane: 'YZ', keepOriginal: true },
+        {
+          id: '66778899', type: 'chamfer', enabled: true, distance: 1,
+          edges: { by: 'picked', fingerprints: [{ kind: 'line', mid: [0.5, 0, 1], dir: [1, 0, 0], length: 0.5774 }] },
+        },
+      ],
+      formulas: { 'mod.ab12cd34.radius': 'wall / 2', 'mod.ef56ab78.spacing.0': 'wall * 10' },
+    }
+    expect(validateDocument(rawDoc(shape)).ok).toBe(true)
+  })
+
+  it('rejects modifiers that would hang or break the engine', () => {
+    expect(errorOf(withMods([{ id: 'ef56ab78', type: 'linearPattern', enabled: true, count: 9999, spacing: [1, 0, 0] }])))
+      .toContain('damaged')
+    expect(errorOf(withMods([{ ...fillet, radius: 0 }]))).toContain('damaged')
+    expect(errorOf(withMods([{ ...fillet, type: 'explode' }]))).toContain('damaged')
+    expect(errorOf(withMods(Array.from({ length: 11 }, (_, i) => ({ ...fillet, id: `0000000${i.toString(16)}` })))))
+      .toContain('damaged')
+    expect(errorOf(withMods([fillet, fillet]))).toContain('two modifiers with the same id')
+  })
+
+  it('rejects formulas on unknown modifier fields', () => {
+    const shape = { ...box('a'), modifiers: [fillet], formulas: { 'mod.ab12cd34.colour': '1' } }
+    expect(errorOf(rawDoc(shape))).toContain('damaged')
   })
 })

@@ -2,12 +2,39 @@ import { z } from 'zod'
 import { MAX_FORMULA_LENGTH } from '../formulas/formula'
 import { variableNameProblem } from '../formulas/variables'
 import { fail, ok, type Result } from '../shared/result'
-import { MAX_FIT, MAX_TEXT_PARAM_LENGTH, MAX_VARIABLES, type BloKadeDocument } from './types'
-
-const FIELD_KEY = /^(?:param\.[A-Za-z0-9_]+|position\.[0-2]|rotation\.[0-2])$/
+import { FIELD_KEY_PATTERN, isFieldKey } from './fields'
+import {
+  MAX_EDGE_SIZE, MAX_FIT, MAX_MODIFIERS, MAX_OFFSET, MAX_PATTERN_ANGLE, MAX_PATTERN_COUNT, MAX_PICKED_EDGES,
+  MAX_TEXT_PARAM_LENGTH, MAX_VARIABLES, MIN_EDGE_SIZE, MIN_PATTERN_ANGLE, type BloKadeDocument,
+} from './types'
 
 const vec3 = z.tuple([z.number(), z.number(), z.number()])
 const transform = z.object({ position: vec3, rotation: vec3 })
+const fingerprint = z.object({
+  kind: z.enum(['line', 'circle', 'other']),
+  mid: vec3,
+  dir: vec3,
+  length: z.number().min(0),
+})
+const edgeSelection = z.discriminatedUnion('by', [
+  z.object({ by: z.literal('description'), which: z.enum(['all', 'top', 'bottom', 'vertical', 'horizontal']) }),
+  z.object({ by: z.literal('picked'), fingerprints: z.array(fingerprint).max(MAX_PICKED_EDGES) }),
+])
+const offset = z.number().min(-MAX_OFFSET).max(MAX_OFFSET)
+const offsetVec = z.tuple([offset, offset, offset])
+const edgeSize = z.number().min(MIN_EDGE_SIZE).max(MAX_EDGE_SIZE)
+const count = z.number().int().min(1).max(MAX_PATTERN_COUNT)
+const modifierBase = { id: z.string().regex(/^[a-f0-9]{8}$/), enabled: z.boolean() }
+const modifier = z.discriminatedUnion('type', [
+  z.object({ ...modifierBase, type: z.literal('fillet'), radius: edgeSize, edges: edgeSelection }),
+  z.object({ ...modifierBase, type: z.literal('chamfer'), distance: edgeSize, edges: edgeSelection }),
+  z.object({ ...modifierBase, type: z.literal('linearPattern'), count, spacing: offsetVec }),
+  z.object({
+    ...modifierBase, type: z.literal('circularPattern'), count, axis: z.enum(['x', 'y', 'z']),
+    angle: z.number().min(MIN_PATTERN_ANGLE).max(MAX_PATTERN_ANGLE), center: offsetVec,
+  }),
+  z.object({ ...modifierBase, type: z.literal('mirror'), plane: z.enum(['XY', 'XZ', 'YZ']), keepOriginal: z.boolean() }),
+])
 const base = {
   id: z.string().min(1),
   name: z.string(),
@@ -15,7 +42,8 @@ const base = {
   transform,
   hidden: z.boolean(),
   color: z.string(),
-  formulas: z.record(z.string().regex(FIELD_KEY), z.string().max(MAX_FORMULA_LENGTH)).optional(),
+  formulas: z.record(z.string().regex(FIELD_KEY_PATTERN).refine(isFieldKey), z.string().max(MAX_FORMULA_LENGTH)).optional(),
+  modifiers: z.array(modifier).max(MAX_MODIFIERS).optional(),
 }
 const shapeNode = z.object({
   ...base,
@@ -28,7 +56,7 @@ const sceneNode = z.discriminatedUnion('kind', [shapeNode, groupNode])
 const variable = z.object({ name: z.string(), expr: z.string().max(MAX_FORMULA_LENGTH) })
 
 const documentShape = z.object({
-  schemaVersion: z.literal(2),
+  schemaVersion: z.literal(3),
   name: z.string(),
   units: z.literal('mm'),
   settings: z.object({ gridSnap: z.number().min(0), fit: z.number().min(0).max(MAX_FIT) }),
@@ -72,9 +100,20 @@ function checkVariables(doc: DocShape, ctx: z.RefinementCtx): void {
   })
 }
 
+/** Modifier ids are unique within each part (fields and formulas are keyed by them). */
+function checkModifierIds(doc: DocShape, ctx: z.RefinementCtx): void {
+  for (const node of Object.values(doc.nodes)) {
+    const ids = (node.modifiers ?? []).map((m) => m.id)
+    if (new Set(ids).size !== ids.length) {
+      ctx.addIssue({ code: 'custom', message: `Part "${node.name}" has two modifiers with the same id` })
+    }
+  }
+}
+
 export const documentSchema = documentShape.superRefine((doc, ctx) => {
   checkTree(doc, ctx)
   checkVariables(doc, ctx)
+  checkModifierIds(doc, ctx)
 })
 
 export function validateDocument(raw: unknown): Result<BloKadeDocument> {

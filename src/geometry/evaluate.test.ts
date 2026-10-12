@@ -1,13 +1,16 @@
-import { measureVolume } from 'replicad'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { measureVolume, type Shape3D } from 'replicad'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { createEmptyDocument, createShapeNode } from '../document/factory'
 import { addNode, groupNodes, setHidden, setMode, updateNode } from '../document/ops'
+import { modifierField, writeField } from '../document/fields'
+import { addModifier, setEdgeSelection } from '../document/modifiers'
 import type { BloKadeDocument, Transform } from '../document/types'
 import { createCadToolkit } from '../plugins/cad'
 import { registry } from '../plugins/index'
 import { createRegistry } from '../plugins/registry'
 import { definePlugin } from '../plugins/types'
 import { Evaluator, NodeBuildError } from './evaluate'
+import { shapeBox } from './edge-info'
 import { initTestOC } from './testing/oc-node'
 
 beforeAll(initTestOC)
@@ -137,3 +140,112 @@ describe('Evaluator', () => {
     expect(measureVolume(ev.local(base, 'g'))).toBeCloseTo(8000 - Math.PI * 25 * 20, 1)
   })
 })
+
+describe('Evaluator modifiers', () => {
+  const withModifier = (doc: BloKadeDocument, id: string, type: 'fillet' | 'linearPattern' | 'mirror') => addModifier(doc, id, type)
+
+  it('applies modifiers to a part before placing it', () => {
+    const base = addNode(createEmptyDocument(), shape('a', 'box', { width: 20, depth: 20, height: 20 }, [100, 0, 0]))
+    const { doc } = withModifier(base, 'a', 'fillet')
+    const ev = newEvaluator()
+    expect(measureVolume(ev.local(doc, 'a'))).toBeLessThan(8000)
+    const box = shapeBox(ev.placed(doc, 'a'))
+    expect((box.min[0] + box.max[0]) / 2).toBeCloseTo(100, 3)
+  })
+
+  it('rounds the combined shape of a group (Review Focus 4)', () => {
+    const { doc } = withModifier(boxWithHole(), 'g', 'fillet')
+    const plain = 8000 - Math.PI * 25 * 20
+    expect(measureVolume(newEvaluator().local(doc, 'g'))).toBeLessThan(plain)
+  })
+
+  it('a row of holes inside a group cuts every hole (Review Focus 4)', () => {
+    const parts = [shape('box', 'box', { width: 100, depth: 20, height: 20 }), shape('hole', 'cylinder', { diameter: 6, height: 40 }, [-30, 0, -10])]
+    const grouped = groupNodes(setMode(parts.reduce((d, n) => addNode(d, n), createEmptyDocument()), ['hole'], 'hole'), ['box', 'hole'], 'g').doc
+    const { doc, modifierId } = withModifier(grouped, 'hole', 'linearPattern')
+    const spaced = updateNode(doc, 'hole', (n) => writeField(n, modifierField(modifierId, 'spacing', 0), 30))
+    expect(measureVolume(newEvaluator().local(spaced, 'g'))).toBeCloseTo(40000 - 3 * Math.PI * 9 * 20, 0)
+  })
+
+  it('turns a modifier problem into a build error for that part only (Review Focus 1)', () => {
+    const base = [shape('a', 'box', { width: 20, depth: 20, height: 20 }), shape('b', 'box', { width: 10, depth: 10, height: 10 }, [50, 0, 0])]
+      .reduce((d, n) => addNode(d, n), createEmptyDocument())
+    const { doc, modifierId } = withModifier(base, 'a', 'fillet')
+    const tooBig = updateNode(doc, 'a', (n) => writeField(n, modifierField(modifierId, 'radius'), 15))
+    const ev = newEvaluator()
+    expect(buildError(() => ev.local(tooBig, 'a')).message).toContain('too big for these edges')
+    expect(measureVolume(ev.local(tooBig, 'b'))).toBeCloseTo(1000, 3)
+  })
+
+  it('reports modifier warnings for the parts built in this pass', () => {
+    const base = addNode(createEmptyDocument(), shape('s', 'sphere', { diameter: 20 }))
+    const { doc, modifierId } = withModifier(base, 's', 'fillet')
+    const ev = newEvaluator()
+    ev.beginPass()
+    ev.local(doc, 's')
+    ev.endPass()
+    expect(ev.warnings()).toEqual({ s: { [modifierId]: 'No edges match, so this does nothing yet.' } })
+    ev.beginPass()
+    ev.local(doc, 's')
+    expect(ev.warnings()).toEqual({ s: { [modifierId]: 'No edges match, so this does nothing yet.' } })
+  })
+
+  it('reuses the cached result until a modifier changes', () => {
+    const { doc, modifierId } = withModifier(addNode(createEmptyDocument(), shape('a', 'box', { width: 20, depth: 20, height: 20 })), 'a', 'fillet')
+    const ev = newEvaluator()
+    const first = ev.local(doc, 'a')
+    expect(ev.local(doc, 'a')).toBe(first)
+    const changed = setEdgeSelection(doc, 'a', modifierId, { by: 'description', which: 'bottom' })
+    expect(ev.local(changed, 'a')).not.toBe(first)
+  })
+
+  it('lists the edges a Round edges modifier can pick, marking the chosen ones', () => {
+    const { doc, modifierId } = withModifier(addNode(createEmptyDocument(), shape('a', 'box', { width: 20, depth: 20, height: 20 })), 'a', 'fillet')
+    const candidates = newEvaluator().edgeCandidates(doc, 'a', modifierId)
+    expect(candidates).toHaveLength(12)
+    expect(candidates.filter((c) => c.picked)).toHaveLength(4)
+    expect(candidates[0]?.points).toHaveLength(6)
+    expect(candidates.find((c) => c.picked)?.fingerprint.mid[2]).toBe(1)
+  })
+
+  it("doesn't offer a cylinder's seam line as an edge to pick", () => {
+    const { doc, modifierId } = withModifier(addNode(createEmptyDocument(), shape('c', 'cylinder', { diameter: 20, height: 20 })), 'c', 'fillet')
+    const candidates = newEvaluator().edgeCandidates(doc, 'c', modifierId)
+    expect(candidates.map((c) => c.fingerprint.kind)).toEqual(['circle', 'circle'])
+  })
+
+  it('refuses edge picking for modifiers that have no edges', () => {
+    const { doc, modifierId } = withModifier(addNode(createEmptyDocument(), shape('a', 'box', { width: 20, depth: 20, height: 20 })), 'a', 'mirror')
+    expect(buildError(() => newEvaluator().edgeCandidates(doc, 'a', modifierId)).message).toContain('Only Round edges and Bevel edges')
+  })
+
+  it('reuses the shape before the picked modifier while Kade clicks edges', () => {
+    const base = addNode(createEmptyDocument(), shape('a', 'box', { width: 20, depth: 20, height: 20 }))
+    const repeated = withModifier(base, 'a', 'linearPattern').doc
+    const { doc, modifierId } = withModifier(repeated, 'a', 'fillet')
+    const ev = newEvaluator()
+    const fuseOwner = fuseOwnerOf(createCadToolkit().box(1, 1, 1))
+    const fuse = vi.spyOn(fuseOwner, 'fuse')
+    try {
+      const first = ev.edgeCandidates(doc, 'a', modifierId)
+      const picked = setEdgeSelection(doc, 'a', modifierId, { by: 'picked', fingerprints: [first[0]!.fingerprint] })
+      ev.beginPass()
+      ev.local(picked, 'a')
+      ev.endPass()
+      fuse.mockClear()
+      expect(ev.edgeCandidates(picked, 'a', modifierId).filter((c) => c.picked)).toHaveLength(1)
+      expect(fuse).not.toHaveBeenCalled()
+    } finally {
+      fuse.mockRestore()
+    }
+  })
+})
+
+/** The replicad prototype that defines fuse(), so a test can count fuses. Frees `sample`. */
+function fuseOwnerOf(sample: Shape3D): { fuse: Shape3D['fuse'] } {
+  let proto: object | null = Object.getPrototypeOf(sample) as object
+  while (proto && !Object.hasOwn(proto, 'fuse')) proto = Object.getPrototypeOf(proto) as object | null
+  sample.delete()
+  if (!proto) throw new Error('fuse not found')
+  return proto as { fuse: Shape3D['fuse'] }
+}

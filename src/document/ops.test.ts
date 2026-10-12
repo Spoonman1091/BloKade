@@ -5,6 +5,7 @@ import {
   addNode, DocumentOpError, DUPLICATE_OFFSET, duplicateNodes, groupNodes, moveNode, removeNodes,
   renameDocument, renameNode, setGridSnap, setHidden, setMode, ungroupNode, updateNode,
 } from './ops'
+import { addModifier } from './modifiers'
 import { worldMatrix } from './transform-math'
 import type { BloKadeDocument, Transform } from './types'
 
@@ -227,5 +228,13 @@ describe('formulas survive only the edits that keep their value', () => {
     const doc = { ...createEmptyDocument(), root: ['g'], nodes: { g: createGroupNode({ id: 'g', children: ['b'] }), b: child } }
     const { doc: flat } = ungroupNode(doc, 'g')
     expect(flat.nodes.b?.formulas).toEqual({ 'position.1': '10/3' })
+  })
+})
+
+describe('modifiers and duplicating', () => {
+  it('duplicating a part keeps its modifiers (Review Focus 5)', () => {
+    const doc = addModifier(addNode(createEmptyDocument(), createShapeNode({ id: 'b', shapeType: 'box', name: 'Box', params: {}, color: '#f00' })), 'b', 'mirror').doc
+    const { doc: copied, newIds } = duplicateNodes(doc, ['b'])
+    expect(copied.nodes[newIds[0] ?? '']?.modifiers).toEqual(doc.nodes.b?.modifiers)
   })
 })

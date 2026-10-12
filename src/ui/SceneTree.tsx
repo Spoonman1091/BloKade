@@ -1,9 +1,11 @@
 import { useRef, useState, type DragEvent, type MouseEvent } from 'react'
 import { nextSelection } from '../app/selection'
+import { MODIFIER_LABELS, modifiersOf } from '../document/modifiers'
 import { moveNode, renameNode, setHidden, setMode } from '../document/ops'
 import type { NodeId } from '../document/types'
 import type { PluginRegistry } from '../plugins/registry'
 import { useBloKade, useBloKadeStore } from '../store/context'
+import { MODIFIER_ICONS } from './modifier-icons'
 
 interface DragProps {
   dragging: NodeId | null
@@ -45,6 +47,8 @@ function TreeItem({ id, registry, drag }: { id: NodeId; registry: PluginRegistry
 
   const { apply } = store.getState()
   const isGroup = node.kind === 'group'
+  const modifiers = modifiersOf(node)
+  const modifierLabels = modifiers.map((m) => MODIFIER_LABELS[m.type]).join(', ')
   const icon = isGroup ? '📦' : registry.get(node.shapeType)?.icon ?? '❓'
   const canDropHere = isGroup && drag.dragging !== null && drag.dragging !== id
   const onClick = (event: MouseEvent): void => {
@@ -92,6 +96,11 @@ function TreeItem({ id, registry, drag }: { id: NodeId; registry: PluginRegistry
       >
         <span aria-hidden="true">{icon}</span>
         {editing ? <RenameInput initial={node.name} onDone={finishRename} /> : <span className="tree-name">{node.name}</span>}
+        {modifiers.some((m) => m.enabled) && (
+          <span className="tree-mods" data-testid={`tree-mods-${id}`} title={modifierLabels} aria-label={`Modifiers: ${modifierLabels}`}>
+            {modifiers.filter((m) => m.enabled).map((m) => MODIFIER_ICONS[m.type]).join('')}
+          </span>
+        )}
         {error && <span className="badge" title={error} aria-label={`Problem: ${error}`}>⚠</span>}
         <button type="button" className="icon-button"
           aria-label={node.mode === 'hole' ? `Make ${node.name} solid` : `Make ${node.name} a hole`}

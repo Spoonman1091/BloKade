@@ -36,7 +36,7 @@ describe('design files', () => {
     })
     const result = parseDesignFile(v1)
     if (!result.ok) throw new Error(result.error)
-    expect(result.value.schemaVersion).toBe(2)
+    expect(result.value.schemaVersion).toBe(3)
     expect(result.value.settings).toEqual({ gridSnap: 0.5, fit: 0.2 })
     expect(result.value.variables).toEqual([])
     expect(result.value.nodes.a).toMatchObject({

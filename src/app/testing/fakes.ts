@@ -9,6 +9,8 @@ export function fakeGeometryApi(overrides: Partial<GeometryApi> = {}): GeometryA
     rebuild: async () => ({ nodes: {} }),
     exportStl: async () => new ArrayBuffer(84),
     export3mf: async () => new ArrayBuffer(22),
+    exportStep: async () => new TextEncoder().encode('ISO-10303-21;').buffer as ArrayBuffer,
+    edgeCandidates: async () => [],
     ...overrides,
   }
 }

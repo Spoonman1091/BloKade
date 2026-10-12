@@ -37,7 +37,8 @@ function buildNode(evaluator: Evaluator, doc: BloKadeDocument, id: NodeId): Node
 function rebuild(evaluator: Evaluator, doc: BloKadeDocument): BuildResult {
   evaluator.beginPass()
   try {
-    return { nodes: Object.fromEntries(doc.root.map((id) => [id, buildNode(evaluator, doc, id)])) }
+    const nodes = Object.fromEntries(doc.root.map((id) => [id, buildNode(evaluator, doc, id)]))
+    return { nodes, warnings: evaluator.warnings() }
   } finally {
     evaluator.endPass()
   }
@@ -82,6 +83,23 @@ export function createGeometryApi(evaluator: Evaluator): GeometryApi {
         return new Uint8Array(write3mf(closedMeshFor3mf(mesh.vertices, mesh.triangles), doc.name)).buffer
       } finally {
         shape.delete()
+      }
+    },
+    exportStep: async (doc, ids) => {
+      const shape = exportShape(evaluator, doc, ids)
+      try {
+        return await shape.blobSTEP().arrayBuffer()
+      } finally {
+        shape.delete()
+      }
+    },
+    edgeCandidates: async (doc, nodeId, modifierId) => {
+      try {
+        return evaluator.edgeCandidates(doc, nodeId, modifierId)
+      } catch (error) {
+        if (error instanceof NodeBuildError) throw new Error(error.message)
+        console.error('Unexpected edge-picking failure', error)
+        throw new Error(UNEXPECTED)
       }
     },
   }

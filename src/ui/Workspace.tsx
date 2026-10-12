@@ -4,6 +4,7 @@ import type { AppDeps } from '../app/deps'
 import { exportDesign, type ExportFormat } from '../app/export'
 import { useShortcuts } from '../app/shortcuts'
 import { useAutosave } from '../app/useAutosave'
+import { useEdgeCandidates } from '../app/useEdgeCandidates'
 import { useGeometrySync } from '../app/useGeometrySync'
 import { useBloKadeStore } from '../store/context'
 import { Viewport } from '../viewport/Viewport'
@@ -20,6 +21,7 @@ export function Workspace({ deps }: { deps: AppDeps }) {
   const actions = useMemo(() => createActions(store, deps.registry), [store, deps.registry])
   const [showDesigns, setShowDesigns] = useState(false)
   useGeometrySync(store, deps.client)
+  useEdgeCandidates(store, deps.client)
   const flushAutosave = useAutosave(store, deps.repo, deps.openTabChannel)
   useShortcuts(actions, !showDesigns)
   const onExport = (format: ExportFormat): void => void exportDesign({ client: deps.client, store, format })
@@ -32,7 +34,7 @@ export function Workspace({ deps }: { deps: AppDeps }) {
         <SceneTree registry={deps.registry} />
       </aside>
       <main className="viewport" data-testid="viewport">
-        <Viewport registry={deps.registry} />
+        <Viewport registry={deps.registry} onToggleEdge={actions.togglePickedEdge} />
       </main>
       <aside className="right-panel">
         <PropertiesPanel registry={deps.registry} />
