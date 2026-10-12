@@ -1,6 +1,16 @@
 import { getOC, type Edge, type Shape3D } from 'replicad'
 import { MODIFIER_LABELS } from '../document/modifiers'
-import { MAX_COPIES, type ChamferModifier, type FilletModifier, type Modifier } from '../document/types'
+import {
+  MAX_COPIES,
+  type ChamferModifier,
+  type CircularPatternModifier,
+  type FilletModifier,
+  type LinearPatternModifier,
+  type MirrorModifier,
+  type Modifier,
+  type PatternAxis,
+  type Vec3,
+} from '../document/types'
 import { edgeInfos, read as readVector, shapeBox } from './edge-info'
 import { edgeTolerance, midOf, selectedEdges } from './edge-select'
 
@@ -64,13 +74,55 @@ function roundEdges(shape: Shape3D, modifier: FilletModifier | ChamferModifier):
   return { shape: out, warning: lostWarning(lost) }
 }
 
+const AXIS_DIRECTION: Readonly<Record<PatternAxis, [number, number, number]>> = { x: [1, 0, 0], y: [0, 1, 0], z: [0, 0, 1] }
+
+/** Fuses shapes into one. Consumes every shape it is given. */
+function fuseAll(shapes: readonly Shape3D[]): Shape3D {
+  const [first, ...rest] = shapes
+  if (!first) throw new ModifierError('There was nothing to repeat.')
+  return rest.reduce((acc, next) => {
+    try {
+      return acc.fuse(next)
+    } finally {
+      acc.delete()
+      next.delete()
+    }
+  }, first)
+}
+
+const scaled = (v: Vec3, k: number): [number, number, number] => [v[0] * k, v[1] * k, v[2] * k]
+
+function linearPattern(shape: Shape3D, m: LinearPatternModifier): Shape3D {
+  return fuseAll(Array.from({ length: m.count }, (_, i) => (i === 0 ? shape.clone() : shape.clone().translate(scaled(m.spacing, i)))))
+}
+
+/** Degrees between neighbouring copies: all the way round shares 360° evenly; less spreads over the angle. */
+export function circularStep(m: CircularPatternModifier): number {
+  if (m.count <= 1) return 0
+  return m.angle >= 360 ? 360 / m.count : m.angle / (m.count - 1)
+}
+
+function circularPattern(shape: Shape3D, m: CircularPatternModifier): Shape3D {
+  const step = circularStep(m)
+  const center: [number, number, number] = [m.center[0], m.center[1], m.center[2]]
+  return fuseAll(Array.from({ length: m.count }, (_, i) =>
+    (i === 0 ? shape.clone() : shape.clone().rotate(step * i, center, AXIS_DIRECTION[m.axis]))))
+}
+
+function mirrored(shape: Shape3D, m: MirrorModifier): Shape3D {
+  const flipped = shape.clone().mirror(m.plane, [0, 0, 0])
+  return m.keepOriginal ? fuseAll([shape.clone(), flipped]) : flipped
+}
+
 /** Applies one modifier without consuming `shape`. */
 function applyOne(shape: Shape3D, modifier: Modifier): Applied {
   try {
     switch (modifier.type) {
       case 'fillet':
       case 'chamfer': return roundEdges(shape, modifier)
-      default: throw new ModifierError(`${MODIFIER_LABELS[modifier.type]} is coming soon.`)
+      case 'linearPattern': return { shape: linearPattern(shape, modifier), warning: null }
+      case 'circularPattern': return { shape: circularPattern(shape, modifier), warning: null }
+      case 'mirror': return { shape: mirrored(shape, modifier), warning: null }
     }
   } catch (error) {
     if (error instanceof ModifierError) throw error

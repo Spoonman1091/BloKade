@@ -102,3 +102,56 @@ describe('Round edges and Bevel edges', () => {
     cylinder.delete()
   })
 })
+
+const row = (count: number, spacing: [number, number, number], id = 'cccccccc'): Modifier =>
+  ({ ...createModifier('linearPattern', id), count, spacing } as Modifier)
+const circle = (count: number, angle: number, center: [number, number, number]): Modifier =>
+  ({ ...createModifier('circularPattern', 'dddddddd'), count, angle, center } as Modifier)
+const mirror = (plane: 'XY' | 'XZ' | 'YZ', keepOriginal: boolean): Modifier =>
+  ({ ...createModifier('mirror', 'eeeeeeee'), plane, keepOriginal } as Modifier)
+
+function xRange(shape: Shape3D): number[] {
+  const { min, max } = shapeBox(shape)
+  return [Math.round(min[0] * 1000) / 1000, Math.round(max[0] * 1000) / 1000]
+}
+
+describe('Repeat and Mirror', () => {
+  it('repeats in a row', () => {
+    const { shape } = applyModifiers(cad().box(20, 20, 20), [row(3, [30, 0, 0])])
+    expect(xRange(shape)).toEqual([-10, 70])
+    expect(volumeOf(shape)).toBeCloseTo(24000, 0)
+  })
+
+  it('repeats in a circle around a center point', () => {
+    const { shape } = applyModifiers(cad().box(20, 20, 20), [circle(4, 360, [-30, 0, 0])])
+    expect(xRange(shape)).toEqual([-70, 10])
+    expect(volumeOf(shape)).toBeCloseTo(32000, 0)
+  })
+
+  it('spreads copies over part of a circle', () => {
+    const { shape } = applyModifiers(cad().box(2, 2, 2), [circle(3, 180, [-30, 0, 0])])
+    expect(xRange(shape)).toEqual([-61, 1])
+    shape.delete()
+  })
+
+  it('mirrors, keeping or replacing the original', () => {
+    const kept = applyModifiers(cad().box(20, 20, 20), [row(2, [30, 0, 0]), mirror('YZ', true)]).shape
+    expect(xRange(kept)).toEqual([-40, 40])
+    expect(volumeOf(kept)).toBeCloseTo(24000, 0)
+    const replaced = applyModifiers(cad().box(20, 20, 20), [row(2, [30, 0, 0]), mirror('YZ', false)]).shape
+    expect(xRange(replaced)).toEqual([-40, 10])
+    replaced.delete()
+  })
+
+  it('refuses stacks that make too many copies before doing any work (Review Focus 2)', () => {
+    const started = Date.now()
+    const error = errorOf(() => applyModifiers(cad().box(2, 2, 2), [row(50, [3, 0, 0]), row(50, [0, 3, 0], 'ffffffff')]))
+    expect(error.message).toBe('These modifiers make 2500 copies. BloKade can make up to 200 at once — use smaller counts.')
+    expect(Date.now() - started).toBeLessThan(1000)
+  })
+
+  it('counts a mirror that keeps the original as two copies', () => {
+    expect(() => applyModifiers(cad().box(2, 2, 2), [row(50, [3, 0, 0]), row(3, [0, 3, 0], 'ffffffff'), mirror('XY', true)]))
+      .toThrow('make 300 copies')
+  })
+})
