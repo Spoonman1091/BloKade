@@ -20,7 +20,7 @@ export interface ShapePlugin<K extends string = string> {
   readonly version: number
   readonly params: Readonly<Record<K, NumberParamSpec>>
   /** Which parameter each size handle (x/y/z) changes. */
-  readonly size?: { readonly x?: K; readonly y?: K; readonly z?: K }
+  readonly size?: { readonly x?: NoInfer<K>; readonly y?: NoInfer<K>; readonly z?: NoInfer<K> }
   build(params: Readonly<Record<K, number>>, cad: CadToolkit): Shape3D
 }
 

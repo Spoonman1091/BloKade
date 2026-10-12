@@ -1,6 +1,6 @@
 import { definePlugin } from '../types'
 
-export default definePlugin<'bottomDiameter' | 'topDiameter' | 'height'>({
+export default definePlugin({
   id: 'cone',
   name: 'Cone',
   icon: '🔺',
