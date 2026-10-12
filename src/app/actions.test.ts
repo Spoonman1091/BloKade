@@ -132,4 +132,12 @@ describe('actions', () => {
     actions.cancel()
     expect(store.getState().selection).toEqual([])
   })
+
+  it('Escape stops edge picking first, then workplane picking, then deselects', () => {
+    const { store, actions } = setup()
+    store.getState().setPickingEdges({ nodeId: 'a', modifierId: 'aaaaaaaa' })
+    actions.cancel()
+    expect(store.getState().pickingEdges).toBeNull()
+    expect(typeof actions.togglePickedEdge).toBe('function')
+  })
 })

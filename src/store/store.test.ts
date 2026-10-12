@@ -74,4 +74,25 @@ describe('store', () => {
     store.getState().openDesign('other', createEmptyDocument())
     expect(store.getState().workplane).toBeNull()
   })
+
+  it('keeps modifier warnings from the latest build', () => {
+    const store = createBloKadeStore({ designId: 'd', doc: createEmptyDocument() })
+    store.getState().applyBuild('d', { nodes: {}, warnings: { a: { aaaaaaaa: 'Lost track of 1 edge' } } })
+    expect(store.getState().modifierWarnings).toEqual({ a: { aaaaaaaa: 'Lost track of 1 edge' } })
+    store.getState().applyBuild('d', { nodes: {} })
+    expect(store.getState().modifierWarnings).toEqual({})
+  })
+
+  it('picks edges or a workplane, never both, and forgets both for another design', () => {
+    const store = createBloKadeStore({ designId: 'd', doc: createEmptyDocument() })
+    store.getState().setPickingWorkplane(true)
+    store.getState().setPickingEdges({ nodeId: 'a', modifierId: 'aaaaaaaa' })
+    expect(store.getState()).toMatchObject({ pickingWorkplane: false, pickingEdges: { nodeId: 'a', modifierId: 'aaaaaaaa' }, edgeCandidates: null })
+    store.getState().setEdgeCandidates([])
+    store.getState().setPickingWorkplane(true)
+    expect(store.getState()).toMatchObject({ pickingWorkplane: true, pickingEdges: null, edgeCandidates: null })
+    store.getState().setPickingEdges({ nodeId: 'a', modifierId: 'aaaaaaaa' })
+    store.getState().openDesign('other', createEmptyDocument())
+    expect(store.getState()).toMatchObject({ pickingEdges: null, edgeCandidates: null, modifierWarnings: {} })
+  })
 })

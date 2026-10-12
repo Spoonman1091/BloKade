@@ -6,9 +6,10 @@ import type { BloKadeDocument, NodeId } from '../document/types'
 import { defaultParams } from '../plugins/params'
 import type { PluginRegistry } from '../plugins/registry'
 import type { BloKadeStore, ToolMode } from '../store/store'
+import { createEdgeActions, type EdgeActions } from './edge-actions'
 import { nextSelection } from './selection'
 
-export interface Actions {
+export interface Actions extends EdgeActions {
   addShape(pluginId: string): void
   deleteSelection(): void
   duplicateSelection(): void
@@ -17,7 +18,7 @@ export interface Actions {
   toggleHole(): void
   selectNode(id: NodeId, additive: boolean): void
   clearSelection(): void
-  /** Esc: stop choosing a workplane if that's happening (keeping the current one), otherwise deselect. */
+  /** Esc: stop picking edges or choosing a workplane if that's happening (keeping the current one), otherwise deselect. */
   cancel(): void
   setTool(tool: ToolMode): void
   setGridSnap(gridSnap: number): void
@@ -48,6 +49,7 @@ export function createActions(store: BloKadeStore, registry: PluginRegistry): Ac
   }
 
   return {
+    ...createEdgeActions(store),
     addShape: (pluginId) => {
       const plugin = registry.get(pluginId)
       if (!plugin) {
@@ -98,7 +100,12 @@ export function createActions(store: BloKadeStore, registry: PluginRegistry): Ac
     },
     selectNode: (id, additive) => state().select(nextSelection(state().selection, id, additive)),
     clearSelection: () => state().select([]),
-    cancel: () => (state().pickingWorkplane ? state().setPickingWorkplane(false) : state().select([])),
+    cancel: () => {
+      const s = state()
+      if (s.pickingEdges) s.setPickingEdges(null)
+      else if (s.pickingWorkplane) s.setPickingWorkplane(false)
+      else s.select([])
+    },
     setTool: (tool) => state().setTool(tool),
     setGridSnap: (gridSnap) => state().apply((doc) => setGridSnap(doc, gridSnap)),
     toggleWorkplanePicking: () => state().setPickingWorkplane(!state().pickingWorkplane),
