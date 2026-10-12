@@ -146,6 +146,18 @@ npm run e2e           # end-to-end tests in a real browser
 
 ## Using BloKade
 
+### Learning BloKade
+
+- **📘 Learn** (top bar) opens the lessons: nine short step-by-step guides, from "Your first shape" to "Ready to
+  print". Each lesson opens its own practice design, so your real designs stay safe. Steps tick themselves off
+  when you do them, and every step has **💡 Show me** if you get stuck. Finished lessons get a ✓.
+- **Tooltips:** rest the mouse on any button or box for half a second to see what it does.
+- **❓ Help mode:** click ❓ in the top bar, then click anything to read what it does (nothing changes while
+  help mode is on). Press Esc to stop.
+
+Lesson progress is kept in this browser. In a private window the lessons still work, but they forget your
+✓ marks when you close it.
+
 | Keys | What it does |
 |---|---|
 | M / R / S | Move / rotate / size handles |
