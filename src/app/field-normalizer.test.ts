@@ -23,4 +23,10 @@ describe('createFieldNormalizer', () => {
     expect(normalize(box, 'param.mystery', -3)).toBe(-3)
     expect(normalize(createGroupNode({ children: [] }), 'param.width', -3)).toBe(-3)
   })
+
+  it('clamps modifier numbers', () => {
+    const withMod = { ...box, modifiers: [{ id: 'aaaaaaaa', type: 'linearPattern', enabled: true, count: 3, spacing: [25, 0, 0] }] as const }
+    expect(normalize(withMod, 'mod.aaaaaaaa.count', 9999)).toBe(50)
+    expect(normalize(withMod, 'mod.aaaaaaaa.spacing.0', -1e9)).toBe(-2000)
+  })
 })

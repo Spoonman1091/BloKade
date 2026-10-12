@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyDocument, createShapeNode } from './factory'
+import { modifierField } from './fields'
+import { addModifier } from './modifiers'
 import { formulaErrors, recomputeFormulas, setFieldInput, type NormalizeField } from './formula-ops'
 import { addNode, DocumentOpError } from './ops'
 import type { BloKadeDocument, Variable } from './types'
@@ -65,5 +67,16 @@ describe('recomputeFormulas', () => {
     const gone = recomputeFormulas({ ...doc, variables: [] }, clampSizes)
     expect(nodeOf(gone)).toMatchObject({ params: { width: 30 }, formulas: { 'param.width': 'wall * 10' } })
     expect(formulaErrors(gone).b?.['param.width']).toContain(`"wall" isn't a variable`)
+  })
+})
+
+describe('formulas on modifiers (Review Focus 5)', () => {
+  it('works out a modifier number from a variable and follows changes', () => {
+    const { doc, modifierId } = addModifier(setup(), 'b', 'linearPattern')
+    const key = modifierField(modifierId, 'count')
+    const withFormula = setFieldInput(doc, 'b', key, 'wall + 1', clampSizes)
+    expect(withFormula.nodes.b?.modifiers?.[0]).toMatchObject({ count: 4 })
+    const changed = recomputeFormulas({ ...withFormula, variables: [{ name: 'wall', expr: '5' }] }, clampSizes)
+    expect(changed.nodes.b?.modifiers?.[0]).toMatchObject({ count: 6 })
   })
 })

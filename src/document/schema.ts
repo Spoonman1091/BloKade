@@ -2,13 +2,11 @@ import { z } from 'zod'
 import { MAX_FORMULA_LENGTH } from '../formulas/formula'
 import { variableNameProblem } from '../formulas/variables'
 import { fail, ok, type Result } from '../shared/result'
+import { FIELD_KEY_PATTERN, isFieldKey } from './fields'
 import {
   MAX_EDGE_SIZE, MAX_FIT, MAX_MODIFIERS, MAX_OFFSET, MAX_PATTERN_ANGLE, MAX_PATTERN_COUNT, MAX_PICKED_EDGES,
   MAX_TEXT_PARAM_LENGTH, MAX_VARIABLES, MIN_EDGE_SIZE, MIN_PATTERN_ANGLE, type BloKadeDocument,
 } from './types'
-
-const FIELD_KEY =
-  /^(?:param\.[A-Za-z0-9_]+|position\.[0-2]|rotation\.[0-2]|mod\.[a-f0-9]{8}\.(?:radius|distance|count|angle|(?:spacing|center)\.[0-2]))$/
 
 const vec3 = z.tuple([z.number(), z.number(), z.number()])
 const transform = z.object({ position: vec3, rotation: vec3 })
@@ -44,7 +42,7 @@ const base = {
   transform,
   hidden: z.boolean(),
   color: z.string(),
-  formulas: z.record(z.string().regex(FIELD_KEY), z.string().max(MAX_FORMULA_LENGTH)).optional(),
+  formulas: z.record(z.string().regex(FIELD_KEY_PATTERN).refine(isFieldKey), z.string().max(MAX_FORMULA_LENGTH)).optional(),
   modifiers: z.array(modifier).max(MAX_MODIFIERS).optional(),
 }
 const shapeNode = z.object({
