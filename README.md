@@ -148,9 +148,9 @@ Select a part (or a group) and use **+ Add a modifier…** under Properties. Mod
 - **◠ Round edges / ◿ Bevel edges:** pick *Top edges*, *Bottom edges*, *Upright edges*, *Flat edges* or
   *All edges*. To choose exact edges, press **👆 Pick edges** and click them in the 3D view (orange = chosen).
   BloKade remembers where they were, so they stay rounded when you resize the part. If an edge disappears,
-  the modifier says "Lost track of an edge" and you can pick again.
+  the modifier says it lost track of some edges and you can pick again.
 - **⋯ Repeat in a row:** how many copies, and the step between them.
-- **✲ Repeat in a circle:** how many copies, how far round (360° = all the way), which way to turn, and the
+- **✲ Repeat in a circle:** how many copies, how far round (360° = all the way), which axis to turn around (up, left–right or front–back), and the
   center to turn around (measured from the part's middle).
 - **⇋ Mirror:** flip left↔right, front↔back or top↕bottom, keeping the original or not.
 
