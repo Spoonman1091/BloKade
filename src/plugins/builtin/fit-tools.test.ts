@@ -39,3 +39,46 @@ describe('peg and socket', () => {
     expect(registry.get('peg')?.mode).toBeUndefined()
   })
 })
+
+describe('screw hole', () => {
+  const radiusAtTop = (shape: Shape3D): number => {
+    const box = shape.boundingBox
+    try {
+      return box.bounds[1][0]
+    } finally {
+      box.delete()
+      shape.delete()
+    }
+  }
+
+  it('builds a plain M3 hole enlarged by the extra room', () => {
+    expect(volumeOf(build('screw-hole', { clearance: 0.2 }))).toBeCloseTo(Math.PI * 1.7 ** 2 * 10, 1)
+  })
+
+  it('builds every style for every size', () => {
+    for (const size of ['M2', 'M3', 'M4', 'M5']) {
+      for (const style of ['plain', 'countersunk', 'counterbored', 'nut', 'insert']) {
+        expect(volumeOf(build('screw-hole', { size, style, depth: 15 }))).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('makes the countersink wide enough for the head', () => {
+    expect(radiusAtTop(build('screw-hole', { style: 'countersunk', clearance: 0.2 }))).toBeCloseTo(3.56, 3)
+  })
+
+  it('fits an M3 nut in the trap', () => {
+    const hole = build('screw-hole', { style: 'nut', clearance: 0.2 })
+    expect(radiusAtTop(hole)).toBeCloseTo(5.9 / Math.sqrt(3), 3)
+  })
+
+  it('reports a hole too shallow for its head (Review Focus 3)', () => {
+    expect(() => build('screw-hole', { style: 'counterbored', depth: 3 })).toThrow('so the screw head fits')
+  })
+
+  it('starts as a hole that follows fit', () => {
+    const plugin = registry.get('screw-hole')
+    expect(plugin).toMatchObject({ mode: 'hole', palette: 'fit' })
+    expect(plugin?.params.clearance).toMatchObject({ formula: 'fit' })
+  })
+})

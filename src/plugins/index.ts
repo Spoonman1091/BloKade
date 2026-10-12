@@ -1,6 +1,6 @@
 import { createRegistry } from './registry'
 
-const builtin = import.meta.glob<unknown>(['./builtin/*.ts', '!./builtin/*.test.ts'], { eager: true, import: 'default' })
+const builtin = import.meta.glob<unknown>(['./builtin/*.ts', '!./builtin/*.test.ts', '!./builtin/*-profile.ts'], { eager: true, import: 'default' })
 const kades = import.meta.glob<unknown>(['../../plugins/**/*.{js,ts}', '!../../plugins/**/*.test.{js,ts}'], { eager: true, import: 'default' })
 
 const BUILTIN_ORDER = [
