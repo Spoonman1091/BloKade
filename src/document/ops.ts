@@ -38,6 +38,7 @@ export function updateNode(
   const node = requireNode(doc, id)
   const next = fn(node)
   if (next.id !== id || next.kind !== node.kind) throw new DocumentOpError("A part's id and kind can't change.")
+  if (next === node) return doc
   return { ...doc, nodes: { ...doc.nodes, [id]: next } }
 }
 
