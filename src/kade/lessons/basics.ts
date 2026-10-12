@@ -1,6 +1,12 @@
 import { codeHas, heightOf, near, widthOf } from './checks'
 import type { CodeLesson } from './types'
 
+const DEFAULT_NAME = 'My first shape'
+
+/** A real new name, not the old one or a half-deleted copy of it. */
+const isNewName = (name: string): boolean =>
+  name.length >= 2 && !name.startsWith(DEFAULT_NAME) && !DEFAULT_NAME.startsWith(name)
+
 export const numbers: CodeLesson = {
   id: 'code-numbers', title: 'Numbers', icon: '🔢',
   intro: 'Change the numbers in your code and watch the shape change.',
@@ -95,7 +101,7 @@ export const errorsLesson: CodeLesson = {
       check: (v) => v.syntaxOk },
     { id: 'spelling', target: 'code-problems', text: "A new message! **widht** is a spelling mistake. Change it to **width**.",
       hint: 'Look on the cad.box line. Swap the h and the t.',
-      check: (v) => v.syntaxOk && !codeHas(v, /widht/) },
+      check: (v) => v.syntaxOk && codeHas(v, /cad\.box\(\s*width\s*,/) },
     { id: 'return', target: 'code-problems', text: 'Last one. build has to **return** the part. Change the line **box** to **return box**.',
       hint: 'Type return and a space in front of box.',
       check: (v) => v.built },
@@ -116,11 +122,11 @@ export const firstShape: CodeLesson = {
   steps: [
     { id: 'name', target: 'code-input', text: 'Give your shape its own name. Change **My first shape** to a name you like, such as **Robot head**.',
       hint: 'Keep the quote marks around the name.',
-      check: (v) => v.built && v.meta !== null && !v.meta.name.startsWith('My first shape') },
+      check: (v) => v.built && v.meta !== null && isNewName(v.meta.name) },
     { id: 'icon', target: 'code-input', text: 'Now pick an icon. Change **🧩** to another emoji, like **🤖**.',
       hint: 'On a Mac, press Ctrl+Cmd+Space for emoji. On Windows, press the Windows key and the full stop together.',
       check: (v) => v.built && v.meta !== null && v.meta.icon !== '🧩' },
-    { id: 'add', target: 'add-to-design', text: 'Click **➕ Add to my design**. Your shape joins your design. Find it again under **My shapes** on the left.',
+    { id: 'add', target: 'add-to-design', text: 'Click **➕ Add to my design**. Your shape joins your design. Find it again under **🧩 My shapes** on the left.',
       hint: 'The button is under the preview, on the right.' },
   ],
 }

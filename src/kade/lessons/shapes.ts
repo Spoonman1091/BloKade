@@ -21,7 +21,7 @@ export const settingsLesson: CodeLesson = {
       check: (v) => v.built && near(heightOf(v), 60) },
     { id: 'add-width', target: 'code-input', text: "Add a second setting under height: **width: { type: 'mm', default: 20, label: 'Width' },** Then use **width** in cad.box.",
       hint: 'Add width to build({ height, width }), then use cad.box(width, width, height).',
-      check: (v) => v.built && settingType(v, 'width') === 'mm' },
+      check: (v) => v.built && settingType(v, 'width') === 'mm' && codeHas(v, /cad\.box\(\s*width\b/) },
     { id: 'yesno', target: 'code-input', text: "Add a tick box: **round: { type: 'yesno', default: false, label: 'Round' },** It gives build true or false.",
       hint: 'To use it, add round to build({ … }) and put if (round) { return cad.cylinder(width, height) } before the last return.',
       check: (v) => v.built && settingType(v, 'round') === 'yesno' },
