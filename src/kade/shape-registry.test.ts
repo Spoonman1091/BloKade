@@ -37,4 +37,10 @@ describe('buildShapeRegistry', () => {
     const libraryOnly = buildShapeRegistry({ base, library: [lib('my-gear', 'gear v2')], carried: {}, results })
     expect(libraryOnly.get('my-gear')?.name).toBe('Gear v2')
   })
+  it("never falls back to the library when the design's own version is broken or unchecked", () => {
+    for (const code of ['broken', 'not checked yet']) {
+      const carriedOnly = buildShapeRegistry({ base, library: [lib('my-gear', 'gear v2')], carried: { 'my-gear': { name: 'Gear', code } }, results })
+      expect(carriedOnly.get('my-gear')).toBeUndefined()
+    }
+  })
 })

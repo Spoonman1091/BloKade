@@ -36,7 +36,11 @@ export function createShapeCatalog(inspect: (code: string) => Promise<InspectRes
       const key = codeHash(code)
       if (asked.has(key)) return
       asked.add(key)
-      void inspect(code).catch(failureOf).then((result) => set((s) => ({ results: { ...s.results, [key]: result } })))
+      void Promise.resolve().then(() => inspect(code)).catch((error: unknown) => {
+        // A timeout is remembered; any other failure may be retried by a later request.
+        if (!(error instanceof GeometryTimeoutError)) asked.delete(key)
+        return failureOf(error)
+      }).then((result) => set((s) => ({ results: { ...s.results, [key]: result } })))
     },
   }))
 }

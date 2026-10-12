@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyDocument, createShapeNode } from '../document/factory'
 import { addNode } from '../document/ops'
-import { registry } from '../plugins/index'
-import { createBloKadeStore } from '../store/store'
+import { MAX_CARRIED_SHAPES } from '../document/types'
+import { TOO_MANY_SHAPES } from '../kade/carried'
 import { codeHash } from '../kade/hash'
 import { buildShapeRegistry } from '../kade/shape-registry'
+import { registry } from '../plugins/index'
+import { createBloKadeStore } from '../store/store'
 import { createActions } from './actions'
 
 function setup() {
@@ -196,5 +198,20 @@ describe("adding Kade's shapes", () => {
     const store = createBloKadeStore({ designId: 'd', doc })
     createActions(store, shapes, codeOf).addShape('my-gear')
     expect(store.getState().history.present.plugins['my-gear']?.code).toBe('older')
+  })
+  it('says so and adds nothing when the design carries too many shapes', () => {
+    const plugins = Object.fromEntries(Array.from({ length: MAX_CARRIED_SHAPES }, (_, i) => [`my-${i}`, { name: 'X', code: 'x' }]))
+    const doc = { ...createEmptyDocument(), plugins }
+    const store = createBloKadeStore({ designId: 'd', doc })
+    createActions(store, shapes, codeOf).addShape('my-gear')
+    expect(store.getState().notice).toBe(TOO_MANY_SHAPES)
+    expect(store.getState().history.present).toBe(doc)
+  })
+  it('adds the part without copying code when there is no code to carry', () => {
+    const store = createBloKadeStore({ designId: 'd', doc: createEmptyDocument() })
+    createActions(store, shapes, () => undefined).addShape('my-gear')
+    const doc = store.getState().history.present
+    expect(doc.plugins).toEqual({})
+    expect(Object.values(doc.nodes)).toHaveLength(1)
   })
 })

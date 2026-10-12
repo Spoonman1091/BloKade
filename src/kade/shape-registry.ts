@@ -35,7 +35,8 @@ export function buildShapeRegistry({ base, library, carried, results }: ShapeSou
   const mine = [...fromLibrary, ...fromDesign.filter((p) => !libraryById.has(p.id))]
   const list = [...base.list(), ...mine]
   return {
-    get: (id) => base.get(id) ?? designById.get(id) ?? libraryById.get(id),
+    // A design that carries a shape only ever uses its own version, even if that one is broken or unchecked.
+    get: (id) => base.get(id) ?? (Object.hasOwn(carried, id) ? designById.get(id) : libraryById.get(id)),
     list: () => list,
     mine: () => mine,
   }
