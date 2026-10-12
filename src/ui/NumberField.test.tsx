@@ -52,4 +52,21 @@ describe('NumberField', () => {
     view.rerender(<NumberField label="Width" value={42} onCommit={vi.fn()} testId="w" />)
     expect(input.value).toBe('42')
   })
+
+  it('does not commit when an untouched rounded field is blurred', async () => {
+    const onCommit = vi.fn()
+    render(<NumberField label="Width" value={1 / 3} onCommit={onCommit} testId="w" />)
+    const input = screen.getByTestId('w') as HTMLInputElement
+    await userEvent.click(input)
+    await userEvent.tab()
+    expect(onCommit).not.toHaveBeenCalled()
+  })
+
+  it('shows the model value when a commit leaves it unchanged', async () => {
+    const { onCommit, input } = setup()
+    await userEvent.clear(input)
+    await userEvent.type(input, '20.0{Enter}')
+    expect(onCommit).not.toHaveBeenCalled()
+    expect(input.value).toBe('20')
+  })
 })

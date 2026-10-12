@@ -85,7 +85,7 @@ export function PropertiesPanel({ registry }: { registry: PluginRegistry }) {
   return (
     <section className="panel" aria-label="Properties">
       <h2>Properties</h2>
-      <TextField label="Name" value={node.name} testId="prop-name" onCommit={(name) => apply((d) => renameNode(d, node.id, name))} />
+      <TextField key={`name-${node.id}`} label="Name" value={node.name} testId="prop-name" onCommit={(name) => apply((d) => renameNode(d, node.id, name))} />
       <div className="mode-toggle" role="group" aria-label="Solid or hole">
         <button type="button" className="tool-button" data-testid="mode-solid" aria-pressed={node.mode === 'solid'}
           onClick={() => apply((d) => setMode(d, [node.id], 'solid'))}>Solid</button>
@@ -93,8 +93,8 @@ export function PropertiesPanel({ registry }: { registry: PluginRegistry }) {
           onClick={() => apply((d) => setMode(d, [node.id], 'hole'))}>Hole</button>
       </div>
       {error && <p className="error-text" role="alert">⚠ {error}</p>}
-      {node.kind === 'shape' && <ShapeParams node={node} registry={registry} />}
-      <Placement node={node} />
+      {node.kind === 'shape' && <ShapeParams key={`params-${node.id}`} node={node} registry={registry} />}
+      <Placement key={`place-${node.id}`} node={node} />
     </section>
   )
 }

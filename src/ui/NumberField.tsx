@@ -16,12 +16,12 @@ function DraftField<T>({ label, value, onCommit, testId, format, parse }: DraftF
   useEffect(() => setDraft(format(value)), [value, format])
 
   const commit = (): void => {
+    const shown = format(value)
+    if (draft === shown) return
     const parsed = parse(draft)
-    if (parsed === null) {
-      setDraft(format(value))
-      return
-    }
-    if (parsed !== value) onCommit(parsed)
+    // Always show the model's value afterwards; if the commit changes it, the effect above refreshes the draft.
+    setDraft(shown)
+    if (parsed !== null && parsed !== value) onCommit(parsed)
   }
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
     if (event.key === 'Enter') commit()

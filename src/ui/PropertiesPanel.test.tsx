@@ -42,6 +42,14 @@ describe('PropertiesPanel', () => {
     expect(selected()).toMatchObject({ params: { height: MIN_MM } })
   })
 
+  it('shows the clamped value when the size does not change', async () => {
+    const { actions } = setup()
+    act(() => actions.addShape('box'))
+    await setField('param-height', '-5')
+    await setField('param-height', '-7')
+    expect((screen.getByTestId('param-height') as HTMLInputElement).value).toBe(String(MIN_MM))
+  })
+
   it('edits position, rotation and name', async () => {
     const { actions, selected } = setup()
     act(() => actions.addShape('box'))
