@@ -95,4 +95,31 @@ describe('PropertiesPanel', () => {
     })
     expect(screen.getByText(/2 parts selected/)).toBeInTheDocument()
   })
+
+  it('takes a formula, shows its result, and keeps the formula text', async () => {
+    const { store, actions, selected } = setup()
+    act(() => store.getState().apply((d) => ({ ...d, variables: [{ name: 'wall', expr: '3' }] })))
+    act(() => actions.addShape('box'))
+    await setField('param-width', 'wall * 10')
+    expect(selected()).toMatchObject({ params: { width: 30 }, formulas: { 'param.width': 'wall * 10' } })
+    expect(screen.getByTestId('param-width')).toHaveValue('wall * 10')
+    expect(screen.getByTestId('param-width-value')).toHaveTextContent('= 30')
+  })
+
+  it("shows a broken formula's problem and keeps the old size (Review Focus 1)", async () => {
+    const { actions, selected } = setup()
+    act(() => actions.addShape('box'))
+    await setField('param-width', 'wal * 10')
+    expect(selected()).toMatchObject({ params: { width: 20 } })
+    expect(screen.getByTestId('param-width-error')).toHaveTextContent(`"wal" isn't a variable`)
+  })
+
+  it('takes formulas for position and rotation', async () => {
+    const { store, actions, selected } = setup()
+    act(() => store.getState().apply((d) => ({ ...d, variables: [{ name: 'wall', expr: '3' }] })))
+    act(() => actions.addShape('box'))
+    await setField('pos-x', 'wall + 1')
+    await setField('rot-z', '90 / wall')
+    expect(selected()?.transform).toEqual({ position: [4, 0, 0], rotation: [0, 0, 30] })
+  })
 })
