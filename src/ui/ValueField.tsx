@@ -1,4 +1,4 @@
-import { useEffect, useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { formatNumber } from './number-input'
 
 interface ValueFieldProps {
@@ -18,8 +18,12 @@ export function ValueField({ label, value, formula, error, testId, onCommit }: V
   const shown = formula ?? formatNumber(value)
   const [draft, setDraft] = useState(shown)
   useEffect(() => setDraft(shown), [shown])
+  // True only while the user has typed something that hasn't been committed yet, so a blur right after Enter can't re-commit.
+  const dirty = useRef(false)
 
   const commit = (): void => {
+    if (!dirty.current) return
+    dirty.current = false
     const text = draft.trim()
     // Always show the model's value afterwards; a real change refreshes it through the effect above.
     setDraft(shown)
@@ -27,7 +31,10 @@ export function ValueField({ label, value, formula, error, testId, onCommit }: V
   }
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
     if (event.key === 'Enter') commit()
-    if (event.key === 'Escape') setDraft(shown)
+    if (event.key === 'Escape') {
+      dirty.current = false
+      setDraft(shown)
+    }
   }
 
   return (
@@ -40,7 +47,10 @@ export function ValueField({ label, value, formula, error, testId, onCommit }: V
           data-testid={testId}
           value={draft}
           aria-invalid={error ? true : undefined}
-          onChange={(event) => setDraft(event.target.value)}
+          onChange={(event) => {
+            dirty.current = true
+            setDraft(event.target.value)
+          }}
           onBlur={commit}
           onKeyDown={onKeyDown}
         />

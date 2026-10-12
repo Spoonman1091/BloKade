@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { ValueField } from './ValueField'
 
@@ -33,5 +34,23 @@ describe('ValueField', () => {
     await userEvent.click(screen.getByText('elsewhere'))
     expect(onCommit).not.toHaveBeenCalled()
     expect(screen.getByTestId('w')).toHaveValue('0.333')
+  })
+
+  it('does not commit a stale value when a blur lands right after Enter', async () => {
+    const onCommit = vi.fn()
+    function Wrapper() {
+      const [formula, setFormula] = useState('wall * 10')
+      return <ValueField label="Width" value={30} formula={formula} testId="w" onCommit={(text) => { onCommit(text); setFormula(text) }} />
+    }
+    render(<Wrapper />)
+    const input = screen.getByTestId('w')
+    fireEvent.change(input, { target: { value: 'wall * 2' } })
+    act(() => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+      fireEvent.blur(input)
+    })
+    expect(onCommit).toHaveBeenCalledTimes(1)
+    expect(onCommit).toHaveBeenCalledWith('wall * 2')
+    expect(input).toHaveValue('wall * 2')
   })
 })

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { NumberField } from './NumberField'
 
@@ -68,5 +69,23 @@ describe('NumberField', () => {
     await userEvent.type(input, '20.0{Enter}')
     expect(onCommit).not.toHaveBeenCalled()
     expect(input.value).toBe('20')
+  })
+
+  it('does not revert or re-commit when a blur lands right after Enter', () => {
+    const onCommit = vi.fn()
+    function Wrapper() {
+      const [value, setValue] = useState(20)
+      return <NumberField label="Width" value={value} testId="w" onCommit={(n) => { onCommit(n); setValue(n) }} />
+    }
+    render(<Wrapper />)
+    const input = screen.getByTestId('w') as HTMLInputElement
+    fireEvent.change(input, { target: { value: '30' } })
+    act(() => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+      fireEvent.blur(input)
+    })
+    expect(onCommit).toHaveBeenCalledTimes(1)
+    expect(onCommit).toHaveBeenCalledWith(30)
+    expect(input.value).toBe('30')
   })
 })

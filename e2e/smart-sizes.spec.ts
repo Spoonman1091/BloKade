@@ -14,8 +14,6 @@ test('a variable drives a size, and changing it resizes the part', async ({ page
   await page.getByTestId('param-width').fill('wall * 10')
   await page.getByTestId('param-width').press('Enter')
   await expect(page.getByTestId('param-width-value')).toHaveText('= 30')
-  // Let the field settle on the formula before touching another field (see report: blur race).
-  await expect(page.getByTestId('param-width')).toHaveValue('wall * 10')
 
   await page.getByTestId('var-expr-wall').fill('4')
   await page.getByTestId('var-expr-wall').press('Enter')
