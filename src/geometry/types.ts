@@ -47,4 +47,6 @@ export interface GeometryApi {
   overlap(doc: BloKadeDocument, a: NodeId, b: NodeId): Promise<OverlapResult>
   /** Loads and checks one of Kade's shapes: its name, icon and settings, or a friendly problem. */
   inspect(code: string): Promise<InspectResult>
+  /** Kade's code (by code hash) that got an earlier worker stuck: never load or build it; it fails with TOO_LONG. */
+  skipShapes(hashes: readonly string[]): Promise<void>
 }

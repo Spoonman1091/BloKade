@@ -12,8 +12,9 @@ function deferred<T>(): Deferred<T> {
   return { promise, resolve, reject }
 }
 
-function fakeWorker() {
+function fakeWorker(running: readonly string[] = []) {
   const calls: { doc: BloKadeDocument; channel?: string; reply: Deferred<BuildResult> }[] = []
+  const skipped: (readonly string[])[] = []
   const handle: WorkerHandle = {
     api: {
       rebuild: (doc, channel) => {
@@ -27,10 +28,12 @@ function fakeWorker() {
       edgeCandidates: async () => [],
       overlap: async () => ({ status: 'none' }),
       inspect: async () => ({ ok: false, problem: 'unused' }),
+      skipShapes: async (hashes) => { skipped.push(hashes) },
     },
     terminate: vi.fn(),
+    runningShapes: () => running,
   }
-  return { handle, calls }
+  return { handle, calls, skipped }
 }
 
 const doc = (name: string) => createEmptyDocument(name)
@@ -90,6 +93,36 @@ describe('GeometryClient', () => {
     expect(second.calls.map((c) => c.doc.name)).toEqual(['after'])
     second.calls[0]?.reply.resolve(result('after'))
     await expect(next).resolves.toEqual(result('after'))
+  })
+
+  it('blames the code a stuck worker was running, and tells every new worker to skip it', async () => {
+    vi.useFakeTimers()
+    const first = fakeWorker(['loop-a'])
+    const second = fakeWorker(['loop-b'])
+    const third = fakeWorker()
+    const spawn = vi.fn().mockReturnValueOnce(first.handle).mockReturnValueOnce(second.handle).mockReturnValueOnce(third.handle)
+    const client = new GeometryClient(spawn, 30_000)
+    const stuck = client.rebuild(doc('one'))
+    const blamed = expect(stuck).rejects.toMatchObject({ name: 'GeometryTimeoutError', shapes: ['loop-a'] })
+    await vi.advanceTimersByTimeAsync(30_000)
+    await blamed
+    expect(second.skipped).toEqual([['loop-a']])
+    const again = client.rebuild(doc('two'))
+    const blamedAgain = expect(again).rejects.toMatchObject({ shapes: ['loop-b'] })
+    await vi.advanceTimersByTimeAsync(30_000)
+    await blamedAgain
+    expect(third.skipped).toEqual([['loop-a', 'loop-b']])
+  })
+
+  it('blames nothing when the worker was not running any of Kade\'s code', async () => {
+    vi.useFakeTimers()
+    const second = fakeWorker()
+    const client = new GeometryClient(vi.fn().mockReturnValueOnce(fakeWorker().handle).mockReturnValueOnce(second.handle), 30_000)
+    const stuck = client.rebuild(doc('one'))
+    const blamed = expect(stuck).rejects.toMatchObject({ shapes: [] })
+    await vi.advanceTimersByTimeAsync(30_000)
+    await blamed
+    expect(second.skipped).toEqual([])
   })
 
   it('exports through the worker', async () => {

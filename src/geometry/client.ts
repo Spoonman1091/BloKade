@@ -5,13 +5,16 @@ import type { BuildChannel, BuildResult, EdgeCandidate, GeometryApi, OverlapResu
 export interface WorkerHandle {
   readonly api: GeometryApi
   terminate(): void
+  /** Kade's code (by code hash) the worker is loading or building right now. */
+  runningShapes?(): readonly string[]
 }
 
 export const REBUILD_TIMEOUT_MS = 30_000
 
 export class GeometryTimeoutError extends Error {
   override name = 'GeometryTimeoutError'
-  constructor() {
+  /** `shapes`: Kade's code (by code hash) the worker was running when it got stuck. Later workers skip it. */
+  constructor(readonly shapes: readonly string[] = []) {
     super('The geometry engine got stuck on your last change, so BloKade restarted it. Try undoing that change.')
   }
 }
@@ -39,6 +42,8 @@ export class GeometryClient {
   private busy = false
   private inspects: readonly PendingInspect[] = []
   private pending: Readonly<Record<BuildChannel, PendingRebuild | null>> = { design: null, preview: null }
+  /** Kade's code that got a worker stuck. Every new worker is told to skip it, so it fails at once with TOO_LONG. */
+  private stuckShapes: ReadonlySet<string> = new Set()
 
   constructor(private readonly spawn: () => WorkerHandle, private readonly timeoutMs = REBUILD_TIMEOUT_MS) {
     this.handle = spawn()
@@ -119,16 +124,21 @@ export class GeometryClient {
     let timer: ReturnType<typeof setTimeout> | undefined
     const timeout = new Promise<never>((_, reject) => {
       timer = setTimeout(() => {
-        this.restart(handle)
-        reject(new GeometryTimeoutError())
+        const blamed = handle.runningShapes?.() ?? []
+        this.restart(handle, blamed)
+        reject(new GeometryTimeoutError(blamed))
       }, this.timeoutMs)
     })
     return Promise.race([fn(handle.api), timeout]).finally(() => clearTimeout(timer))
   }
 
-  private restart(stuck: WorkerHandle): void {
+  private restart(stuck: WorkerHandle, blamed: readonly string[]): void {
     if (this.handle !== stuck) return
     stuck.terminate()
+    this.stuckShapes = new Set([...this.stuckShapes, ...blamed])
     this.handle = this.spawn()
+    if (this.stuckShapes.size === 0) return
+    // Sent before any later job, and the worker handles messages in order, so the next job already skips these.
+    this.handle.api.skipShapes([...this.stuckShapes]).catch((error: unknown) => console.error('Could not tell the new worker which shapes got stuck', error))
   }
 }

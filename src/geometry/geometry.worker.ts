@@ -8,6 +8,7 @@ import { KadeShapes } from '../kade/kade-shapes'
 import { createGeometryApi } from './api'
 import { Evaluator } from './evaluate'
 import { initBrowserOC } from './oc-browser'
+import { shapeRunMessage } from './shape-runs'
 import type { GeometryApi } from './types'
 
 /**
@@ -27,8 +28,13 @@ async function loadLetters(): Promise<void> {
 
 void loadLetters()
 
+/** Tells the page which of Kade's code is running, so a stuck worker's shape can be skipped after the restart. */
+const reportRun = (hash: string, running: boolean): void => {
+  (globalThis as unknown as { postMessage(message: unknown): void }).postMessage(shapeRunMessage(hash, running))
+}
+
 const apiReady = initBrowserOC().then(() =>
-  createGeometryApi(new Evaluator(registry, createCadToolkit()), new KadeShapes(blobModuleLoader, registry)))
+  createGeometryApi(new Evaluator(registry, createCadToolkit()), new KadeShapes(blobModuleLoader, registry, reportRun)))
 
 const api: GeometryApi = {
   rebuild: async (doc, channel) => (await apiReady).rebuild(doc, channel),
@@ -38,6 +44,7 @@ const api: GeometryApi = {
   edgeCandidates: async (doc, nodeId, modifierId) => (await apiReady).edgeCandidates(doc, nodeId, modifierId),
   overlap: async (doc, a, b) => (await apiReady).overlap(doc, a, b),
   inspect: async (code) => (await apiReady).inspect(code),
+  skipShapes: async (hashes) => (await apiReady).skipShapes(hashes),
 }
 
 Comlink.expose(api)

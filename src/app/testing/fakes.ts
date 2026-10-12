@@ -27,6 +27,7 @@ export function fakeGeometryApi(overrides: Partial<GeometryApi> = {}): GeometryA
     edgeCandidates: async () => [],
     overlap: async () => ({ status: 'none' }),
     inspect: async (code) => fakeInspect(code),
+    skipShapes: async () => undefined,
     ...overrides,
   }
 }

@@ -6,7 +6,9 @@ import { addModifier } from '../document/modifiers'
 import type { BloKadeDocument } from '../document/types'
 import { createCadToolkit } from '../plugins/cad'
 import { registry } from '../plugins/index'
+import { codeHash } from '../kade/hash'
 import { KadeShapes } from '../kade/kade-shapes'
+import { TOO_LONG } from '../kade/messages'
 import { fileModuleLoader } from '../kade/testing/file-loader'
 import { closedMeshFor3mf, createGeometryApi, ExportError } from './api'
 import { Evaluator } from './evaluate'
@@ -139,5 +141,23 @@ describe("designs carrying Kade's shapes (a fresh worker, an empty library)", ()
   })
   it('inspects code', async () => {
     await expect(newApi().inspect(ROBOT)).resolves.toMatchObject({ ok: true, meta: { name: 'Robot' } })
+  })
+  it('fails only the part whose code got a worker stuck while loading, and builds the others', async () => {
+    const loop = "while (true) {}\nexport default { name: 'Robot', build(s, cad) { return cad.box(1, 1, 1) } }"
+    const api = newApi()
+    await api.skipShapes([codeHash(loop)])
+    const result = await api.rebuild(carrying(loop))
+    const robot = result.nodes.robot
+    expect(robot?.status === 'error' && robot.message).toBe(`Robot couldn't be built: ${TOO_LONG}`)
+    expect(result.nodes.box?.status).toBe('ok')
+  })
+  it('fails only the part whose build() got a worker stuck, and builds the others', async () => {
+    const loop = "export default { name: 'Robot', build(s, cad) { while (true) {} } }"
+    const api = newApi()
+    await api.skipShapes([codeHash(loop)])
+    const result = await api.rebuild(carrying(loop))
+    const robot = result.nodes.robot
+    expect(robot?.status === 'error' && robot.message).toBe(`Robot couldn't be built: ${TOO_LONG}`)
+    expect(result.nodes.box?.status).toBe('ok')
   })
 })

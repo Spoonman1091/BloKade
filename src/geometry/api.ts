@@ -111,5 +111,6 @@ export function createGeometryApi(evaluator: Evaluator, shapes: KadeShapes): Geo
       }
     }),
     inspect: (code) => shapes.inspect(code),
+    skipShapes: async (hashes) => shapes.skip(hashes),
   }
 }
