@@ -164,7 +164,8 @@ Lesson progress is kept in this browser. In a private window the lessons still w
 
 | Keys | What it does |
 |---|---|
-| M / R / S | Move / rotate / size handles |
+| M / R / S | Move / rotate / size handles (with Size, drag a white handle; the other side stays put) |
+| Alt (while dragging a corner) | Keep the shape's proportions |
 | Shift (while dragging) | Turn snapping off |
 | H | Switch between solid and hole |
 | Ctrl/Cmd + G | Group (holes cut out of solids) |

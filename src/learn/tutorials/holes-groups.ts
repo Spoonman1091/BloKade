@@ -8,7 +8,7 @@ export const holesGroups: Tutorial = {
   id: 'holes-groups',
   title: 'Holes and groups',
   icon: '⬚',
-  intro: 'Turn a part into a hole and use it to cut another part.',
+  intro: 'Turn a part into a hole and use it to cut another part. A hole is how you cut part of a shape away, like making an L from a block.',
   steps: [
     {
       id: 'add-box', text: 'Click **Box** to add a box.', target: 'add-box',

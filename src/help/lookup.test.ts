@@ -56,3 +56,17 @@ describe('helpKeyOf', () => {
     expect(helpKeyOf(document.body)).toBeNull()
   })
 })
+
+describe('size handle help', () => {
+  it('explains side handles and corners', () => {
+    expect(helpFor('size-handle')?.card).toContain('The other side stays put')
+    expect(helpFor('size-corner')?.card).toContain('Hold **Alt**')
+    expect(helpFor('size-corner')?.tutorial).toBe('move-turn-size')
+  })
+
+  it('tells Kade how to cut part of a shape away', () => {
+    expect(helpFor('mode-hole')?.card).toContain('cut part of a shape away')
+    expect(helpFor('tree-mode')?.card).toContain('cut part of a shape away')
+    expect(helpFor('tool-size')?.card).toContain('The other side stays put')
+  })
+})

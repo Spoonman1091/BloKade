@@ -43,7 +43,7 @@ export const moveTurnSize: Tutorial = {
       hint: 'Size is next to Rotate in the top bar.',
     },
     {
-      id: 'taller', text: 'Make it taller: drag the top handle, or type **40** into **Height**.', target: 'param-height',
+      id: 'taller', text: 'Make it taller: drag the white handle on top, or type **40** into **Height**.', target: 'param-height',
       check: (v) => { const h = cylinder(v)?.params.height; return typeof h === 'number' && h > 20 },
       hint: 'Height is under Size in Properties. The cylinder starts 20 mm tall.',
     },
