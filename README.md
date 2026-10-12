@@ -151,7 +151,7 @@ Select a part (or a group) and use **+ Add a modifier…** under Properties. Mod
   the modifier says it lost track of some edges and you can pick again.
 - **⋯ Repeat in a row:** how many copies, and the step between them.
 - **✲ Repeat in a circle:** how many copies, how far round (360° = all the way), which axis to turn around (up, left–right or front–back), and the
-  center to turn around (measured from the part's middle).
+  center to turn around (measured from the part's own origin — the middle of its bottom).
 - **⇋ Mirror:** flip left↔right, front↔back or top↕bottom, keeping the original or not.
 
 Every modifier number takes formulas too, like `holes + 1`.

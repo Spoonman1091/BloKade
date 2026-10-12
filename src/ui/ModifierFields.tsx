@@ -93,7 +93,7 @@ function CircleFields(props: ModifierFieldsProps & { modifier: CircularPatternMo
           {AXIS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </label>
-      <VectorInput {...props} field="center" label="Center (mm, from the part's middle)" value={m.center} />
+      <VectorInput {...props} field="center" label="Center (mm, from the part's own origin)" value={m.center} />
     </>
   )
 }
