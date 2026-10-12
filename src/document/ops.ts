@@ -56,8 +56,14 @@ export function removeNodes(doc: BloKadeDocument, ids: readonly NodeId[]): BloKa
   return { ...doc, root: doc.root.filter((id) => !doomed.has(id)), nodes }
 }
 
+function requireGroupParent(doc: BloKadeDocument, parentId: NodeId | null): void {
+  if (parentId === null) return
+  if (requireNode(doc, parentId).kind !== 'group') throw new DocumentOpError('Only groups can hold other parts.')
+}
+
 export function moveNode(doc: BloKadeDocument, id: NodeId, newParentId: NodeId | null): BloKadeDocument {
   requireNode(doc, id)
+  requireGroupParent(doc, newParentId)
   if (newParentId === id || (newParentId !== null && isDescendant(doc, id, newParentId))) {
     throw new DocumentOpError("A group can't go inside itself.")
   }
@@ -74,17 +80,19 @@ export function moveNode(doc: BloKadeDocument, id: NodeId, newParentId: NodeId |
 export function groupNodes(
   doc: BloKadeDocument, ids: readonly NodeId[], groupId: NodeId = newId(),
 ): { doc: BloKadeDocument; groupId: NodeId } {
-  if (ids.length < 2) throw new DocumentOpError('Pick at least two parts to group.')
-  const parents = new Set(ids.map((id) => {
+  if (hasNode(doc, groupId)) throw new DocumentOpError(`A part with id ${groupId} already exists.`)
+  const unique = [...new Set(ids)]
+  if (unique.length < 2) throw new DocumentOpError('Pick at least two parts to group.')
+  const parents = new Set(unique.map((id) => {
     requireNode(doc, id)
     return parentOf(doc, id) ?? null
   }))
   if (parents.size !== 1) throw new DocumentOpError('Parts must be at the same level to group them.')
   const parentId = [...parents][0] ?? null
   const siblings = siblingsOf(doc, parentId)
-  const chosen = siblings.filter((id) => ids.includes(id))
-  const insertAt = siblings.findIndex((id) => ids.includes(id))
-  const remaining = siblings.filter((id) => !ids.includes(id))
+  const chosen = siblings.filter((id) => unique.includes(id))
+  const insertAt = siblings.findIndex((id) => unique.includes(id))
+  const remaining = siblings.filter((id) => !unique.includes(id))
   const first = requireNode(doc, chosen[0] ?? '')
   const group = createGroupNode({ id: groupId, children: chosen, color: first.color })
   const withGroup = { ...doc, nodes: { ...doc.nodes, [groupId]: group } }

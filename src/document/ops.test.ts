@@ -168,3 +168,25 @@ describe('prototype-named ids', () => {
     expect(() => moveNode(threeBoxes(), 'toString', null)).toThrow('That part no longer exists.')
   })
 })
+
+describe('move target validation', () => {
+  it('reports a missing target as a missing part', () => {
+    expect(() => moveNode(threeBoxes(), 'a', 'ghost')).toThrow(DocumentOpError)
+    expect(() => moveNode(threeBoxes(), 'a', 'ghost')).toThrow('That part no longer exists.')
+  })
+
+  it('refuses to move into a shape', () => {
+    expect(() => moveNode(threeBoxes(), 'a', 'b')).toThrow('Only groups can hold other parts.')
+  })
+})
+
+describe('group id validation', () => {
+  it('refuses a group id that already exists', () => {
+    expect(() => groupNodes(threeBoxes(), ['a', 'b'], 'c')).toThrow(DocumentOpError)
+    expect(() => groupNodes(threeBoxes(), ['a', 'b'], 'c')).toThrow('already exists')
+  })
+
+  it('treats repeated ids as one part', () => {
+    expect(() => groupNodes(threeBoxes(), ['a', 'a'])).toThrow('Pick at least two parts to group.')
+  })
+})
