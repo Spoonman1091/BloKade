@@ -23,7 +23,8 @@ interface FieldsProps {
   setField(key: FieldKey, text: string): void
 }
 
-function ShapeParams({ node, errors, setField, registry }: FieldsProps & { node: ShapeNode; registry: PluginRegistry }) {
+/** A shape's own settings (its parameters). Also used by the My shapes preview. */
+export function ShapeSettings({ node, errors, setField, registry }: FieldsProps & { node: ShapeNode; registry: PluginRegistry }) {
   const apply = useBloKade((s) => s.apply)
   const plugin = registry.get(node.shapeType)
   if (!plugin) return <p className="error-text">This shape's plugin is missing, so its size can't be changed.</p>
@@ -101,7 +102,7 @@ export function PropertiesPanel({ registry, onCheckOverlap }: { registry: Plugin
           onClick={() => apply((d) => setMode(d, [node.id], 'hole'))}>Hole</button>
       </div>
       {error && <p className="error-text" role="alert">⚠ {error}</p>}
-      {node.kind === 'shape' && <ShapeParams key={`params-${node.id}`} node={node} errors={nodeErrors} setField={setField} registry={registry} />}
+      {node.kind === 'shape' && <ShapeSettings key={`params-${node.id}`} node={node} errors={nodeErrors} setField={setField} registry={registry} />}
       <Placement key={`place-${node.id}`} node={node} errors={nodeErrors} setField={setField} />
       <ModifierStack key={`mods-${node.id}`} node={node} errors={nodeErrors} setField={setField} />
     </section>
