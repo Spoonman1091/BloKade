@@ -312,7 +312,8 @@ Each milestone is independently usable and gets its own implementation plan.
 | 2 | **Smart Sizes** | Text shape (with a bundled font file); variables panel and formulas in every field; `fit` setting; align tool; object snapping; workplane on face; live measurements. |
 | 3 | **Round & Repeat** | Modifier stack UI; fillet/chamfer (by description, then picked edges with fingerprints); linear and circular patterns; mirror; STEP export. |
 | 4 | **Perfect Fit** | Peg & socket, screw holes, threads, snap-fit clip, overlap check. |
-| 5 | **Kade's Plugins** | Documented `cad` toolkit; plugin guide and "make your first shape" tutorial; `plugins/` folder for Kade's shapes; example gear plugin. |
+| 5 | **Learn BloKade** | Guided app tutorials, help everywhere, lesson panel. See `2026-10-12-blokade-learn-and-plugins-design.md`. |
+| 6 | **Kade's Plugins** | In-app shape editor, friendly `cad` toolkit, coding lessons, gear example, designs carry their shapes. See `2026-10-12-blokade-learn-and-plugins-design.md`. |
 
 ## 10. Open Questions
 
