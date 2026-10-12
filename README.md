@@ -10,8 +10,17 @@ Kade's 3D design app for 3D printing. It's as easy as TinkerCAD, and it's built 
 docker compose up -d --build
 ```
 
-Then open `http://<server-name>:8080`. Designs are saved in each browser automatically.
-Use **📁 → Save to file** to back them up or move them to another computer.
+Then open `http://<server-ip>:8080` in a browser on any computer at home, using the server's IP address,
+for example `http://192.168.1.50:8080`.
+
+- **Change the port:** edit the number before the colon in `docker-compose.yml` (`"8080:80"`, for example
+  `"9000:80"`), then run `docker compose up -d` again.
+- **Stop it:** `docker compose down`
+- **Update it:** `git pull`, then `docker compose up -d --build`
+
+**Back up your designs.** Designs live in each browser, not on the server, so clearing the browser's data
+deletes them. To keep a copy (or move a design to another computer), click the **📁** button with the
+design's name in the toolbar, then **Save to file**. Use **Load from file** in the same window to bring it back.
 
 **For development:**
 

@@ -1,6 +1,6 @@
 import { renameNode, setMode, updateNode } from '../document/ops'
 import type { SceneNode, ShapeNode, Vec3 } from '../document/types'
-import { resolveParams } from '../plugins/params'
+import { MAX_MM, resolveParams } from '../plugins/params'
 import type { PluginRegistry } from '../plugins/registry'
 import type { NumberParamSpec } from '../plugins/types'
 import { useBloKade } from '../store/context'
@@ -8,6 +8,8 @@ import { NumberField, TextField } from './NumberField'
 
 const AXES = ['x', 'y', 'z'] as const
 const UNIT: Record<NumberParamSpec['type'], string> = { mm: ' (mm)', angle: ' (°)', whole: '', number: '' }
+
+const clampPosition = (value: number): number => Math.min(MAX_MM, Math.max(-MAX_MM, value))
 
 const withAxis = (v: Vec3, index: number, value: number): Vec3 =>
   [index === 0 ? value : v[0], index === 1 ? value : v[1], index === 2 ? value : v[2]]
@@ -45,7 +47,7 @@ function Placement({ node }: { node: SceneNode }) {
       <h3>Position (mm)</h3>
       <div className="field-row">
         {AXES.map((axis, i) => (
-          <NumberField key={axis} label={axis} value={node.transform.position[i] ?? 0} testId={`pos-${axis}`} onCommit={(v) => setPart('position', i, v)} />
+          <NumberField key={axis} label={axis} value={node.transform.position[i] ?? 0} testId={`pos-${axis}`} onCommit={(v) => setPart('position', i, clampPosition(v))} />
         ))}
       </div>
       <h3>Rotation (°)</h3>

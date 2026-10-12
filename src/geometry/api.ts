@@ -5,10 +5,21 @@ import { exportTargets } from './export-targets'
 import { write3mf } from './export-3mf'
 import { EXPORT_QUALITY, toMeshData } from './tessellate'
 import type { BuildResult, GeometryApi, NodeBuild } from './types'
-import { weldMesh } from './weld'
+import { countOpenEdges, weldMesh } from './weld'
 
 export class ExportError extends Error {
   override name = 'ExportError'
+}
+
+const HAS_GAPS = "This shape has tiny gaps, so it can't be saved as 3MF. Try ⬇ STL, or change its size a little."
+
+/** Welded mesh for 3MF. Slicers reject meshes with open edges, so refuse them with a friendly message. */
+export function closedMeshFor3mf(
+  vertices: ArrayLike<number>, triangles: ArrayLike<number>,
+): { vertices: number[]; triangles: number[] } {
+  const welded = weldMesh(vertices, triangles)
+  if (countOpenEdges(welded.triangles) > 0) throw new ExportError(HAS_GAPS)
+  return welded
 }
 
 const UNEXPECTED = 'Something went wrong building this part. Try changing its size a little, or undo.'
@@ -68,7 +79,7 @@ export function createGeometryApi(evaluator: Evaluator): GeometryApi {
       const shape = exportShape(evaluator, doc, ids)
       try {
         const mesh = shape.mesh(EXPORT_QUALITY)
-        return new Uint8Array(write3mf(weldMesh(mesh.vertices, mesh.triangles), doc.name)).buffer
+        return new Uint8Array(write3mf(closedMeshFor3mf(mesh.vertices, mesh.triangles), doc.name)).buffer
       } finally {
         shape.delete()
       }

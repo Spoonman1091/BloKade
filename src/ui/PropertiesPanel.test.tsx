@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { createActions } from '../app/actions'
 import { renderWithStore } from '../app/testing/render'
 import { createEmptyDocument } from '../document/factory'
-import { MIN_MM } from '../plugins/params'
+import { MAX_MM, MIN_MM } from '../plugins/params'
 import { registry } from '../plugins/index'
 import { createBloKadeStore } from '../store/store'
 import { PropertiesPanel } from './PropertiesPanel'
@@ -58,6 +58,16 @@ describe('PropertiesPanel', () => {
     await setField('prop-name', 'Base')
     expect(selected()?.transform).toEqual({ position: [12, 0, 0], rotation: [0, 0, 45] })
     expect(selected()?.name).toBe('Base')
+  })
+
+  it('keeps positions within the build limits', async () => {
+    const { actions, selected } = setup()
+    act(() => actions.addShape('box'))
+    await setField('pos-x', '1e9')
+    await setField('pos-y', '-5000')
+    await setField('pos-z', '-12')
+    expect(selected()?.transform.position).toEqual([MAX_MM, -MAX_MM, -12])
+    expect((screen.getByTestId('pos-x') as HTMLInputElement).value).toBe(String(MAX_MM))
   })
 
   it('switches between solid and hole', async () => {

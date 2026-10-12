@@ -5,7 +5,7 @@ import { addNode, groupNodes, setHidden, setMode } from '../document/ops'
 import type { BloKadeDocument } from '../document/types'
 import { createCadToolkit } from '../plugins/cad'
 import { registry } from '../plugins/index'
-import { createGeometryApi } from './api'
+import { closedMeshFor3mf, createGeometryApi, ExportError } from './api'
 import { Evaluator } from './evaluate'
 import { exportTargets, looseHoles } from './export-targets'
 import { initTestOC } from './testing/oc-node'
@@ -70,6 +70,12 @@ describe('geometry api', () => {
     expect(exportTargets(hidden, ['box', 'hole'])).toEqual(['g'])
     expect(looseHoles(hidden)).toEqual(['ball'])
     expect(looseHoles(hidden, ['box'])).toEqual([])
+  })
+
+  it('refuses a 3MF mesh with gaps in it', () => {
+    const tetra = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+    expect(closedMeshFor3mf(tetra, [0, 1, 2, 0, 3, 1, 1, 3, 2, 2, 3, 0]).triangles).toHaveLength(12)
+    expect(() => closedMeshFor3mf(tetra, [0, 1, 2, 0, 3, 1])).toThrow(ExportError)
   })
 
   it('refuses to export nothing', async () => {
