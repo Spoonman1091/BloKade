@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useStore } from 'zustand'
+import { useShallow } from 'zustand/react/shallow'
 import type { CarriedShape } from '../document/types'
+import { carriedInUse } from '../kade/carried'
 import { createShapeCatalog, namesFromChecks, type ShapeCatalog } from '../kade/catalog'
 import { createEditorStore, type EditorStore } from '../kade/editor-store'
 import type { LibraryShape } from '../kade/library'
@@ -27,7 +29,8 @@ export function useShapeSetup(deps: AppDeps, store: BloKadeStore): ShapeSetup {
     void editor.getState().load()
   }, [editor])
   const library = useStore(editor, (s) => s.shapes)
-  const carried = useStore(store, (s) => s.history.present.plugins)
+  // Only copies parts use: adding a shape replaces a copy no part uses, so the library's version is the one to offer.
+  const carried = useStore(store, useShallow((s) => carriedInUse(s.history.present)))
   const registry = useShapeRegistry({ base: deps.registry, catalog, library, carried })
   const results = useStore(catalog, (s) => s.results)
   useEffect(() => {

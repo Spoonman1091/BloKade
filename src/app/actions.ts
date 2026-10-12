@@ -3,7 +3,7 @@ import {
   DocumentOpError, duplicateNodes, groupNodes, removeNodes, setGridSnap, setMode, ungroupNode,
 } from '../document/ops'
 import type { BloKadeDocument, CarriedShape, NodeId } from '../document/types'
-import { carryShape } from '../kade/carried'
+import { carryShape, unaddableNotice } from '../kade/carried'
 import { KITS } from '../plugins/kits'
 import type { PluginRegistry } from '../plugins/registry'
 import type { BloKadeStore, ToolMode } from '../store/store'
@@ -62,7 +62,8 @@ export function createActions(
     addShape: (pluginId) => {
       const plugin = registry.get(pluginId)
       if (!plugin) {
-        state().notify(`BloKade doesn't have a "${pluginId}" shape.`)
+        const notice = unaddableNotice(state().history.present, pluginId, carriedCodeOf(pluginId))
+        state().notify(notice ?? `BloKade doesn't have a "${pluginId}" shape.`)
         return
       }
       const color = pickColor(Object.keys(state().history.present.nodes).length)

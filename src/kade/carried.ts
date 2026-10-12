@@ -15,6 +15,25 @@ export function carryShape(doc: BloKadeDocument, id: string, shape: CarriedShape
   return { ...doc, plugins: { ...doc.plugins, [id]: { name: shape.name, code: shape.code } } }
 }
 
+/** The carried shapes the design's parts use. A copy no part uses is left out (adding the shape replaces it). */
+export function carriedInUse(doc: BloKadeDocument): Record<string, CarriedShape> {
+  const used = shapeIdsInUse(doc)
+  return Object.fromEntries(Object.entries(doc.plugins).filter(([id]) => used.has(id)))
+}
+
+/**
+ * Why one of Kade's shapes can't be added right now, by name, or null when it isn't one of theirs.
+ * `newest` is the library's version of the shape.
+ */
+export function unaddableNotice(doc: BloKadeDocument, id: string, newest: CarriedShape | undefined): string | null {
+  const copy = Object.hasOwn(carriedInUse(doc), id) ? doc.plugins[id] : undefined
+  if (copy) {
+    const fix = newest && newest.code !== copy.code ? 'Try the Use my newest version button.' : 'Fix it in 🧩 My shapes.'
+    return `This design's copy of ${copy.name} has a problem. ${fix}`
+  }
+  return newest ? `${newest.name} isn't ready to add yet. Check it in 🧩 My shapes.` : null
+}
+
 /** Library shapes whose code differs from the version this design's parts use. */
 export function outdatedShapes(doc: BloKadeDocument, library: readonly LibraryShape[]): LibraryShape[] {
   const used = shapeIdsInUse(doc)

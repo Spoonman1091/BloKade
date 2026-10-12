@@ -19,7 +19,7 @@ describe('buildShapeRegistry', () => {
 
   it('puts the built-ins first, then the library, then shapes only the design carries', () => {
     expect(shapes.list().slice(0, base.list().length)).toEqual(base.list())
-    expect(shapes.mine().map((p) => p.name)).toEqual(['Gear v2', 'Robot'])
+    expect(shapes.mine().map((p) => p.name)).toEqual(['Gear v1', 'Robot'])
     expect(shapes.list()).toHaveLength(base.list().length + 2)
   })
   it("uses the design's own version of a shape for its parts", () => {
@@ -36,6 +36,12 @@ describe('buildShapeRegistry', () => {
   it('uses the library version when the design does not carry the shape', () => {
     const libraryOnly = buildShapeRegistry({ base, library: [lib('my-gear', 'gear v2')], carried: {}, results })
     expect(libraryOnly.get('my-gear')?.name).toBe('Gear v2')
+  })
+  it("offers the design's own copy in the palette, and leaves it out when that copy is broken or unchecked", () => {
+    for (const code of ['broken', 'not checked yet']) {
+      const carriedOnly = buildShapeRegistry({ base, library: [lib('my-gear', 'gear v2')], carried: { 'my-gear': { name: 'Gear', code } }, results })
+      expect(carriedOnly.mine()).toEqual([])
+    }
   })
   it("never falls back to the library when the design's own version is broken or unchecked", () => {
     for (const code of ['broken', 'not checked yet']) {

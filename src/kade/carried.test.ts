@@ -3,7 +3,7 @@ import { createEmptyDocument, createShapeNode } from '../document/factory'
 import { addNode, DocumentOpError, removeNodes } from '../document/ops'
 import { MAX_CARRIED_SHAPES, type BloKadeDocument } from '../document/types'
 import { createBloKadeStore } from '../store/store'
-import { carryShape, outdatedShapes, withNewestVersions } from './carried'
+import { carriedInUse, carryShape, outdatedShapes, unaddableNotice, withNewestVersions } from './carried'
 import type { LibraryShape } from './library'
 
 const gear = { name: 'Gear', code: 'v1' }
@@ -58,5 +58,18 @@ describe('carried shapes', () => {
     expect(store.getState().history.present.plugins).toEqual({ 'my-gear': { name: 'Big gear', code: 'v2' } })
     store.getState().undo()
     expect(store.getState().history.present).toBe(doc)
+  })
+  it('lists only the carried shapes parts use', () => {
+    const doc = withParts({ ...createEmptyDocument(), plugins: { 'my-gear': gear, 'my-cup': { name: 'Cup', code: 'c' } } }, ['my-gear'])
+    expect(carriedInUse(doc)).toEqual({ 'my-gear': gear })
+  })
+  it("names the shape when the design's copy can't be added", () => {
+    const doc = withParts({ ...createEmptyDocument(), plugins: { 'my-0a1b2c3d4e': { name: 'Robot head', code: 'bad' } } }, ['my-0a1b2c3d4e'])
+    expect(unaddableNotice(doc, 'my-0a1b2c3d4e', { name: 'Robot head', code: 'good' }))
+      .toBe("This design's copy of Robot head has a problem. Try the Use my newest version button.")
+    expect(unaddableNotice(doc, 'my-0a1b2c3d4e', { name: 'Robot head', code: 'bad' }))
+      .toBe("This design's copy of Robot head has a problem. Fix it in 🧩 My shapes.")
+    expect(unaddableNotice(doc, 'my-other', { name: 'Cup', code: 'x' })).toBe("Cup isn't ready to add yet. Check it in 🧩 My shapes.")
+    expect(unaddableNotice(doc, 'nope', undefined)).toBeNull()
   })
 })

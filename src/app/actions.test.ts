@@ -202,6 +202,15 @@ describe("adding Kade's shapes", () => {
     createActions(store, shapes, () => ({ name: 'Gear', code: 'newer' })).addShape('my-gear')
     expect(store.getState().history.present.plugins['my-gear']?.code).toBe('newer')
   })
+  it("names the shape, not its id, when the design's copy has a problem", () => {
+    const gearPart = createShapeNode({ id: 'g', shapeType: 'my-gear', name: 'Gear', params: {}, color: '#fff' })
+    const doc = addNode({ ...createEmptyDocument(), plugins: { 'my-gear': { name: 'Gear', code: 'broken' } } }, gearPart)
+    const store = createBloKadeStore({ designId: 'd', doc })
+    const carried = buildShapeRegistry({ base: registry, library: [], carried: doc.plugins, results: {} })
+    createActions(store, carried, codeOf).addShape('my-gear')
+    expect(store.getState().notice).toBe("This design's copy of Gear has a problem. Try the Use my newest version button.")
+    expect(store.getState().history.present).toBe(doc)
+  })
   it('keeps the version the design\'s parts already use', () => {
     const gearPart = createShapeNode({ id: 'g', shapeType: 'my-gear', name: 'Gear', params: {}, color: '#fff' })
     const doc = addNode({ ...createEmptyDocument(), plugins: { 'my-gear': { name: 'Gear', code: 'older' } } }, gearPart)

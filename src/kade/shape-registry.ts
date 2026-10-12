@@ -14,13 +14,16 @@ export interface ShapeSources {
 }
 
 export interface ShapeRegistry extends PluginRegistry {
-  /** Kade's shapes for the My shapes palette: the library first, then shapes only the design carries. */
+  /**
+   * Kade's shapes for the My shapes palette: the library first, then shapes only the design carries.
+   * A shape the design carries is offered as the design's copy (what Add would use), and left out if that copy is broken.
+   */
   mine(): readonly ShapePlugin[]
 }
 
 /**
  * The page's shape list: built-ins and plugins/ folder files, then Kade's library, then the design's carried shapes.
- * A part uses the version its design carries; the palette shows the library's.
+ * A part uses the version its design carries. `carried` should be the shapes the design's parts use.
  */
 export function buildShapeRegistry({ base, library, carried, results }: ShapeSources): ShapeRegistry {
   const pluginOf = (id: string, code: string): ShapePlugin[] => {
@@ -32,7 +35,12 @@ export function buildShapeRegistry({ base, library, carried, results }: ShapeSou
   const fromDesign = Object.entries(carried).flatMap(([id, shape]) => pluginOf(id, shape.code))
   const libraryById = new Map(fromLibrary.map((p) => [p.id, p]))
   const designById = new Map(fromDesign.map((p) => [p.id, p]))
-  const mine = [...fromLibrary, ...fromDesign.filter((p) => !libraryById.has(p.id))]
+  const ownCopy = (p: ShapePlugin): ShapePlugin[] => {
+    if (!Object.hasOwn(carried, p.id)) return [p]
+    const copy = designById.get(p.id)
+    return copy ? [copy] : []
+  }
+  const mine = [...fromLibrary.flatMap(ownCopy), ...fromDesign.filter((p) => !libraryById.has(p.id))]
   const list = [...base.list(), ...mine]
   return {
     // A design that carries a shape only ever uses its own version, even if that one is broken or unchecked.
