@@ -3,8 +3,10 @@ import {
   DocumentOpError, duplicateNodes, groupNodes, removeNodes, setGridSnap, setMode, ungroupNode,
 } from '../document/ops'
 import type { BloKadeDocument, NodeId } from '../document/types'
+import { KITS } from '../plugins/kits'
 import type { PluginRegistry } from '../plugins/registry'
 import type { BloKadeStore, ToolMode } from '../store/store'
+import { addKit as addKitParts } from './add-kit'
 import { addPart } from './add-part'
 import { createEdgeActions, type EdgeActions } from './edge-actions'
 import { createFieldNormalizer } from './field-normalizer'
@@ -12,6 +14,8 @@ import { nextSelection } from './selection'
 
 export interface Actions extends EdgeActions {
   addShape(pluginId: string): void
+  /** Adds a matched set of parts (like a peg and its socket) as one undo step. */
+  addKit(kitId: string): void
   deleteSelection(): void
   duplicateSelection(): void
   groupSelection(): void
@@ -64,6 +68,18 @@ export function createActions(store: BloKadeStore, registry: PluginRegistry): Ac
         const placement = { color, position: workplane?.origin, rotation: workplane?.rotation }
         const { doc: next, id } = addPart(doc, plugin, placement, normalize)
         return { doc: next, value: [id] }
+      }))
+    },
+    addKit: (kitId) => {
+      const kit = KITS.find((k) => k.id === kitId)
+      if (!kit) {
+        state().notify(`BloKade doesn't have a "${kitId}" kit.`)
+        return
+      }
+      const firstColor = Object.keys(state().history.present.nodes).length
+      selectIf(run(store, (doc) => {
+        const { doc: next, ids } = addKitParts(doc, kit, registry, normalize, state().workplane, firstColor)
+        return { doc: next, value: ids }
       }))
     },
     deleteSelection: () => {

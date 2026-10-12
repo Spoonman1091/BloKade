@@ -11,6 +11,7 @@ import { Viewport } from '../viewport/Viewport'
 import { DesignsDialog } from './DesignsDialog'
 import { PropertiesPanel } from './PropertiesPanel'
 import { SceneTree } from './SceneTree'
+import { KITS } from '../plugins/kits'
 import { ShapePalette } from './ShapePalette'
 import { Toasts } from './Toasts'
 import { Toolbar } from './Toolbar'
@@ -30,7 +31,7 @@ export function Workspace({ deps }: { deps: AppDeps }) {
     <div className="workspace">
       <Toolbar actions={actions} onExport={onExport} onOpenDesigns={() => setShowDesigns(true)} />
       <aside className="left-panel">
-        <ShapePalette registry={deps.registry} onAdd={actions.addShape} />
+        <ShapePalette registry={deps.registry} kits={KITS} onAdd={actions.addShape} onAddKit={actions.addKit} />
         <SceneTree registry={deps.registry} />
       </aside>
       <main className="viewport" data-testid="viewport">

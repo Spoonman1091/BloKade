@@ -19,6 +19,17 @@ describe('actions', () => {
     expect(doc().nodes[id as string]).toMatchObject({ shapeType: 'box', name: 'Box', params: { width: 20, depth: 20, height: 20 } })
   })
 
+  it('adds a kit as one undo step and selects its parts (Review Focus 2)', () => {
+    const { store, actions } = setup()
+    const before = store.getState().history.present
+    actions.addKit('peg-socket')
+    expect(store.getState().selection).toHaveLength(2)
+    actions.undo()
+    expect(store.getState().history.present).toBe(before)
+    actions.addKit('nope')
+    expect(store.getState().notice).toBe('BloKade doesn\'t have a "nope" kit.')
+  })
+
   it('explains an unknown shape', () => {
     const { store, actions } = setup()
     actions.addShape('spaceship')
