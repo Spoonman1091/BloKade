@@ -106,22 +106,30 @@ export class Evaluator {
     const members = this.members(doc, group)
     const solids = members.filter((m) => m.mode === 'solid')
     const holes = members.filter((m) => m.mode === 'hole')
-    const [firstSolid, ...otherSolids] = solids
-    if (!firstSolid) {
+    if (solids.length === 0) {
       throw new NodeBuildError(
         "This group has no solid parts, so there's nothing to keep. Add a solid or switch a part from Hole to Solid.",
         group.id,
       )
     }
+    // Touch every member (cheap cache hits) so their entries survive endPass even when the group itself is a hit.
+    const placed = (m: SceneNode) => this.placedMember(doc, group, m)
+    const solidShapes = solids.map(placed)
+    const holeShapes = holes.map(placed)
     return this.entry(this.groupKey(doc, group), () => {
-      const fused = otherSolids.reduce((acc, m) => swap(acc, acc.fuse(this.placedMember(doc, group, m))),
-        this.placedMember(doc, group, firstSolid).clone())
-      const result = holes.reduce((acc, m) => swap(acc, acc.cut(this.placedMember(doc, group, m))), fused)
-      if (result.faces.length === 0) {
-        result.delete()
-        throw new NodeBuildError('The holes cut away everything in this group.', group.id)
+      const [first, ...rest] = solidShapes
+      let acc = (first as Shape3D).clone()
+      try {
+        for (const s of rest) acc = swap(acc, acc.fuse(s))
+        for (const h of holeShapes) acc = swap(acc, acc.cut(h))
+        if (acc.faces.length === 0) {
+          throw new NodeBuildError('The holes cut away everything in this group.', group.id)
+        }
+      } catch (error) {
+        acc.delete()
+        throw error
       }
-      return result
+      return acc
     })
   }
 

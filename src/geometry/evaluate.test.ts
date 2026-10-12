@@ -103,4 +103,37 @@ describe('Evaluator', () => {
     expect(second).not.toBe(first)
     expect(() => measureVolume(first)).toThrow()
   })
+
+  it('keeps group members cached across passes', () => {
+    const ev = newEvaluator()
+    const doc = boxWithHole()
+    const moved = updateNode(doc, 'hole', (n) => ({ ...n, transform: { position: [5, 0, -10], rotation: [0, 0, 0] } as Transform }))
+    const run = (d: BloKadeDocument) => {
+      ev.beginPass()
+      ev.local(d, 'g')
+      const box = ev.placed(d, 'box')
+      ev.endPass()
+      return box
+    }
+    const first = run(doc)
+    expect(run(doc)).toBe(first)
+    expect(run(moved)).toBe(first)
+    expect(measureVolume(first)).toBeCloseTo(8000, 1)
+  })
+
+  it('recovers after a group build fails midway', () => {
+    const base = boxWithHole()
+    const extra = addNode(base, shape('box2', 'box', { width: 5, depth: 5, height: 5 }))
+    const bad = updateNode(
+      { ...extra, nodes: { ...extra.nodes, g: { ...(extra.nodes.g as object), children: ['box', 'box2', 'hole'] } as never } },
+      'box2', (n) => (n.kind === 'shape' ? { ...n, shapeType: 'spaceship' } : n),
+    )
+    const ev = newEvaluator()
+    expect(buildError(() => ev.local(bad, 'g')).nodeId).toBe('g')
+    const good = updateNode(bad, 'box2', (n) => (n.kind === 'shape' ? { ...n, shapeType: 'box' } : n))
+    expect(measureVolume(ev.local(good, 'g'))).toBeGreaterThan(0)
+    const badHole = updateNode(base, 'hole', (n) => (n.kind === 'shape' ? { ...n, shapeType: 'spaceship' } : n))
+    expect(buildError(() => ev.local(badHole, 'g')).nodeId).toBe('g')
+    expect(measureVolume(ev.local(base, 'g'))).toBeCloseTo(8000 - Math.PI * 25 * 20, 1)
+  })
 })
