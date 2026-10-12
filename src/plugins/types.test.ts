@@ -31,4 +31,27 @@ describe('definePlugin inference', () => {
     })
     expect(defaultParams(plugin)).toEqual({ a: 3 })
   })
+
+  it('hands text params to build as strings', () => {
+    const plugin = definePlugin({
+      id: 'label',
+      name: 'Label',
+      icon: 'x',
+      version: 1,
+      params: {
+        text: { type: 'text', default: 'Kade', label: 'Text' },
+        size: { type: 'mm', default: 4, label: 'Size' },
+      },
+      size: {
+        // @ts-expect-error size handles can only change number params
+        x: 'text',
+        y: 'size',
+      },
+      build: ({ text, size }, cad) => {
+        const letters: string = text
+        return cad.box(size * letters.length, size, size)
+      },
+    })
+    expect(defaultParams(plugin)).toEqual({ text: 'Kade', size: 4 })
+  })
 })

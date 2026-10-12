@@ -33,4 +33,14 @@ describe('createRegistry', () => {
     expect(registry.get('a')?.name).toBe('Good')
     expect(problems[0]).toContain('"a"')
   })
+
+  it('accepts text params', () => {
+    const { problems } = createRegistry([{ ...good('t'), params: { ...good('t').params, label: { type: 'text', default: 'Hi', label: 'Label' } } }])
+    expect(problems).toEqual([])
+  })
+
+  it('reports a size handle pointing at a text param', () => {
+    const plugin = { ...good('u'), params: { label: { type: 'text', default: 'Hi', label: 'Label' } }, size: { x: 'label' } }
+    expect(createRegistry([plugin]).problems[0]).toContain('text')
+  })
 })
