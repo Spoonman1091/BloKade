@@ -76,24 +76,36 @@ function roundEdges(shape: Shape3D, modifier: FilletModifier | ChamferModifier):
 
 const AXIS_DIRECTION: Readonly<Record<PatternAxis, [number, number, number]>> = { x: [1, 0, 0], y: [0, 1, 0], z: [0, 0, 1] }
 
-/** Fuses shapes into one. Consumes every shape it is given. */
-function fuseAll(shapes: readonly Shape3D[]): Shape3D {
-  const [first, ...rest] = shapes
-  if (!first) throw new ModifierError('There was nothing to repeat.')
-  return rest.reduce((acc, next) => {
+/** Fuses two shapes into one. Consumes both, even if the fuse fails. */
+function fuseTwo(a: Shape3D, b: Shape3D): Shape3D {
+  try {
+    return a.fuse(b)
+  } finally {
+    a.delete()
+    b.delete()
+  }
+}
+
+/** Builds copy 0..count-1 and fuses them one at a time so at most two solids are alive; a throw frees them. */
+function fuseCopies(count: number, copy: (i: number) => Shape3D): Shape3D {
+  let acc = copy(0)
+  for (let i = 1; i < count; i++) {
+    let next: Shape3D
     try {
-      return acc.fuse(next)
-    } finally {
+      next = copy(i)
+    } catch (error) {
       acc.delete()
-      next.delete()
+      throw error
     }
-  }, first)
+    acc = fuseTwo(acc, next)
+  }
+  return acc
 }
 
 const scaled = (v: Vec3, k: number): [number, number, number] => [v[0] * k, v[1] * k, v[2] * k]
 
 function linearPattern(shape: Shape3D, m: LinearPatternModifier): Shape3D {
-  return fuseAll(Array.from({ length: m.count }, (_, i) => (i === 0 ? shape.clone() : shape.clone().translate(scaled(m.spacing, i)))))
+  return fuseCopies(m.count, (i) => (i === 0 ? shape.clone() : shape.clone().translate(scaled(m.spacing, i))))
 }
 
 /** Degrees between neighbouring copies: all the way round shares 360° evenly; less spreads over the angle. */
@@ -105,13 +117,28 @@ export function circularStep(m: CircularPatternModifier): number {
 function circularPattern(shape: Shape3D, m: CircularPatternModifier): Shape3D {
   const step = circularStep(m)
   const center: [number, number, number] = [m.center[0], m.center[1], m.center[2]]
-  return fuseAll(Array.from({ length: m.count }, (_, i) =>
-    (i === 0 ? shape.clone() : shape.clone().rotate(step * i, center, AXIS_DIRECTION[m.axis]))))
+  return fuseCopies(m.count, (i) =>
+    (i === 0 ? shape.clone() : shape.clone().rotate(step * i, center, AXIS_DIRECTION[m.axis])))
 }
 
 function mirrored(shape: Shape3D, m: MirrorModifier): Shape3D {
   const flipped = shape.clone().mirror(m.plane, [0, 0, 0])
-  return m.keepOriginal ? fuseAll([shape.clone(), flipped]) : flipped
+  if (!m.keepOriginal) return flipped
+  let original: Shape3D
+  try {
+    original = shape.clone()
+  } catch (error) {
+    flipped.delete()
+    throw error
+  }
+  return fuseTwo(original, flipped)
+}
+
+/** Boolean unions can return a broken solid instead of failing; refuse it. */
+function sound(out: Shape3D, modifier: Modifier): Applied {
+  if (isSound(out)) return { shape: out, warning: null }
+  out.delete()
+  throw new ModifierError(`${MODIFIER_LABELS[modifier.type]} couldn't be applied. Try different settings.`)
 }
 
 /** Applies one modifier without consuming `shape`. */
@@ -120,9 +147,9 @@ function applyOne(shape: Shape3D, modifier: Modifier): Applied {
     switch (modifier.type) {
       case 'fillet':
       case 'chamfer': return roundEdges(shape, modifier)
-      case 'linearPattern': return { shape: linearPattern(shape, modifier), warning: null }
-      case 'circularPattern': return { shape: circularPattern(shape, modifier), warning: null }
-      case 'mirror': return { shape: mirrored(shape, modifier), warning: null }
+      case 'linearPattern': return sound(linearPattern(shape, modifier), modifier)
+      case 'circularPattern': return sound(circularPattern(shape, modifier), modifier)
+      case 'mirror': return sound(mirrored(shape, modifier), modifier)
     }
   } catch (error) {
     if (error instanceof ModifierError) throw error

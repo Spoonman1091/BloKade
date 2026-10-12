@@ -122,6 +122,10 @@ describe('Repeat and Mirror', () => {
     expect(volumeOf(shape)).toBeCloseTo(24000, 0)
   })
 
+  it('leaves a part alone when repeated once', () => {
+    expect(volumeOf(applyModifiers(cad().box(20, 20, 20), [row(1, [30, 0, 0])]).shape)).toBeCloseTo(8000, 0)
+  })
+
   it('repeats in a circle around a center point', () => {
     const { shape } = applyModifiers(cad().box(20, 20, 20), [circle(4, 360, [-30, 0, 0])])
     expect(xRange(shape)).toEqual([-70, 10])
