@@ -1,5 +1,6 @@
 import { GizmoHelper, GizmoViewport, Grid, OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
+import { useState } from 'react'
 import { Object3D } from 'three'
 import { nextSelection } from '../app/selection'
 import type { NodeId } from '../document/types'
@@ -17,6 +18,7 @@ export function Viewport({ registry }: { registry: PluginRegistry }) {
   const selection = useBloKade((s) => s.selection)
   const engineReady = useBloKade((s) => s.engineReady)
   const select = useBloKade((s) => s.select)
+  const [measurement, setMeasurement] = useState<string | null>(null)
   const onSelect = (id: NodeId, additive: boolean): void => select(nextSelection(selection, id, additive))
 
   return (
@@ -34,12 +36,13 @@ export function Viewport({ registry }: { registry: PluginRegistry }) {
             <NodeMesh key={id} node={node} displayed={displayed} selected={selection.includes(id)} onSelect={onSelect} />
           ) : null
         })}
-        <TransformHandles registry={registry} />
+        <TransformHandles registry={registry} onMeasure={setMeasurement} />
         <OrbitControls makeDefault />
         <GizmoHelper alignment="bottom-right" margin={[70, 70]}>
           <GizmoViewport />
         </GizmoHelper>
       </Canvas>
+      {measurement && <div className="measure-overlay" data-testid="measurement">{measurement}</div>}
       {!engineReady && <div className="viewport-overlay">Warming up the geometry engine…</div>}
     </>
   )
