@@ -3,6 +3,8 @@ import { createEmptyDocument, createShapeNode } from '../document/factory'
 import { addNode } from '../document/ops'
 import { registry } from '../plugins/index'
 import { createBloKadeStore } from '../store/store'
+import { codeHash } from '../kade/hash'
+import { buildShapeRegistry } from '../kade/shape-registry'
 import { createActions } from './actions'
 
 function setup() {
@@ -168,5 +170,31 @@ describe('actions', () => {
     s.setOverlap({ doc: s.history.present, selection: s.selection, result: { status: 'none' } })
     actions.cancel()
     expect(store.getState().overlap).toBeNull()
+  })
+})
+
+describe("adding Kade's shapes", () => {
+  const code = "export default { name: 'Gear' }"
+  const shapes = buildShapeRegistry({
+    base: registry, library: [{ id: 'my-gear', name: 'Gear', code, updatedAt: 1 }], carried: {},
+    results: { [codeHash(code)]: { ok: true, meta: { name: 'Gear', icon: '⚙️', params: { size: { type: 'mm', default: 40, label: 'Size' } } } } },
+  })
+  const codeOf = (id: string) => (id === 'my-gear' ? { name: 'Gear', code } : undefined)
+
+  it('copies the code into the design with the part, as one undo step', () => {
+    const store = createBloKadeStore({ designId: 'd', doc: createEmptyDocument() })
+    const before = store.getState().history.present
+    createActions(store, shapes, codeOf).addShape('my-gear')
+    const doc = store.getState().history.present
+    expect(doc.plugins).toEqual({ 'my-gear': { name: 'Gear', code } })
+    expect(Object.values(doc.nodes)[0]).toMatchObject({ shapeType: 'my-gear', name: 'Gear', params: { size: 40 } })
+    store.getState().undo()
+    expect(store.getState().history.present).toBe(before)
+  })
+  it('keeps the version a design already carries', () => {
+    const doc = { ...createEmptyDocument(), plugins: { 'my-gear': { name: 'Gear', code: 'older' } } }
+    const store = createBloKadeStore({ designId: 'd', doc })
+    createActions(store, shapes, codeOf).addShape('my-gear')
+    expect(store.getState().history.present.plugins['my-gear']?.code).toBe('older')
   })
 })

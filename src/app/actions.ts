@@ -2,7 +2,8 @@ import { pickColor } from '../document/factory'
 import {
   DocumentOpError, duplicateNodes, groupNodes, removeNodes, setGridSnap, setMode, ungroupNode,
 } from '../document/ops'
-import type { BloKadeDocument, NodeId } from '../document/types'
+import type { BloKadeDocument, CarriedShape, NodeId } from '../document/types'
+import { carryShape } from '../kade/carried'
 import { KITS } from '../plugins/kits'
 import type { PluginRegistry } from '../plugins/registry'
 import type { BloKadeStore, ToolMode } from '../store/store'
@@ -47,7 +48,9 @@ function run<T>(store: BloKadeStore, op: (doc: BloKadeDocument) => { doc: BloKad
   }
 }
 
-export function createActions(store: BloKadeStore, registry: PluginRegistry): Actions {
+export function createActions(
+  store: BloKadeStore, registry: PluginRegistry, carriedCodeOf: (id: string) => CarriedShape | undefined = () => undefined,
+): Actions {
   const state = () => store.getState()
   const normalize = createFieldNormalizer(registry)
   const selectIf = (ids: readonly NodeId[] | undefined): void => {
@@ -64,9 +67,11 @@ export function createActions(store: BloKadeStore, registry: PluginRegistry): Ac
       }
       const color = pickColor(Object.keys(state().history.present.nodes).length)
       const workplane = state().workplane
+      const carried = carriedCodeOf(pluginId)
       selectIf(run(store, (doc) => {
         const placement = { color, position: workplane?.origin, rotation: workplane?.rotation }
-        const { doc: next, id } = addPart(doc, plugin, placement, normalize)
+        const withCode = carried ? carryShape(doc, pluginId, carried) : doc
+        const { doc: next, id } = addPart(withCode, plugin, placement, normalize)
         return { doc: next, value: [id] }
       }))
     },
