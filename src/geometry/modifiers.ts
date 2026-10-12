@@ -221,9 +221,10 @@ function applyOrFree(shape: Shape3D, modifier: Modifier): Applied {
  * Most repeat work allowed: copies made × faces on the part being repeated. Fusing detailed copies gets slow
  * fast — measured with real OpenCascade (Node, balanced-tree fuse): "HELLO WORLD" text (166 faces) ×20 with
  * overlapping copies took ~24 s (3320 work), ×50 would be 8300 work and runs past the 30 s rebuild limit;
- * 200 boxes (6 faces, 1200 work) take under 1 s. 3500 keeps 20 detailed copies and every simple repeat allowed.
+ * 200 boxes (6 faces, 1200 work) take under 1 s; ×10 overlapping text (1660 work) took ~11 s. 2000 leaves room for
+ * slower computers (and edge picking on top) while still allowing about 12 detailed copies and every simple repeat.
  */
-export const MAX_REPEAT_WORK = 3500
+export const MAX_REPEAT_WORK = 2000
 
 function faceCount(shape: Shape3D): number {
   const faces = shape.faces
