@@ -5,9 +5,9 @@ import { fileNameFor } from '../persistence/design-file'
 import type { BloKadeStore } from '../store/store'
 import { downloadBytes } from './download'
 
-export type ExportFormat = 'stl' | '3mf'
+export type ExportFormat = 'stl' | '3mf' | 'step'
 
-const MIME: Record<ExportFormat, string> = { stl: 'model/stl', '3mf': 'model/3mf' }
+const MIME: Record<ExportFormat, string> = { stl: 'model/stl', '3mf': 'model/3mf', step: 'model/step' }
 const EXPORT_FAILED = "Export didn't work. Try again."
 export const SELECTION_ONLY = 'Exported the selected part(s) only. Click empty space first to export everything.'
 export const LOOSE_HOLES = 'Holes only cut when grouped with a solid — select both and press Group.'
@@ -22,7 +22,7 @@ export function exportNotes(doc: BloKadeDocument, ids?: readonly NodeId[]): stri
 }
 
 export async function exportDesign(input: {
-  client: Pick<GeometryClient, 'exportStl' | 'export3mf'>
+  client: Pick<GeometryClient, 'exportStl' | 'export3mf' | 'exportStep'>
   store: BloKadeStore
   format: ExportFormat
   download?: (data: ArrayBuffer, filename: string, mime: string) => void
@@ -31,9 +31,12 @@ export async function exportDesign(input: {
   const doc = history.present
   const ids = selection.length > 0 ? selection : undefined
   try {
-    const data = input.format === 'stl'
-      ? await input.client.exportStl(doc, ids)
-      : await input.client.export3mf(doc, ids)
+    const exporters: Record<ExportFormat, () => Promise<ArrayBuffer>> = {
+      stl: () => input.client.exportStl(doc, ids),
+      '3mf': () => input.client.export3mf(doc, ids),
+      step: () => input.client.exportStep(doc, ids),
+    }
+    const data = await exporters[input.format]()
     const download = input.download ?? downloadBytes
     download(data, fileNameFor(doc, input.format), MIME[input.format])
     const notes = exportNotes(doc, ids)

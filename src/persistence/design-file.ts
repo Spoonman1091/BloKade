@@ -23,7 +23,7 @@ export function parseDesignFile(text: string): Result<BloKadeDocument> {
 
 export const serializeDesign = (doc: BloKadeDocument): string => JSON.stringify(doc, null, 2)
 
-export function fileNameFor(doc: BloKadeDocument, extension: 'blokade' | 'stl' | '3mf'): string {
+export function fileNameFor(doc: BloKadeDocument, extension: 'blokade' | 'stl' | '3mf' | 'step'): string {
   const slug = doc.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
   return `${slug || 'design'}.${extension}`
 }

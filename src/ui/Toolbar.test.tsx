@@ -66,6 +66,12 @@ describe('Toolbar', () => {
     expect(screen.getByTestId('open-designs')).toHaveTextContent('My Robot')
   })
 
+  it('exports STEP', async () => {
+    const { onExport } = setup()
+    await userEvent.click(screen.getByTestId('export-step'))
+    expect(onExport).toHaveBeenCalledWith('step')
+  })
+
   it('picks a workplane and goes back to the ground', async () => {
     const { store } = setup()
     await userEvent.click(screen.getByTestId('workplane'))

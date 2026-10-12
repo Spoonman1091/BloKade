@@ -11,7 +11,7 @@ describe('exportDesign', () => {
   it('downloads the export with a friendly file name', async () => {
     const download = vi.fn()
     const data = new ArrayBuffer(84)
-    const client = { exportStl: vi.fn().mockResolvedValue(data), export3mf: vi.fn() }
+    const client = { exportStl: vi.fn().mockResolvedValue(data), export3mf: vi.fn(), exportStep: vi.fn() }
     await exportDesign({ client, store: store(), format: 'stl', download })
     expect(client.exportStl).toHaveBeenCalledWith(expect.objectContaining({ name: 'Phone Stand' }), undefined)
     expect(download).toHaveBeenCalledWith(data, 'phone-stand.stl', 'model/stl')
@@ -19,15 +19,23 @@ describe('exportDesign', () => {
 
   it('exports only the selection when something is selected', async () => {
     const s = store()
-    const client = { exportStl: vi.fn(), export3mf: vi.fn().mockResolvedValue(new ArrayBuffer(1)) }
+    const client = { exportStl: vi.fn(), export3mf: vi.fn().mockResolvedValue(new ArrayBuffer(1)), exportStep: vi.fn() }
     s.setState({ selection: ['a'] })
     await exportDesign({ client, store: s, format: '3mf', download: vi.fn() })
     expect(client.export3mf).toHaveBeenCalledWith(expect.anything(), ['a'])
   })
 
+  it('exports STEP with the design name', async () => {
+    const download = vi.fn()
+    const exportStep = vi.fn(async () => new ArrayBuffer(4))
+    await exportDesign({ client: { exportStl: vi.fn(), export3mf: vi.fn(), exportStep }, store: store(), format: 'step', download })
+    expect(exportStep).toHaveBeenCalled()
+    expect(download).toHaveBeenCalledWith(expect.any(ArrayBuffer), 'phone-stand.step', 'model/step')
+  })
+
   it('shows export problems as a notice', async () => {
     const s = store()
-    const client = { exportStl: vi.fn().mockRejectedValue(new Error("There's nothing to export.")), export3mf: vi.fn() }
+    const client = { exportStl: vi.fn().mockRejectedValue(new Error("There's nothing to export.")), export3mf: vi.fn(), exportStep: vi.fn() }
     await exportDesign({ client, store: s, format: 'stl', download: vi.fn() })
     expect(s.getState().notice).toBe("There's nothing to export.")
   })
@@ -41,7 +49,7 @@ const storeWith = (doc: BloKadeDocument, selection: string[] = []) => {
   s.setState({ selection })
   return s
 }
-const okClient = () => ({ exportStl: vi.fn().mockResolvedValue(new ArrayBuffer(84)), export3mf: vi.fn() })
+const okClient = () => ({ exportStl: vi.fn().mockResolvedValue(new ArrayBuffer(84)), export3mf: vi.fn(), exportStep: vi.fn() })
 
 describe('export notices', () => {
   it('says only the selection was exported when other parts are visible', async () => {
@@ -85,7 +93,7 @@ describe('export notices', () => {
 
   it('keeps the error message when the export fails', async () => {
     const s = storeWith(setMode(withParts('a', 'b', 'h'), ['h'], 'hole'), ['a', 'h'])
-    const client = { exportStl: vi.fn().mockRejectedValue(new Error('Broken part.')), export3mf: vi.fn() }
+    const client = { exportStl: vi.fn().mockRejectedValue(new Error('Broken part.')), export3mf: vi.fn(), exportStep: vi.fn() }
     await exportDesign({ client, store: s, format: 'stl', download: vi.fn() })
     expect(s.getState().notice).toBe('Broken part.')
   })
