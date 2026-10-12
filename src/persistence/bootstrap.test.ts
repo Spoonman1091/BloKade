@@ -13,6 +13,12 @@ describe('openInitialDesign', () => {
     expect((await repo.list()).map((d) => d.id)).toEqual([opened.id])
   })
 
+  it('does not reuse the name of a damaged design when starting fresh', async () => {
+    const repo = createMemoryDesignRepository({ seed: { 'Untitled design': { schemaVersion: 1 } } })
+    const opened = await openInitialDesign(repo)
+    expect(opened.doc.name).toBe('Untitled design 2')
+  })
+
   it('reopens the last design', async () => {
     const repo = createMemoryDesignRepository()
     await repo.save('a', createEmptyDocument('A'))

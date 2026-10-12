@@ -1,5 +1,6 @@
 import { createEmptyDocument, newId } from '../document/factory'
 import type { BloKadeDocument } from '../document/types'
+import { nextUntitledName } from './design-names'
 import { NOT_FOUND, type DesignRepository } from './repository'
 
 export interface InitialDesign {
@@ -31,12 +32,12 @@ async function firstLoadable(repo: DesignRepository, ids: readonly string[]) {
 export async function openInitialDesign(repo: DesignRepository): Promise<InitialDesign> {
   try {
     const last = await repo.getLastOpened()
-    const listed = (await repo.list()).map((d) => d.id)
-    const ids = [...new Set([last, ...listed].filter((id): id is string => typeof id === 'string'))]
+    const listed = await repo.list()
+    const ids = [...new Set([last, ...listed.map((d) => d.id)].filter((id): id is string => typeof id === 'string'))]
     const opened = await firstLoadable(repo, ids)
     const notice = opened.damaged > 0 ? DAMAGED_DESIGN : null
     if (opened.id !== null) return { id: opened.id, doc: opened.doc, notice }
-    const fresh = { id: newId(), doc: createEmptyDocument() }
+    const fresh = { id: newId(), doc: createEmptyDocument(nextUntitledName(listed.map((d) => d.name))) }
     await repo.save(fresh.id, fresh.doc)
     return { ...fresh, notice }
   } catch (error) {

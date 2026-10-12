@@ -5,6 +5,7 @@ import { renameDocument } from '../document/ops'
 import type { BloKadeDocument } from '../document/types'
 import { STORAGE_UNAVAILABLE } from '../persistence/bootstrap'
 import { fileNameFor, parseDesignFile, serializeDesign } from '../persistence/design-file'
+import { nextUntitledName } from '../persistence/design-names'
 import { duplicateDesign, type DesignRepository, type DesignSummary } from '../persistence/repository'
 import { useBloKade, useBloKadeStore } from '../store/context'
 import { TextField } from './NumberField'
@@ -15,6 +16,8 @@ interface DesignsDialogProps {
   onClose(): void
   confirm?(message: string): boolean
 }
+
+const lastEdited = (summary: DesignSummary): string => new Date(summary.updatedAt).toLocaleString()
 
 function useDesignActions({ repo, flushAutosave, onClose, confirm }: Required<DesignsDialogProps>) {
   const store = useBloKadeStore()
@@ -41,7 +44,9 @@ function useDesignActions({ repo, flushAutosave, onClose, confirm }: Required<De
     onClose()
   }
   const createNew = async (): Promise<void> => {
-    const fresh = { id: newId(), doc: createEmptyDocument() }
+    await flushAutosave()
+    const names = (await repo.list()).map((d) => d.name)
+    const fresh = { id: newId(), doc: createEmptyDocument(nextUntitledName(names)) }
     await repo.save(fresh.id, fresh.doc)
     await open(fresh.id, fresh.doc)
   }
@@ -51,7 +56,7 @@ function useDesignActions({ repo, flushAutosave, onClose, confirm }: Required<De
     else notify(loaded.error)
   }
   const remove = async (summary: DesignSummary): Promise<void> => {
-    if (!confirm(`Delete "${summary.name}"? This can't be undone.`)) return
+    if (!confirm(`Delete "${summary.name}" (last edited ${lastEdited(summary)})? This can't be undone.`)) return
     await flushAutosave()
     await repo.remove(summary.id)
     if (summary.id !== store.getState().designId) return refresh()
@@ -109,7 +114,10 @@ export function DesignsDialog({ repo, flushAutosave, onClose, confirm = (m) => w
             const name = isCurrent ? currentName : design.name
             return (
               <li key={design.id} className={isCurrent ? 'current' : undefined}>
-                <span className="design-name">{name}</span>
+                <span className="design-name">
+                  {name}
+                  <small className="design-updated">Last edited {lastEdited(design)}</small>
+                </span>
                 {!isCurrent && <button type="button" className="tool-button" onClick={() => void actions.openExisting(design.id)}>Open</button>}
                 <button type="button" className="tool-button" aria-label={`Duplicate ${name}`} onClick={() => void actions.duplicate(design.id)}>Duplicate</button>
                 <button type="button" className="tool-button" aria-label={`Delete ${name}`} onClick={() => void actions.remove(design)}>Delete</button>

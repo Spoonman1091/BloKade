@@ -74,5 +74,6 @@ button { font: inherit; }
 .design-list { list-style: none; margin: 8px 0; padding: 0; max-height: 300px; overflow-y: auto; }
 .design-list li { display: flex; gap: 6px; align-items: center; padding: 4px 0; }
 .design-list li.current .design-name { font-weight: 700; }
-.design-name { flex: 1; }
+.design-name { flex: 1; display: flex; flex-direction: column; }
+.design-updated { color: var(--muted); font-size: 0.75rem; font-weight: 400; }
 .dialog-actions { display: flex; flex-wrap: wrap; gap: 6px; }

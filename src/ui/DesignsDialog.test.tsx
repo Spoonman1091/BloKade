@@ -9,9 +9,11 @@ import { createMemoryDesignRepository } from '../persistence/memory-repository'
 import { createBloKadeStore } from '../store/store'
 import { DesignsDialog } from './DesignsDialog'
 
+const DAY = 86_400_000
+
 async function setup(confirm = () => true) {
   let t = 0
-  const repo = createMemoryDesignRepository({ now: () => ++t })
+  const repo = createMemoryDesignRepository({ now: () => (t += DAY) })
   await repo.save('other', createEmptyDocument('Other'))
   await repo.save('current', createEmptyDocument('Current'))
   const store = createBloKadeStore({ designId: 'current', doc: createEmptyDocument('Current') })
@@ -37,6 +39,22 @@ describe('DesignsDialog', () => {
     expect(await repo.list()).toHaveLength(3)
   })
 
+  it('gives each new design its own name', async () => {
+    const { store, repo } = await setup()
+    await userEvent.click(screen.getByRole('button', { name: 'New design' }))
+    await waitFor(() => expect(store.getState().history.present.name).toBe('Untitled design'))
+    await repo.save(store.getState().designId, store.getState().history.present)
+    store.getState().openDesign('current', createEmptyDocument('Current'))
+    await userEvent.click(screen.getByRole('button', { name: 'New design' }))
+    await waitFor(() => expect(store.getState().history.present.name).toBe('Untitled design 2'))
+  })
+
+  it('shows when each design was last edited', async () => {
+    await setup()
+    expect(screen.getByText(`Last edited ${new Date(DAY).toLocaleString()}`)).toBeInTheDocument()
+    expect(screen.getByText(`Last edited ${new Date(2 * DAY).toLocaleString()}`)).toBeInTheDocument()
+  })
+
   it('renames the current design', async () => {
     const { store } = await setup()
     const input = screen.getByTestId('design-name')
@@ -50,7 +68,7 @@ describe('DesignsDialog', () => {
     const { repo } = await setup(confirm)
     await userEvent.click(screen.getByRole('button', { name: 'Delete Other' }))
     await waitFor(async () => expect((await repo.list()).map((d) => d.id)).toEqual(['current']))
-    expect(confirm).toHaveBeenCalledWith('Delete "Other"? This can\'t be undone.')
+    expect(confirm).toHaveBeenCalledWith(`Delete "Other" (last edited ${new Date(DAY).toLocaleString()})? This can't be undone.`)
   })
 
   it('keeps a design when deletion is not confirmed', async () => {
