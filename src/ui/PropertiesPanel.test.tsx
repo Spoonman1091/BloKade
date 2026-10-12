@@ -3,8 +3,10 @@ import { act, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { createActions } from '../app/actions'
+import { boxMesh } from '../app/testing/meshes'
 import { renderWithStore } from '../app/testing/render'
 import { createEmptyDocument } from '../document/factory'
+import { updateNode } from '../document/ops'
 import { MAX_MM, MIN_MM } from '../plugins/params'
 import { registry } from '../plugins/index'
 import { createBloKadeStore } from '../store/store'
@@ -128,5 +130,20 @@ describe('PropertiesPanel', () => {
     act(() => actions.addShape('text'))
     await setField('param-text', 'Hi Kade')
     expect(selected()).toMatchObject({ params: { text: 'Hi Kade' } })
+  })
+
+  it('shows line-up buttons for two or more parts and uses them', async () => {
+    const { store, actions } = setup()
+    act(() => actions.addShape('box'))
+    act(() => actions.addShape('box'))
+    const [a, b] = store.getState().history.present.root
+    if (!a || !b) throw new Error('missing parts')
+    act(() => {
+      store.getState().apply((d) => updateNode(d, b, (n) => ({ ...n, transform: { ...n.transform, position: [30, 0, 0] } })))
+      store.getState().applyBuild('d', { nodes: { [a]: { status: 'ok', mesh: boxMesh(20, 20, 20) }, [b]: { status: 'ok', mesh: boxMesh(20, 20, 20) } } })
+      store.getState().select([a, b])
+    })
+    await userEvent.click(screen.getByTestId('align-x-min'))
+    expect(store.getState().history.present.nodes[b]?.transform.position[0]).toBe(0)
   })
 })

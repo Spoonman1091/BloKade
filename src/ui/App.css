@@ -86,3 +86,4 @@ button { font: inherit; }
 .variable-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 4px; align-items: start; }
 .variable-row .field { grid-template-columns: auto 1fr; }
 .hint code { background: var(--bg); padding: 0 4px; border-radius: 4px; }
+.align-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 4px; }

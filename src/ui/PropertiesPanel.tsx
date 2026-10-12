@@ -8,6 +8,7 @@ import { resolveParams } from '../plugins/params'
 import type { PluginRegistry } from '../plugins/registry'
 import type { NumberParamType, ParamSpec } from '../plugins/types'
 import { useBloKade } from '../store/context'
+import { AlignTools } from './AlignTools'
 import { TextField } from './NumberField'
 import { ValueField } from './ValueField'
 
@@ -78,6 +79,7 @@ export function PropertiesPanel({ registry }: { registry: PluginRegistry }) {
       <section className="panel" aria-label="Properties">
         <h2>Properties</h2>
         <p className="hint">{selection.length} parts selected. Group them, or pick one to change it.</p>
+        <AlignTools />
       </section>
     )
   }
