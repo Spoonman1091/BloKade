@@ -66,6 +66,34 @@ describe('Round edges and Bevel edges', () => {
       .toBe('Round edges: 15 mm is too big for these edges. Try a smaller size.')
   })
 
+  it("explains edges that can't be rounded at any size", () => {
+    const touching = (() => {
+      const a = cad().box(10, 10, 10)
+      const b = cad().box(10, 10, 10).translate([10, 10, 0])
+      try { return a.fuse(b) } finally { a.delete(); b.delete() }
+    })()
+    const all: EdgeSelection = { by: 'description', which: 'all' }
+    expect(errorOf(() => applyModifiers(touching.clone(), [round(1, all)])).message)
+      .toBe("Round edges can't round these edges. Try choosing different edges.")
+    expect(errorOf(() => applyModifiers(touching, [bevel(1, all)])).message)
+      .toBe("Bevel edges can't bevel these edges. Try choosing different edges.")
+  })
+
+  it('ignores the seam line of a cylinder (Review Focus 1)', () => {
+    const { shape, warnings } = applyModifiers(cad().cylinder(20, 20), [round(0.05, { by: 'description', which: 'vertical' })])
+    expect(warnings).toEqual({ aaaaaaaa: 'No edges match, so this does nothing yet.' })
+    shape.delete()
+  })
+
+  it('does not fail on round shapes with seams (Review Focus 1)', () => {
+    const all: EdgeSelection = { by: 'description', which: 'all' }
+    for (const make of [() => cad().sphere(20), () => cad().torus(40, 10)]) {
+      const { shape, warnings } = applyModifiers(make(), [round(2, all)])
+      expect(Object.values(warnings).every((w) => w === 'No edges match, so this does nothing yet.')).toBe(true)
+      shape.delete()
+    }
+  })
+
   it('does nothing, with a hint, when no edge matches', () => {
     const { shape, warnings } = applyModifiers(cad().sphere(20), [round(2)])
     expect(warnings).toEqual({ aaaaaaaa: 'No edges match, so this does nothing yet.' })

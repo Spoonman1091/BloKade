@@ -208,6 +208,12 @@ describe('Evaluator modifiers', () => {
     expect(candidates.find((c) => c.picked)?.fingerprint.mid[2]).toBe(1)
   })
 
+  it("doesn't offer a cylinder's seam line as an edge to pick", () => {
+    const { doc, modifierId } = withModifier(addNode(createEmptyDocument(), shape('c', 'cylinder', { diameter: 20, height: 20 })), 'c', 'fillet')
+    const candidates = newEvaluator().edgeCandidates(doc, 'c', modifierId)
+    expect(candidates.map((c) => c.fingerprint.kind)).toEqual(['circle', 'circle'])
+  })
+
   it('refuses edge picking for modifiers that have no edges', () => {
     const { doc, modifierId } = withModifier(addNode(createEmptyDocument(), shape('a', 'box', { width: 20, depth: 20, height: 20 })), 'a', 'mirror')
     expect(buildError(() => newEvaluator().edgeCandidates(doc, 'a', modifierId)).message).toContain('Only Round edges and Bevel edges')

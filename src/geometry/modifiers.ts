@@ -2,6 +2,7 @@ import { getOC, type Edge, type Shape3D } from 'replicad'
 import { MODIFIER_LABELS } from '../document/modifiers'
 import {
   MAX_COPIES,
+  MIN_EDGE_SIZE,
   type ChamferModifier,
   type CircularPatternModifier,
   type FilletModifier,
@@ -47,30 +48,49 @@ function isSound(shape: Shape3D): boolean {
   }
 }
 
+type EdgeModifier = FilletModifier | ChamferModifier
+type EdgePick = (edge: Edge) => number | null
+
+/** Rounds or bevels at `size`; null when OpenCascade fails or returns a broken solid. Does not consume `shape`. */
+function tryRound(shape: Shape3D, type: EdgeModifier['type'], pickAt: (size: number) => EdgePick, size: number): Shape3D | null {
+  let out: Shape3D
+  try {
+    out = type === 'fillet' ? shape.fillet(pickAt(size)) : shape.chamfer(pickAt(size))
+  } catch {
+    return null
+  }
+  if (isSound(out)) return out
+  out.delete()
+  return null
+}
+
+/** Too big if the smallest size works; otherwise these edges can't be rounded at all. */
+function roundingProblem(shape: Shape3D, modifier: EdgeModifier, pickAt: (size: number) => EdgePick, size: number): ModifierError {
+  const label = MODIFIER_LABELS[modifier.type]
+  const smallest = size > MIN_EDGE_SIZE ? tryRound(shape, modifier.type, pickAt, MIN_EDGE_SIZE) : null
+  if (smallest) {
+    smallest.delete()
+    return new ModifierError(`${label}: ${size} mm is too big for these edges. Try a smaller size.`)
+  }
+  const verb = modifier.type === 'fillet' ? 'round' : 'bevel'
+  return new ModifierError(`${label} can't ${verb} these edges. Try choosing different edges.`)
+}
+
 /** Rounds or bevels the chosen edges. Does not consume `shape`; always returns a new shape. */
-function roundEdges(shape: Shape3D, modifier: FilletModifier | ChamferModifier): Applied {
+function roundEdges(shape: Shape3D, modifier: EdgeModifier): Applied {
   const box = shapeBox(shape)
   const infos = edgeInfos(shape)
   const { indices, lost } = selectedEdges(modifier.edges, infos, box)
   if (indices.size === 0) return { shape: shape.clone(), warning: lostWarning(lost) ?? 'No edges match, so this does nothing yet.' }
   const mids = [...indices].flatMap((i) => (infos[i] ? [midOf(infos[i])] : []))
   const tol = edgeTolerance(box)
-  const size = modifier.type === 'fillet' ? modifier.radius : modifier.distance
-  const pick = (edge: Edge): number | null => {
+  const pickAt = (size: number): EdgePick => (edge) => {
     const m = readVector(edge.pointAt(0.5))
     return mids.some((p) => Math.hypot(p[0] - m[0], p[1] - m[1], p[2] - m[2]) <= tol) ? size : null
   }
-  const tooBig = new ModifierError(`${MODIFIER_LABELS[modifier.type]}: ${size} mm is too big for these edges. Try a smaller size.`)
-  let out: Shape3D
-  try {
-    out = modifier.type === 'fillet' ? shape.fillet(pick) : shape.chamfer(pick)
-  } catch {
-    throw tooBig
-  }
-  if (!isSound(out)) {
-    out.delete()
-    throw tooBig
-  }
+  const size = modifier.type === 'fillet' ? modifier.radius : modifier.distance
+  const out = tryRound(shape, modifier.type, pickAt, size)
+  if (!out) throw roundingProblem(shape, modifier, pickAt, size)
   return { shape: out, warning: lostWarning(lost) }
 }
 

@@ -9,6 +9,8 @@ export interface EdgeInfo {
   /** Unit direction at the midpoint. */
   readonly tangent: Vec3
   readonly length: number
+  /** A closing line where a round face meets itself (a cylinder's side seam). Not a real edge, so never chosen. */
+  readonly seam: boolean
 }
 
 /** Highest score that still counts as "the same edge". */
@@ -31,8 +33,8 @@ const distance = (a: Vec3, b: Vec3): number => Math.hypot(a[0] - b[0], a[1] - b[
 
 export function matchesDescription(info: EdgeInfo, which: EdgeWhich, box: Box): boolean {
   const tol = edgeTolerance(box)
-  // Collapsed edges (a sphere's poles) can't be rounded and would make OpenCascade fail.
-  if (info.length <= tol) return false
+  // Collapsed edges (a sphere's poles) and seams can't be rounded and would make OpenCascade fail.
+  if (info.seam || info.length <= tol) return false
   const zs = info.samples.map((p) => p[2])
   switch (which) {
     case 'all': return true
@@ -74,7 +76,7 @@ export function matchFingerprints(
 ): { matched: ReadonlySet<number>; lost: number } {
   const current = infos.map((info) => fingerprintOf(info, box))
   const pairs: Pair[] = fingerprints
-    .flatMap((fp, f) => current.map((c, e) => ({ f, e, score: fingerprintScore(fp, c) })))
+    .flatMap((fp, f) => current.flatMap((c, e) => (infos[e]?.seam ? [] : [{ f, e, score: fingerprintScore(fp, c) }])))
     .filter((p) => p.score <= MATCH_THRESHOLD)
     .sort((a, b) => a.score - b.score)
   const used = pairs.reduce(

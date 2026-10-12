@@ -1,6 +1,7 @@
 import type { Edge, Shape3D } from 'replicad'
 import type { Box } from '../document/box'
 import type { EdgeKind, Vec3 } from '../document/types'
+import { seamFlags } from './edge-seams'
 import type { EdgeInfo } from './edge-select'
 
 const SAMPLE_AT = [0, 0.25, 0.5, 0.75, 1] as const
@@ -21,24 +22,30 @@ function unit(v: Vec3): Vec3 {
   return length > 1e-12 ? [v[0] / length, v[1] / length, v[2] / length] : [0, 0, 0]
 }
 
-export function edgeInfo(edge: Edge): EdgeInfo {
+export function edgeInfo(edge: Edge, seam: boolean): EdgeInfo {
   return {
     kind: KINDS[edge.geomType] ?? 'other',
     samples: SAMPLE_AT.map((t) => read(edge.pointAt(t))),
     tangent: unit(read(edge.tangentAt(0.5))),
     length: edge.length,
+    seam,
   }
 }
 
-/** Facts about every edge of a shape, in replicad's edge order. Frees the edge wrappers. */
+/** Reads every edge of a shape, in replicad's edge order, telling `fn` whether it is a seam. Frees the wrappers. */
+export function readEdges<T>(shape: Shape3D, fn: (edge: Edge, seam: boolean) => T): T[] {
+  const edges = shape.edges
+  try {
+    const seams = seamFlags(shape, edges)
+    return edges.map((edge, i) => fn(edge, seams[i] ?? false))
+  } finally {
+    edges.forEach((edge) => edge.delete())
+  }
+}
+
+/** Facts about every edge of a shape, in replicad's edge order. */
 export function edgeInfos(shape: Shape3D): EdgeInfo[] {
-  return shape.edges.map((edge) => {
-    try {
-      return edgeInfo(edge)
-    } finally {
-      edge.delete()
-    }
-  })
+  return readEdges(shape, edgeInfo)
 }
 
 /** Points along an edge for drawing it: 2 for a straight edge, more for a curve. Flat x,y,z numbers. */

@@ -9,7 +9,7 @@ import {
 function line(a: Vec3, b: Vec3): EdgeInfo {
   const at = (t: number): Vec3 => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]
   const length = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2])
-  return { kind: 'line', samples: [0, 0.25, 0.5, 0.75, 1].map(at), tangent: [(b[0] - a[0]) / length, (b[1] - a[1]) / length, (b[2] - a[2]) / length], length }
+  return { kind: 'line', samples: [0, 0.25, 0.5, 0.75, 1].map(at), tangent: [(b[0] - a[0]) / length, (b[1] - a[1]) / length, (b[2] - a[2]) / length], length, seam: false }
 }
 
 /** The 12 edges of an axis-aligned box from min to max. */
@@ -40,14 +40,14 @@ describe('edges by description', () => {
 
   it('treats a circle lying on the top as a top edge', () => {
     const circle: EdgeInfo = {
-      kind: 'circle', samples: [[5, 0, 20], [0, 5, 20], [-5, 0, 20], [0, -5, 20], [5, 0, 20]], tangent: [-1, 0, 0], length: 31.4,
+      kind: 'circle', samples: [[5, 0, 20], [0, 5, 20], [-5, 0, 20], [0, -5, 20], [5, 0, 20]], tangent: [-1, 0, 0], length: 31.4, seam: false,
     }
     expect(matchesDescription(circle, 'top', cubeBox)).toBe(true)
     expect(matchesDescription(circle, 'vertical', cubeBox)).toBe(false)
   })
 
   it('never chooses collapsed edges, like the poles of a sphere', () => {
-    const pole: EdgeInfo = { kind: 'other', samples: Array.from({ length: 5 }, (): Vec3 => [0, 0, 20]), tangent: [0, 0, 0], length: 0 }
+    const pole: EdgeInfo = { kind: 'other', samples: Array.from({ length: 5 }, (): Vec3 => [0, 0, 20]), tangent: [0, 0, 0], length: 0, seam: false }
     expect(matchesDescription(pole, 'top', cubeBox)).toBe(false)
     expect(matchesDescription(pole, 'all', cubeBox)).toBe(false)
   })
@@ -103,5 +103,24 @@ describe('edge fingerprints (Review Focus 3)', () => {
     const flat: Box = { min: [0, 0, 0], max: [10, 10, 0] }
     const fp = fingerprintOf(line([0, 0, 0], [10, 0, 0]), flat)
     expect(fp.mid).toEqual([0.5, 0, 0.5])
+  })
+})
+
+describe('seam edges', () => {
+  const seam: EdgeInfo = { ...line([10, 0, 0], [10, 0, 20]), seam: true }
+  const withSeam = [...cube, seam]
+
+  it('never chooses a seam by description', () => {
+    for (const which of ['all', 'vertical', 'top', 'bottom', 'horizontal'] as const) {
+      expect(matchesDescription(seam, which, cubeBox)).toBe(false)
+    }
+    expect(selectedEdges({ by: 'description', which: 'all' }, withSeam, cubeBox).indices.has(12)).toBe(false)
+  })
+
+  it('never matches a remembered edge to a seam', () => {
+    const remembered = fingerprintOf({ ...seam, seam: false }, cubeBox)
+    const { matched, lost } = matchFingerprints([remembered], [seam], cubeBox)
+    expect(matched.size).toBe(0)
+    expect(lost).toBe(1)
   })
 })
