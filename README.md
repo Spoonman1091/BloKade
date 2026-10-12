@@ -20,6 +20,8 @@ for example `http://192.168.1.50:5233`.
 
 **On a server managed by Portainer:** see [Deploy with Portainer](#deploy-with-portainer) below.
 
+**On the internet (GitHub Pages):** see [GitHub Pages](#github-pages) below.
+
 **Back up your designs.** Designs live in each browser, not on the server, so clearing the browser's data
 deletes them. To keep a copy (or move a design to another computer), click the **📁** button with the
 design's name in the toolbar, then **Save to file**. Use **Load from file** in the same window to bring it back.
@@ -103,6 +105,35 @@ Git only holds the stack file; the app itself is inside the image. So updating t
    - With **Option B** (registry), click **Pull and redeploy** so Portainer downloads the new image.
    - With **Option A or C** (image already on the server), redeploy *without* re-pulling. There is no
      registry for Portainer to pull from, and a pull would fail.
+
+## GitHub Pages
+
+Every push to `master` builds BloKade and publishes it to
+`https://spoonman1091.github.io/BloKade/` using `.github/workflows/pages.yml`. The workflow runs the unit
+tests first, so a broken build is never published.
+
+**One-time setup:** on GitHub, open the repository's **Settings → Pages**, and under **Build and deployment**
+set **Source** to **GitHub Actions**. To publish without pushing, open **Actions → Deploy to GitHub Pages →
+Run workflow**.
+
+Good to know:
+
+- **Designs don't move between sites.** Each website keeps its own designs in the browser, so designs made on
+  the home server don't appear on GitHub Pages, and the other way round. Use **Save to file** and
+  **Load from file** to move one across.
+- **Anyone with the link can use it.** Nothing is uploaded: every person's designs stay in their own browser.
+- **The first visit is slower,** because the 23 MB geometry engine downloads once. After that the browser
+  keeps it.
+
+The site lives under `/BloKade/`, so the workflow builds with `BLOKADE_BASE=/BloKade/`. To try that build
+locally:
+
+```bash
+BLOKADE_BASE=/BloKade/ npm run build
+BLOKADE_BASE=/BloKade/ npx vite preview
+```
+
+Then open `http://localhost:4173/BloKade/`. Docker and `npm run dev` keep using `/`.
 
 ## Test it
 
