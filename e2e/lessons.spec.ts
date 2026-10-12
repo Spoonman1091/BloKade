@@ -129,18 +129,22 @@ test('Perfect fit', async ({ page }) => {
 test('Ready to print', async ({ page }) => {
   await startTutorial(page, 'ready-to-print')
   await page.getByTestId('add-box').click()
-  await next(page)
-  await next(page)
-  await next(page)
+  for (const snippet of ['STL', '3MF', 'slicer']) {
+    await expect(step(page)).toContainText(snippet)
+    await next(page)
+  }
   await finished(page)
 })
 
 test('help mode explains a button without pressing it', async ({ page }) => {
   await page.goto('/')
+  await expect(page.getByText('Warming up the geometry engine…')).toBeHidden()
   await page.getByTestId('help-mode').click()
   await page.getByTestId('add-box').click()
   await expect(page.getByTestId('help-card')).toContainText('Click to add a Box')
+  await expect(page.getByRole('treeitem', { name: 'Box' })).toHaveCount(0)
   await page.keyboard.press('Escape')
   await expect(page.getByTestId('help-card')).toBeHidden()
-  await expect(page.getByRole('treeitem', { name: 'Box' })).toHaveCount(0)
+  await page.getByTestId('add-box').click()
+  await expect(page.getByRole('treeitem', { name: 'Box' })).toHaveCount(1)
 })
