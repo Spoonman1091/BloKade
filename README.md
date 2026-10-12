@@ -18,6 +18,8 @@ for example `http://192.168.1.50:5233`.
 - **Stop it:** `docker compose down`
 - **Update it:** `git pull`, then `docker compose up -d --build`
 
+**On a server managed by Portainer:** see [Deploy with Portainer](#deploy-with-portainer) below.
+
 **Back up your designs.** Designs live in each browser, not on the server, so clearing the browser's data
 deletes them. To keep a copy (or move a design to another computer), click the **📁** button with the
 design's name in the toolbar, then **Save to file**. Use **Load from file** in the same window to bring it back.
@@ -28,6 +30,79 @@ design's name in the toolbar, then **Save to file**. Use **Load from file** in t
 npm install
 npm run dev
 ```
+
+## Deploy with Portainer
+
+`docker-compose.prod.yml` is the same stack without a `build:` step, so Portainer can deploy it straight
+from Git. You build the image yourself first, then Portainer runs it. Two settings come from environment
+variables:
+
+| Variable | Default | What it does |
+|---|---|---|
+| `BLOKADE_IMAGE` | `blokade:latest` | The image to run |
+| `BLOKADE_PORT` | `5233` | The port BloKade is served on |
+
+### 1. Build the image
+
+Pick one of these.
+
+**Option A: build on the Docker host itself** (simplest; no registry needed). On the server Portainer manages:
+
+```bash
+git clone https://github.com/Spoonman1091/BloKade.git
+cd BloKade
+docker build -t blokade:latest .
+```
+
+To update later: `git pull`, then run the same `docker build` command again.
+
+**Option B: build somewhere else and push to a registry**, for example GitHub Container Registry. Log in
+first with a GitHub token that has the `write:packages` scope:
+
+```bash
+echo "$GITHUB_TOKEN" | docker login ghcr.io -u spoonman1091 --password-stdin
+```
+
+Then build for the server's CPU and push. Use `linux/arm64` instead of `linux/amd64` for a Raspberry Pi
+or another ARM server. Building on a Mac for an Intel/AMD server needs `--platform`.
+
+```bash
+docker buildx build --platform linux/amd64 -t ghcr.io/spoonman1091/blokade:latest --push .
+```
+
+If the package is private, add the registry in Portainer under **Registries** so the server can pull it.
+
+**Option C: copy the image over SSH** (no registry, built on another machine):
+
+```bash
+docker buildx build --platform linux/amd64 -t blokade:latest --load .
+docker save blokade:latest | ssh user@server docker load
+```
+
+### 2. Create the stack in Portainer
+
+1. In Portainer, open your environment, then **Stacks → Add stack**.
+2. Name it `blokade` and choose **Repository** as the build method.
+3. Fill in the repository fields:
+   - **Repository URL:** `https://github.com/Spoonman1091/BloKade`
+   - **Repository reference:** `refs/heads/master`
+   - **Compose path:** `docker-compose.prod.yml`
+   - Turn on **Authentication** only if the repository is private, using a GitHub token with read access.
+4. Under **Environment variables**, add `BLOKADE_IMAGE` if you used a registry (for example
+   `ghcr.io/spoonman1091/blokade:latest`), and `BLOKADE_PORT` if you want a port other than 5233.
+5. Optional: turn on **GitOps updates** (polling, or a webhook) so the stack redeploys when
+   `docker-compose.prod.yml` changes in Git.
+6. Click **Deploy the stack**, then open `http://<server-ip>:5233`.
+
+### 3. Update to a new version
+
+Git only holds the stack file; the app itself is inside the image. So updating takes two steps:
+
+1. Build the new image again, using the same option and tag as in step 1.
+2. In Portainer, open the stack and redeploy it:
+   - With **Option B** (registry), click **Pull and redeploy** so Portainer downloads the new image.
+   - With **Option A or C** (image already on the server), redeploy *without* re-pulling. There is no
+     registry for Portainer to pull from, and a pull would fail.
 
 ## Test it
 
