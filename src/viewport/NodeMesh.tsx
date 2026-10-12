@@ -2,7 +2,7 @@ import type { ThreeEvent } from '@react-three/fiber'
 import { useEffect, useMemo } from 'react'
 import { MathUtils } from 'three'
 import { HOLE_COLOR } from '../document/factory'
-import type { NodeId, SceneNode } from '../document/types'
+import type { NodeId, SceneNode, Vec3 } from '../document/types'
 import type { DisplayedMesh } from '../store/merge-build'
 import { toBufferGeometry, toEdgeGeometry } from './three-geometry'
 
@@ -14,9 +14,11 @@ interface NodeMeshProps {
   displayed: DisplayedMesh
   selected: boolean
   onSelect(id: NodeId, additive: boolean): void
+  /** Set while choosing a workplane: clicking a face reports it instead of selecting the part. */
+  onPickFace?(point: Vec3, normal: Vec3): void
 }
 
-export function NodeMesh({ node, displayed, selected, onSelect }: NodeMeshProps) {
+export function NodeMesh({ node, displayed, selected, onSelect, onPickFace }: NodeMeshProps) {
   const geometry = useMemo(() => toBufferGeometry(displayed.mesh), [displayed.mesh])
   const edges = useMemo(() => toEdgeGeometry(displayed.mesh), [displayed.mesh])
   useEffect(() => () => {
@@ -30,6 +32,13 @@ export function NodeMesh({ node, displayed, selected, onSelect }: NodeMeshProps)
   const opacity = isHole ? 0.35 : displayed.stale ? 0.5 : 1
   const handleClick = (event: ThreeEvent<MouseEvent>): void => {
     event.stopPropagation()
+    if (onPickFace) {
+      if (event.face) {
+        const normal = event.face.normal.clone().transformDirection(event.object.matrixWorld)
+        onPickFace([event.point.x, event.point.y, event.point.z], [normal.x, normal.y, normal.z])
+      }
+      return
+    }
     onSelect(node.id, event.shiftKey || event.metaKey || event.ctrlKey)
   }
 

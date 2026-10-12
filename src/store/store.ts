@@ -1,11 +1,17 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import { DocumentOpError } from '../document/ops'
-import type { BloKadeDocument, NodeId } from '../document/types'
+import type { BloKadeDocument, NodeId, Vec3 } from '../document/types'
 import type { BuildResult } from '../geometry/types'
 import { commit, createHistory, redo, undo, type History } from '../history/history'
 import { mergeBuild, type DisplayedMesh } from './merge-build'
 
 export type ToolMode = 'move' | 'rotate' | 'size'
+
+/** Where new shapes land: a point on a face, turned so a new shape's bottom sits flat on it. */
+export interface Workplane {
+  readonly origin: Vec3
+  readonly rotation: Vec3
+}
 
 export interface BloKadeState {
   readonly designId: string
@@ -18,6 +24,12 @@ export interface BloKadeState {
   readonly notice: string | null
   /** A notice that stays until the problem is gone (no timeout, no dismiss button). */
   readonly stickyNotice: string | null
+  /** Null means the ground grid. */
+  readonly workplane: Workplane | null
+  /** True while the next click on a face chooses the workplane. */
+  readonly pickingWorkplane: boolean
+  setWorkplane(workplane: Workplane | null): void
+  setPickingWorkplane(picking: boolean): void
   apply(fn: (doc: BloKadeDocument) => BloKadeDocument): void
   select(ids: readonly NodeId[]): void
   setTool(tool: ToolMode): void
@@ -45,6 +57,8 @@ export function createBloKadeStore(init: { designId: string; doc: BloKadeDocumen
     engineReady: false,
     notice: null,
     stickyNotice: null,
+    workplane: null,
+    pickingWorkplane: false,
     apply: (fn) => {
       try {
         const next = fn(get().history.present)
@@ -56,6 +70,8 @@ export function createBloKadeStore(init: { designId: string; doc: BloKadeDocumen
     },
     select: (ids) => set((s) => ({ selection: pruneSelection(s.history.present, ids) })),
     setTool: (tool) => set({ tool }),
+    setWorkplane: (workplane) => set({ workplane, pickingWorkplane: false }),
+    setPickingWorkplane: (pickingWorkplane) => set({ pickingWorkplane }),
     undo: () => set((s) => {
       const history = undo(s.history)
       return { history, selection: pruneSelection(history.present, s.selection) }
@@ -65,7 +81,7 @@ export function createBloKadeStore(init: { designId: string; doc: BloKadeDocumen
       return { history, selection: pruneSelection(history.present, s.selection) }
     }),
     openDesign: (designId, doc) =>
-      set({ designId, history: createHistory(doc), selection: [], meshes: {}, errors: {} }),
+      set({ designId, history: createHistory(doc), selection: [], meshes: {}, errors: {}, workplane: null, pickingWorkplane: false }),
     applyBuild: (designId, result) => {
       if (designId !== get().designId) return
       set((s) => ({ ...mergeBuild(s.meshes, result), engineReady: true }))

@@ -64,4 +64,14 @@ describe('store', () => {
     store.getState().undo()
     expect(store.getState().history.present.nodes.b?.formulas).toEqual({ 'position.0': 'wall' })
   })
+
+  it('remembers a workplane, stops picking when one is chosen, and forgets it for another design', () => {
+    const store = createBloKadeStore({ designId: 'd', doc: createEmptyDocument() })
+    store.getState().setPickingWorkplane(true)
+    expect(store.getState().pickingWorkplane).toBe(true)
+    store.getState().setWorkplane({ origin: [1, 2, 3], rotation: [0, 90, 0] })
+    expect(store.getState()).toMatchObject({ workplane: { origin: [1, 2, 3], rotation: [0, 90, 0] }, pickingWorkplane: false })
+    store.getState().openDesign('other', createEmptyDocument())
+    expect(store.getState().workplane).toBeNull()
+  })
 })

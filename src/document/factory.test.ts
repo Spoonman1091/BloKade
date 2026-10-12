@@ -61,4 +61,9 @@ describe('factories', () => {
     expect(pickColor(0)).toBe(SHAPE_COLORS[0])
     expect(pickColor(SHAPE_COLORS.length + 1)).toBe(SHAPE_COLORS[1])
   })
+
+  it('can place a new shape with a rotation', () => {
+    const node = createShapeNode({ shapeType: 'box', name: 'Box', params: {}, color: '#f00', position: [1, 2, 3], rotation: [0, 90, 0] })
+    expect(node.transform).toEqual({ position: [1, 2, 3], rotation: [0, 90, 0] })
+  })
 })

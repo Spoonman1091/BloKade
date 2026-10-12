@@ -36,6 +36,7 @@ export function createShapeNode(input: {
   color: string
   id?: NodeId
   position?: Vec3
+  rotation?: Vec3
 }): ShapeNode {
   return {
     id: input.id ?? newId(),
@@ -46,7 +47,7 @@ export function createShapeNode(input: {
     mode: 'solid',
     hidden: false,
     color: input.color,
-    transform: input.position ? { ...IDENTITY_TRANSFORM, position: input.position } : IDENTITY_TRANSFORM,
+    transform: { position: input.position ?? IDENTITY_TRANSFORM.position, rotation: input.rotation ?? IDENTITY_TRANSFORM.rotation },
   }
 }
 
