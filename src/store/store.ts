@@ -16,6 +16,8 @@ export interface BloKadeState {
   readonly errors: Readonly<Record<NodeId, string>>
   readonly engineReady: boolean
   readonly notice: string | null
+  /** A notice that stays until the problem is gone (no timeout, no dismiss button). */
+  readonly stickyNotice: string | null
   apply(fn: (doc: BloKadeDocument) => BloKadeDocument): void
   select(ids: readonly NodeId[]): void
   setTool(tool: ToolMode): void
@@ -24,6 +26,7 @@ export interface BloKadeState {
   openDesign(designId: string, doc: BloKadeDocument): void
   applyBuild(designId: string, result: BuildResult): void
   notify(message: string | null): void
+  setStickyNotice(message: string | null): void
 }
 
 export type BloKadeStore = StoreApi<BloKadeState>
@@ -41,6 +44,7 @@ export function createBloKadeStore(init: { designId: string; doc: BloKadeDocumen
     errors: {},
     engineReady: false,
     notice: null,
+    stickyNotice: null,
     apply: (fn) => {
       try {
         const next = fn(get().history.present)
@@ -67,5 +71,6 @@ export function createBloKadeStore(init: { designId: string; doc: BloKadeDocumen
       set((s) => ({ ...mergeBuild(s.meshes, result), engineReady: true }))
     },
     notify: (notice) => set({ notice }),
+    setStickyNotice: (stickyNotice) => set({ stickyNotice }),
   }))
 }

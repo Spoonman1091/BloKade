@@ -19,7 +19,7 @@ export function Workspace({ deps }: { deps: AppDeps }) {
   const actions = useMemo(() => createActions(store, deps.registry), [store, deps.registry])
   const [showDesigns, setShowDesigns] = useState(false)
   useGeometrySync(store, deps.client)
-  const flushAutosave = useAutosave(store, deps.repo)
+  const flushAutosave = useAutosave(store, deps.repo, deps.openTabChannel)
   useShortcuts(actions, !showDesigns)
   const onExport = (format: ExportFormat): void => void exportDesign({ client: deps.client, store, format })
 

@@ -11,6 +11,9 @@ export interface Autosaver {
 export function createAutosaver(options: {
   save(id: string, doc: BloKadeDocument): Promise<void>
   onError(error: unknown): void
+  /** When true for a design, saves of it are skipped (another tab owns it). */
+  isBlocked?(id: string): boolean
+  onSaved?(id: string): void
   delayMs?: number
 }): Autosaver {
   const delayMs = options.delayMs ?? AUTOSAVE_DELAY_MS
@@ -25,9 +28,11 @@ export function createAutosaver(options: {
   }
 
   const save = async (job: { id: string; doc: BloKadeDocument }): Promise<void> => {
+    if (options.isBlocked?.(job.id)) return
     try {
       await options.save(job.id, job.doc)
       failing = false
+      options.onSaved?.(job.id)
     } catch (error) {
       if (!failing) options.onError(error)
       failing = true

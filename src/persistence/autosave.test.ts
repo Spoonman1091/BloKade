@@ -74,3 +74,33 @@ describe('autosaver', () => {
     expect(flushed).toBe(true)
   })
 })
+
+describe('autosaver tab lock', () => {
+  it('does not save a design that is locked by another tab', async () => {
+    const save = vi.fn().mockResolvedValue(undefined)
+    const onSaved = vi.fn()
+    const saver = createAutosaver({ save, onError: vi.fn(), isBlocked: (id) => id === 'd', onSaved })
+    saver.schedule('d', createEmptyDocument())
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS)
+    await saver.flush()
+    expect(save).not.toHaveBeenCalled()
+    expect(onSaved).not.toHaveBeenCalled()
+  })
+
+  it('reports each successful save', async () => {
+    const save = vi.fn().mockResolvedValue(undefined)
+    const onSaved = vi.fn()
+    const saver = createAutosaver({ save, onError: vi.fn(), isBlocked: () => false, onSaved })
+    saver.schedule('d', createEmptyDocument())
+    await saver.flush()
+    expect(onSaved).toHaveBeenCalledExactlyOnceWith('d')
+  })
+
+  it('does not report a failed save', async () => {
+    const onSaved = vi.fn()
+    const saver = createAutosaver({ save: vi.fn().mockRejectedValue(new Error('x')), onError: vi.fn(), onSaved })
+    saver.schedule('d', createEmptyDocument())
+    await saver.flush()
+    expect(onSaved).not.toHaveBeenCalled()
+  })
+})

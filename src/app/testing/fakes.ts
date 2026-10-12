@@ -19,6 +19,7 @@ export function fakeDeps(overrides: Partial<AppDeps> = {}): AppDeps {
     client: new GeometryClient(() => ({ api: fakeGeometryApi(), terminate: () => undefined })),
     registry,
     pluginProblems: [],
+    openTabChannel: () => null,
     ...overrides,
   }
 }
