@@ -21,9 +21,11 @@ interface ToolbarProps {
   actions: Actions
   onExport(format: ExportFormat): void
   onOpenDesigns(): void
+  learnOpen: boolean
+  onLearn(): void
 }
 
-export function Toolbar({ actions, onExport, onOpenDesigns }: ToolbarProps) {
+export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn }: ToolbarProps) {
   const undoable = useBloKade((s) => canUndo(s.history))
   const redoable = useBloKade((s) => canRedo(s.history))
   const count = useBloKade((s) => s.selection.length)
@@ -37,6 +39,9 @@ export function Toolbar({ actions, onExport, onOpenDesigns }: ToolbarProps) {
     <header className="toolbar">
       <span className="brand">BloKade</span>
       <button type="button" className="tool-button" data-testid="open-designs" onClick={onOpenDesigns}>📁 {designName}</button>
+      <div className="toolbar-group">
+        <button type="button" className="tool-button" data-testid="learn" aria-pressed={learnOpen} onClick={onLearn}>📘 Learn</button>
+      </div>
       <div className="toolbar-group">
         <button type="button" className="tool-button" data-testid="undo" title="Undo (Ctrl+Z)" disabled={!undoable} onClick={actions.undo}>↶ Undo</button>
         <button type="button" className="tool-button" data-testid="redo" title="Redo (Ctrl+Shift+Z)" disabled={!redoable} onClick={actions.redo}>↷ Redo</button>

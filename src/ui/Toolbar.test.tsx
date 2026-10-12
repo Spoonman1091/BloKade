@@ -14,8 +14,9 @@ function setup() {
   const actions = createActions(store, registry)
   const onExport = vi.fn()
   const onOpenDesigns = vi.fn()
-  renderWithStore(<Toolbar actions={actions} onExport={onExport} onOpenDesigns={onOpenDesigns} />, store)
-  return { store, actions, onExport, onOpenDesigns, doc: () => store.getState().history.present }
+  const onLearn = vi.fn()
+  renderWithStore(<Toolbar actions={actions} onExport={onExport} onOpenDesigns={onOpenDesigns} learnOpen={false} onLearn={onLearn} />, store)
+  return { store, actions, onExport, onOpenDesigns, onLearn, doc: () => store.getState().history.present }
 }
 
 describe('Toolbar', () => {
@@ -64,6 +65,12 @@ describe('Toolbar', () => {
     expect(onExport).toHaveBeenCalledWith('3mf')
     expect(onOpenDesigns).toHaveBeenCalledOnce()
     expect(screen.getByTestId('open-designs')).toHaveTextContent('My Robot')
+  })
+
+  it('opens the lessons', async () => {
+    const { onLearn } = setup()
+    await userEvent.click(screen.getByTestId('learn'))
+    expect(onLearn).toHaveBeenCalled()
   })
 
   it('exports STEP', async () => {
