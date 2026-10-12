@@ -1,9 +1,13 @@
 import type { Shape3D } from 'replicad'
-import type { BloKadeDocument, GroupNode, NodeId, SceneNode, ShapeNode } from '../document/types'
+import { modifiersOf } from '../document/modifiers'
+import type { BloKadeDocument, GroupNode, Modifier, NodeId, SceneNode, ShapeNode } from '../document/types'
 import type { CadToolkit } from '../plugins/cad-types'
 import { resolveParams } from '../plugins/params'
 import type { PluginRegistry } from '../plugins/registry'
+import { findEdgeCandidates } from './edge-candidates'
+import { applyModifiers, ModifierError, modifierInput } from './modifiers'
 import { placeShape } from './transform'
+import type { EdgeCandidate, ModifierWarnings } from './types'
 
 export class NodeBuildError extends Error {
   override name = 'NodeBuildError'
@@ -18,15 +22,20 @@ const stableKey = (values: Readonly<Record<string, unknown>>): string =>
 const lookup = (doc: BloKadeDocument, id: NodeId): SceneNode | undefined =>
   Object.hasOwn(doc.nodes, id) ? doc.nodes[id] : undefined
 
+const enabledModifiers = (node: SceneNode): readonly Modifier[] => modifiersOf(node).filter((m) => m.enabled)
+
 /** Builds solids from the document with a per-node cache. Returned shapes are owned by the cache. */
 export class Evaluator {
   private readonly cache = new Map<string, Shape3D>()
+  private readonly warningCache = new Map<string, Readonly<Record<string, string>>>()
+  private passWarnings = new Map<NodeId, Readonly<Record<string, string>>>()
   private touched = new Set<string>()
 
   constructor(private readonly registry: PluginRegistry, private readonly cad: CadToolkit) {}
 
   beginPass(): void {
     this.touched = new Set()
+    this.passWarnings = new Map()
   }
 
   endPass(): void {
@@ -34,13 +43,65 @@ export class Evaluator {
       if (!this.touched.has(key)) {
         shape.delete()
         this.cache.delete(key)
+        this.warningCache.delete(key)
       }
     }
   }
 
   local(doc: BloKadeDocument, id: NodeId): Shape3D {
     const node = this.nodeOf(doc, id)
+    const base = this.base(doc, node)
+    const modifiers = enabledModifiers(node)
+    if (modifiers.length === 0) return base
+    const key = this.localKey(doc, node)
+    const shape = this.entry(key, () => this.modified(base, modifiers, key, node.id))
+    const found = this.warningCache.get(key)
+    if (found && Object.keys(found).length > 0) this.passWarnings.set(node.id, found)
+    return shape
+  }
+
+  /** Modifier notes for the parts built since beginPass(). */
+  warnings(): ModifierWarnings {
+    return Object.fromEntries(this.passWarnings)
+  }
+
+  edgeCandidates(doc: BloKadeDocument, id: NodeId, modifierId: string): EdgeCandidate[] {
+    const node = this.nodeOf(doc, id)
+    const target = modifiersOf(node).find((m) => m.id === modifierId)
+    if (!target || (target.type !== 'fillet' && target.type !== 'chamfer')) {
+      throw new NodeBuildError('Only Round edges and Bevel edges can pick edges.', id)
+    }
+    const input = this.asBuildError(id, () => modifierInput(this.base(doc, node).clone(), modifiersOf(node), modifierId))
+    try {
+      return findEdgeCandidates(input, target.edges)
+    } finally {
+      input.delete()
+    }
+  }
+
+  private base(doc: BloKadeDocument, node: SceneNode): Shape3D {
     return node.kind === 'shape' ? this.shapeLocal(node) : this.groupLocal(doc, node)
+  }
+
+  private modified(base: Shape3D, modifiers: readonly Modifier[], key: string, id: NodeId): Shape3D {
+    const result = this.asBuildError(id, () => applyModifiers(base.clone(), modifiers))
+    this.warningCache.set(key, result.warnings)
+    return result.shape
+  }
+
+  private asBuildError<T>(id: NodeId, run: () => T): T {
+    try {
+      return run()
+    } catch (error) {
+      if (error instanceof ModifierError) throw new NodeBuildError(error.message, id)
+      throw error
+    }
+  }
+
+  private localKey(doc: BloKadeDocument, node: SceneNode): string {
+    const base = node.kind === 'shape' ? this.shapeKey(node) : this.groupKey(doc, node)
+    const modifiers = enabledModifiers(node)
+    return modifiers.length > 0 ? `${base}|mods:${JSON.stringify(modifiers)}` : base
   }
 
   placed(doc: BloKadeDocument, id: NodeId): Shape3D {
@@ -76,8 +137,7 @@ export class Evaluator {
   }
 
   private placedKey(doc: BloKadeDocument, node: SceneNode): string {
-    const local = node.kind === 'shape' ? this.shapeKey(node) : this.groupKey(doc, node)
-    return `${local}@${node.transform.position.join(',')}/${node.transform.rotation.join(',')}`
+    return `${this.localKey(doc, node)}@${node.transform.position.join(',')}/${node.transform.rotation.join(',')}`
   }
 
   private members(doc: BloKadeDocument, group: GroupNode): SceneNode[] {

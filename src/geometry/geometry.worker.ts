@@ -31,6 +31,8 @@ const api: GeometryApi = {
   rebuild: async (doc) => (await apiReady).rebuild(doc),
   exportStl: async (doc, ids) => (await apiReady).exportStl(doc, ids),
   export3mf: async (doc, ids) => (await apiReady).export3mf(doc, ids),
+  exportStep: async (doc, ids) => (await apiReady).exportStep(doc, ids),
+  edgeCandidates: async (doc, nodeId, modifierId) => (await apiReady).edgeCandidates(doc, nodeId, modifierId),
 }
 
 Comlink.expose(api)

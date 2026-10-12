@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { strFromU8, unzipSync } from 'fflate'
 import { createEmptyDocument, createShapeNode } from '../document/factory'
 import { addNode, groupNodes, setHidden, setMode } from '../document/ops'
+import { addModifier } from '../document/modifiers'
 import type { BloKadeDocument } from '../document/types'
 import { createCadToolkit } from '../plugins/cad'
 import { registry } from '../plugins/index'
@@ -86,5 +87,23 @@ describe('geometry api', () => {
   it('refuses to export a part with a problem', async () => {
     const doc = addNode(createEmptyDocument(), shape('ring', 'torus', { diameter: 10, thickness: 10 }))
     await expect(newApi().exportStl(doc)).rejects.toThrow('"ring" has a problem')
+  })
+
+  it('exports STEP', async () => {
+    const doc = addNode(createEmptyDocument(), createShapeNode({ id: 'a', shapeType: 'box', name: 'Box', params: {}, color: '#f00' }))
+    const bytes = await newApi().exportStep(doc)
+    expect(new TextDecoder().decode(bytes.slice(0, 12))).toBe('ISO-10303-21')
+  })
+
+  it('includes modifier warnings in a rebuild', async () => {
+    const base = addNode(createEmptyDocument(), createShapeNode({ id: 's', shapeType: 'sphere', name: 'Ball', params: {}, color: '#f00' }))
+    const { doc, modifierId } = addModifier(base, 's', 'fillet')
+    const result = await newApi().rebuild(doc)
+    expect(result.warnings).toEqual({ s: { [modifierId]: 'No edges match, so this does nothing yet.' } })
+  })
+
+  it('explains edge-picking problems in plain words', async () => {
+    const doc = addNode(createEmptyDocument(), createShapeNode({ id: 'a', shapeType: 'box', name: 'Box', params: {}, color: '#f00' }))
+    await expect(newApi().edgeCandidates(doc, 'a', 'deadbeef')).rejects.toThrow('Only Round edges and Bevel edges')
   })
 })

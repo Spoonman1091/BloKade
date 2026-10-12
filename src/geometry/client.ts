@@ -1,5 +1,5 @@
 import type { BloKadeDocument, NodeId } from '../document/types'
-import type { BuildResult, GeometryApi } from './types'
+import type { BuildResult, EdgeCandidate, GeometryApi } from './types'
 
 export interface WorkerHandle {
   readonly api: GeometryApi
@@ -45,6 +45,14 @@ export class GeometryClient {
 
   export3mf(doc: BloKadeDocument, ids?: readonly NodeId[]): Promise<ArrayBuffer> {
     return this.call((api) => api.export3mf(doc, ids))
+  }
+
+  exportStep(doc: BloKadeDocument, ids?: readonly NodeId[]): Promise<ArrayBuffer> {
+    return this.call((api) => api.exportStep(doc, ids))
+  }
+
+  edgeCandidates(doc: BloKadeDocument, nodeId: NodeId, modifierId: string): Promise<EdgeCandidate[]> {
+    return this.call((api) => api.edgeCandidates(doc, nodeId, modifierId))
   }
 
   dispose(): void {
