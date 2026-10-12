@@ -10,10 +10,10 @@ Kade's 3D design app for 3D printing. It's as easy as TinkerCAD, and it's built 
 docker compose up -d --build
 ```
 
-Then open `http://<server-ip>:8080` in a browser on any computer at home, using the server's IP address,
-for example `http://192.168.1.50:8080`.
+Then open `http://<server-ip>:5233` (5233 spells KADE on a phone keypad) in a browser on any computer at home, using the server's IP address,
+for example `http://192.168.1.50:5233`.
 
-- **Change the port:** edit the number before the colon in `docker-compose.yml` (`"8080:80"`, for example
+- **Change the port:** edit the number before the colon in `docker-compose.yml` (`"5233:80"`, for example
   `"9000:80"`), then run `docker compose up -d` again.
 - **Stop it:** `docker compose down`
 - **Update it:** `git pull`, then `docker compose up -d --build`
