@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { fakeDeps } from '../app/testing/fakes'
 import { App } from './App'
+
+vi.mock('../viewport/Viewport', () => ({ Viewport: () => null }))
 
 describe('App', () => {
   it('starts up and shows the shape palette', async () => {
