@@ -5,6 +5,7 @@ import { useAutosave } from '../app/useAutosave'
 import { useGeometrySync } from '../app/useGeometrySync'
 import { useBloKadeStore } from '../store/context'
 import { Viewport } from '../viewport/Viewport'
+import { PropertiesPanel } from './PropertiesPanel'
 import { ShapePalette } from './ShapePalette'
 import { Toasts } from './Toasts'
 
@@ -23,7 +24,9 @@ export function Workspace({ deps }: { deps: AppDeps }) {
       <main className="viewport" data-testid="viewport">
         <Viewport registry={deps.registry} />
       </main>
-      <aside className="right-panel" />
+      <aside className="right-panel">
+        <PropertiesPanel registry={deps.registry} />
+      </aside>
       <Toasts />
     </div>
   )
