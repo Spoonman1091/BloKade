@@ -37,6 +37,18 @@ describe('HelpTooltips', () => {
     expect(screen.queryByTestId('help-tooltip')).toBeNull()
   })
 
+  it('keeps the tip when the pointer moves between parts of the same control', () => {
+    render(<>
+      <button type="button" data-testid="mode-hole"><span>🕳</span><span>Hole</span></button>
+      <HelpTooltips suppressKey={null} disabled={false} />
+    </>)
+    fireEvent.pointerOver(screen.getByText('🕳'))
+    act(() => vi.advanceTimersByTime(TOOLTIP_DELAY_MS))
+    expect(screen.getByTestId('help-tooltip')).toBeInTheDocument()
+    fireEvent.pointerOver(screen.getByText('Hole'))
+    expect(screen.getByTestId('help-tooltip')).toBeInTheDocument()
+  })
+
   it('stays quiet while help mode is on', () => {
     setup({ disabled: true })
     fireEvent.pointerOver(screen.getByText('Hole'))

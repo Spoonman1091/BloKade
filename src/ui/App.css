@@ -129,7 +129,7 @@ button { font: inherit; }
 .link-button { background: none; border: none; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 0; }
 .lesson-cheer { font-size: 1.2rem; }
 .lesson-highlight {
-  position: fixed; z-index: 2000; pointer-events: none;
+  position: fixed; z-index: 25; pointer-events: none;
   border: 3px solid var(--accent); border-radius: var(--radius);
   animation: lesson-pulse 1.2s ease-in-out infinite;
 }

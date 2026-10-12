@@ -19,6 +19,7 @@ export const HELP_TEXTS: Readonly<Record<string, HelpEntry>> = {
   'export-stl': { tip: 'Downloads an STL file for your 3D printer’s slicer.', card: 'STL is the file most slicers open. It holds the shape of everything that isn’t a loose hole.', tutorial: 'ready-to-print' },
   'export-3mf': { tip: 'Downloads a 3MF file, which keeps colours too.', card: '3MF is a newer printer file. Slicers like PrusaSlicer and Bambu Studio open it and keep your colours.', tutorial: 'ready-to-print' },
   'export-step': { tip: 'Downloads a STEP file for other CAD programs.', card: 'STEP keeps exact curves. Use it to open your design in programs like Fusion or FreeCAD. Printers need STL or 3MF.' },
+  viewport: { tip: 'The 3D view. Drag to spin, scroll to zoom, click a part to select it.', card: 'This is your design in 3D. Drag with the left button to spin around, the right button to slide, and the wheel to zoom. Click a part to select it, then use the handles to move, turn or size it.', tutorial: 'first-shape' },
   learn: { tip: 'Opens the lessons: step-by-step guides to BloKade.', card: 'Lessons walk you through BloKade one step at a time. Each lesson uses its own practice design, so your work stays safe.' },
   'help-mode': { tip: 'Help mode: click anything to learn what it does.', card: 'In help mode, clicking a button shows what it does instead of doing it. Press Esc or ❓ again to stop.' },
   // Panel headings

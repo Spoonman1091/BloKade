@@ -158,6 +158,8 @@ npm run e2e           # end-to-end tests in a real browser
 Lesson progress is kept in this browser. In a private window the lessons still work, but they forget your
 ✓ marks when you close it.
 
+### Keyboard shortcuts
+
 | Keys | What it does |
 |---|---|
 | M / R / S | Move / rotate / size handles |

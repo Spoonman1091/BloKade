@@ -86,6 +86,26 @@ describe('watchSteps', () => {
     stop()
   })
 
+  it('does not advance when Kade returns to the practice design and the check flips to true', () => {
+    const doneWhenClear: Tutorial = {
+      id: 'clear', title: 'Clear', icon: '🟦', intro: 'i',
+      steps: [{ id: 'c', text: 'Deselect', hint: 'h', check: (v) => v.selection.length === 0 && shapesOf(v, 'box').length >= 1 }],
+    }
+    const store = createBloKadeStore({ designId: 'practice', doc: createEmptyDocument() })
+    const actions = createActions(store, registry)
+    const lessons = createLessonStore(null, [doneWhenClear])
+    actions.addShape('box')
+    lessons.getState().begin('clear', 'practice')
+    const stop = watchSteps(store, lessons, [doneWhenClear])
+    expect(store.getState().selection.length).toBeGreaterThan(0)
+    const practiceDoc = store.getState().history.present
+    store.getState().openDesign('other', createEmptyDocument('Other'))
+    store.getState().openDesign('practice', practiceDoc)
+    expect(lessons.getState().progress.active?.step).toBe(0)
+    expect(lessons.getState().progress.done).not.toContain('clear')
+    stop()
+  })
+
   it('stops watching when unsubscribed', () => {
     const { actions, step, stop } = setup()
     stop()

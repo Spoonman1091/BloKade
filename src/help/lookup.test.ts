@@ -4,6 +4,10 @@ import { HELP_TEXTS } from './help-texts'
 import { helpFor, helpKeyOf } from './lookup'
 
 describe('helpFor', () => {
+  it('has help for the 3D view', () => {
+    expect(helpFor('viewport')).not.toBeNull()
+  })
+
   it('finds exact help', () => {
     expect(helpFor('mode-hole')?.tip).toBe(HELP_TEXTS['mode-hole']?.tip)
   })

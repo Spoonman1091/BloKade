@@ -31,14 +31,21 @@ export function HelpTooltips({ suppressKey, disabled }: { suppressKey: string | 
     setTip(null)
     if (disabled) return undefined
     let timer: ReturnType<typeof setTimeout> | undefined
+    let current: HTMLElement | null = null
     const hide = (): void => {
       clearTimeout(timer)
+      current = null
       setTip(null)
     }
     const show = (event: Event): void => {
+      const found = event.target instanceof Element ? helpKeyOf(event.target) : null
+      if (found && found.element === current) return
       hide()
       const make = tipFor(event.target, suppressKey)
-      if (make) timer = setTimeout(() => setTip(make()), TOOLTIP_DELAY_MS)
+      if (make && found) {
+        current = found.element
+        timer = setTimeout(() => setTip(make()), TOOLTIP_DELAY_MS)
+      }
     }
     const onOut = (event: Event): void => {
       if (event instanceof MouseEvent && event.relatedTarget === null) hide()

@@ -16,7 +16,7 @@ export function lessonView(state: BloKadeState): LessonView {
   }
 }
 
-const reported = new Set<string>()
+const reported = new WeakSet<TutorialStep>()
 
 /** True when the step's check passes. A check that throws counts as "not done yet" and is logged once. */
 export function isStepDone(step: TutorialStep, view: LessonView): boolean {
@@ -24,8 +24,8 @@ export function isStepDone(step: TutorialStep, view: LessonView): boolean {
   try {
     return step.check(view)
   } catch (error) {
-    if (!reported.has(step.id)) {
-      reported.add(step.id)
+    if (!reported.has(step)) {
+      reported.add(step)
       console.error(`Lesson step "${step.id}" could not be checked`, error)
     }
     return false

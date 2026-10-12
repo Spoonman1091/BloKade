@@ -20,8 +20,11 @@ export function watchSteps(store: BloKadeStore, lessons: LessonStore, tutorials:
       return
     }
     const view = lessonView(store.getState())
-    if (view.designId !== active.designId) return
-    const key = `${active.tutorialId}:${active.step}`
+    if (view.designId !== active.designId) {
+      seen = null
+      return
+    }
+    const key = `${active.tutorialId}:${active.step}:${active.designId}`
     const done = isStepDone(step, view)
     const arriving = seen?.key !== key
     const becameDone = !arriving && done && seen?.done === false
