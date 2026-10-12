@@ -80,6 +80,12 @@ export interface ShapePlugin<P extends ParamSpecs = ParamSpecs> {
   readonly mode?: 'hole'
   /** Which palette section lists it. 'hidden' parts are only added by a kit. Missing means 'shapes'. */
   readonly palette?: 'shapes' | 'fit' | 'hidden'
+  /** Kade's shapes: a hash of the code. The build cache uses it in place of `version`. */
+  readonly revision?: string
+  /** 'kade': build() takes the friendly toolkit and is run through runKadeBuild (Kade's library and the plugins/ folder). */
+  readonly toolkit?: 'kade'
+  /** Where Kade's code was loaded from, so errors can name the line. */
+  readonly source?: string
   build(params: ParamValuesOf<P>, cad: CadToolkit): Shape3D
 }
 

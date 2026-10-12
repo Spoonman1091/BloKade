@@ -8,7 +8,8 @@ import type { BloKadeDocument, Transform } from '../document/types'
 import { createCadToolkit } from '../plugins/cad'
 import { registry } from '../plugins/index'
 import { createRegistry } from '../plugins/registry'
-import { definePlugin } from '../plugins/types'
+import { definePlugin, type ShapePlugin } from '../plugins/types'
+import type { KadeBuild } from '../kade/run-build'
 import { Evaluator, NodeBuildError } from './evaluate'
 import { shapeBox } from './edge-info'
 import { initTestOC } from './testing/oc-node'
@@ -249,3 +250,32 @@ function fuseOwnerOf(sample: Shape3D): { fuse: Shape3D['fuse'] } {
   if (!proto) throw new Error('fuse not found')
   return proto as { fuse: Shape3D['fuse'] }
 }
+
+describe("Evaluator with Kade's shapes", () => {
+  const kadePlugin = (revision: string, build: KadeBuild): ShapePlugin => ({
+    id: 'kade-thing', name: 'Kade thing', icon: '🧩', version: 1, revision, toolkit: 'kade',
+    params: { w: { type: 'mm', default: 10, label: 'W' } },
+    // Kade's builds take the friendly toolkit; the evaluator calls them through runKadeBuild.
+    build: build as unknown as ShapePlugin['build'],
+  })
+  const registryOf = (plugin: ShapePlugin) => createRegistry([plugin]).registry
+  const doc = () => addNode(createEmptyDocument(), createShapeNode({ id: 'k', shapeType: 'kade-thing', name: 'K', params: { w: 10 }, color: '#fff' }))
+
+  it('builds them with the friendly toolkit', () => {
+    const evaluator = new Evaluator(registryOf(kadePlugin('r1', (v, cad) => cad.box(v.w, 10, 10).move(0, 0, 5))), createCadToolkit())
+    expect(evaluator.local(doc(), 'k').boundingBox.bounds[0]?.[2]).toBeCloseTo(5)
+  })
+  it('puts the friendly message on the part', () => {
+    const evaluator = new Evaluator(registryOf(kadePlugin('r1', () => undefined)), createCadToolkit())
+    expect(buildError(() => evaluator.local(doc(), 'k')).message)
+      .toBe("Kade thing couldn't be built: build() needs to end with return and a part, like return cad.box(10, 10, 10).")
+  })
+  it('rebuilds when the code changes, even with the same id and settings', () => {
+    const evaluator = new Evaluator(registryOf(kadePlugin('r1', (_v, cad) => cad.box(10, 10, 10))), createCadToolkit())
+    const first = evaluator.local(doc(), 'k')
+    evaluator.setRegistry(registryOf(kadePlugin('r2', (_v, cad) => cad.box(20, 10, 10))))
+    const second = evaluator.local(doc(), 'k')
+    expect(second).not.toBe(first)
+    expect(second.boundingBox.bounds[1]?.[0]).toBeCloseTo(10)
+  })
+})

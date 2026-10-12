@@ -43,6 +43,9 @@ const pluginSchema = z
     params: z.record(z.string(), paramSpec),
     mode: z.literal('hole').optional(),
     palette: z.enum(['shapes', 'fit', 'hidden']).optional(),
+    revision: z.string().optional(),
+    toolkit: z.literal('kade').optional(),
+    source: z.string().optional(),
     size: z.object({ x: z.string().optional(), y: z.string().optional(), z: z.string().optional() }).optional(),
     build: z.custom<ShapePlugin['build']>((v) => typeof v === 'function', 'build must be a function'),
   })

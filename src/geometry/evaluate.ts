@@ -4,6 +4,8 @@ import type { BloKadeDocument, GroupNode, Modifier, NodeId, SceneNode, ShapeNode
 import type { CadToolkit } from '../plugins/cad-types'
 import { resolveParams } from '../plugins/params'
 import type { PluginRegistry } from '../plugins/registry'
+import type { ParamValues, ShapePlugin } from '../plugins/types'
+import { runKadeBuild, type KadeBuild } from '../kade/run-build'
 import { findEdgeCandidates } from './edge-candidates'
 import { applyModifiers, ModifierError } from './modifiers'
 import { placeShape } from './transform'
@@ -33,7 +35,12 @@ export class Evaluator {
   /** The edge-picking input, kept through the next pass so clicking edges doesn't rebuild it. */
   private pinned = new Set<string>()
 
-  constructor(private readonly registry: PluginRegistry, private readonly cad: CadToolkit) {}
+  constructor(private registry: PluginRegistry, private readonly cad: CadToolkit) {}
+
+  /** Swaps the shape list (for example to a design's carried shapes). Cached builds stay; Kade's are keyed by revision. */
+  setRegistry(registry: PluginRegistry): void {
+    this.registry = registry
+  }
 
   beginPass(): void {
     this.touched = new Set()
@@ -141,7 +148,7 @@ export class Evaluator {
   private shapeKey(node: ShapeNode): string {
     const plugin = this.registry.get(node.shapeType)
     const params = plugin ? resolveParams(plugin, node.params) : node.params
-    return `shape:${node.shapeType}@${plugin?.version ?? 0}:${stableKey(params)}`
+    return `shape:${node.shapeType}@${plugin?.revision ?? plugin?.version ?? 0}:${stableKey(params)}`
   }
 
   private groupKey(doc: BloKadeDocument, group: GroupNode): string {
@@ -168,11 +175,17 @@ export class Evaluator {
     const params = resolveParams(plugin, node.params)
     return this.entry(this.shapeKey(node), () => {
       try {
-        return plugin.build(params, this.cad)
+        return this.buildShape(plugin, params)
       } catch (error) {
         throw new NodeBuildError(`${plugin.name} couldn't be built: ${messageOf(error)}`, node.id)
       }
     })
+  }
+
+  private buildShape(plugin: ShapePlugin, params: ParamValues): Shape3D {
+    if (plugin.toolkit !== 'kade') return plugin.build(params, this.cad)
+    // Kade's builds take the friendly toolkit, not the internal one their type names.
+    return runKadeBuild(plugin.build as unknown as KadeBuild, params, plugin.source ?? null, this.cad)
   }
 
   private groupLocal(doc: BloKadeDocument, group: GroupNode): Shape3D {

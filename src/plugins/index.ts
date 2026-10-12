@@ -1,3 +1,4 @@
+import { loadFolderPlugins } from '../kade/folder'
 import { createRegistry } from './registry'
 
 // Helper files in builtin/ must be named *-profile.ts: they are not plugins, so they are left out here.
@@ -17,4 +18,8 @@ const builtinPlugins = Object.entries(builtin)
   .sort(([a], [b]) => orderOf(a) - orderOf(b))
   .map(([, plugin]) => plugin)
 
-export const { registry, problems: pluginProblems } = createRegistry([...builtinPlugins, ...Object.values(kades)])
+const folder = loadFolderPlugins(kades)
+const created = createRegistry([...builtinPlugins, ...folder.plugins])
+
+export const registry = created.registry
+export const pluginProblems: readonly string[] = [...folder.problems, ...created.problems]

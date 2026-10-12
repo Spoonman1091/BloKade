@@ -34,6 +34,12 @@ describe('createRegistry', () => {
     expect(problems[0]).toContain('"a"')
   })
 
+  it("accepts the fields Kade's shapes carry", () => {
+    const { problems } = createRegistry([{ ...good('mine'), revision: 'abc-1', toolkit: 'kade', source: 'blob:x' }])
+    expect(problems).toEqual([])
+    expect(createRegistry([{ ...good('x'), toolkit: 'other' }]).problems).toHaveLength(1)
+  })
+
   it('accepts text params', () => {
     const { problems } = createRegistry([{ ...good('t'), params: { ...good('t').params, label: { type: 'text', default: 'Hi', label: 'Label' } } }])
     expect(problems).toEqual([])
