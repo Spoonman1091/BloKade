@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { createEmptyDocument } from '../document/factory'
+import { MAX_CARRIED_SHAPES } from '../document/types'
 import { initTestOC } from '../geometry/testing/oc-node'
 import { registry } from '../plugins/index'
 import { NO_BUILD } from './definition'
@@ -60,9 +61,12 @@ describe('KadeShapes.inspect', () => {
   })
   it('turns a loader that fails unexpectedly into a friendly problem', async () => {
     const quiet = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    const broken: ModuleLoader = async () => { throw new Error('disk on fire') }
-    await expect(new KadeShapes(broken, registry).inspect('export default {}')).resolves.toEqual({ ok: false, problem: CHECK_FAILED })
-    quiet.mockRestore()
+    try {
+      const broken: ModuleLoader = async () => { throw new Error('disk on fire') }
+      await expect(new KadeShapes(broken, registry).inspect('export default {}')).resolves.toEqual({ ok: false, problem: CHECK_FAILED })
+    } finally {
+      quiet.mockRestore()
+    }
   })
   it('forgets the oldest code past its limit', async () => {
     const { load, counts } = counting()
@@ -96,6 +100,18 @@ describe('KadeShapes.registryFor', () => {
     const robot = (await new KadeShapes(fileModuleLoader, registry).registryFor(doc)).get('my-robot0001')
     expect(robot).toMatchObject({ name: 'Robot', toolkit: 'kade', params: {} })
     expect(() => robot?.build({}, {} as never)).toThrow(NO_BUILD)
+  })
+  it('loads each of the most shapes a design can carry only once across rebuilds', async () => {
+    const { load, counts } = counting()
+    const shapes = new KadeShapes(load, registry)
+    const plugins = Object.fromEntries(Array.from({ length: MAX_CARRIED_SHAPES }, (_, n) =>
+      [`my-shape${n}`, { name: `S${n}`, code: `export default { name: 'S${n}', build(s, cad) { return cad.box(1, 1, 1) } }` }]))
+    const doc = { ...createEmptyDocument(), plugins }
+    await shapes.registryFor(doc)
+    await shapes.registryFor(doc)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(counts.loads).toBe(MAX_CARRIED_SHAPES)
+    expect(counts.disposed).toBe(0)
   })
   it('hands back the built-in list for a design that carries nothing', async () => {
     expect(await new KadeShapes(fileModuleLoader, registry).registryFor(createEmptyDocument())).toBe(registry)

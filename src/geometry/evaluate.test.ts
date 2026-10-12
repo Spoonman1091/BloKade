@@ -240,6 +240,29 @@ describe('Evaluator modifiers', () => {
       fuse.mockRestore()
     }
   })
+
+  it('keeps the edge-picking input through a preview pass', () => {
+    const base = addNode(createEmptyDocument(), shape('a', 'box', { width: 20, depth: 20, height: 20 }))
+    const { doc, modifierId } = withModifier(withModifier(base, 'a', 'linearPattern').doc, 'a', 'fillet')
+    const ev = newEvaluator()
+    const fuseOwner = fuseOwnerOf(createCadToolkit().box(1, 1, 1))
+    const fuse = vi.spyOn(fuseOwner, 'fuse')
+    try {
+      const first = ev.edgeCandidates(doc, 'a', modifierId)
+      ev.beginPass('preview')
+      ev.local(addNode(createEmptyDocument(), shape('p', 'sphere', { diameter: 10 })), 'p')
+      ev.endPass()
+      const picked = setEdgeSelection(doc, 'a', modifierId, { by: 'picked', fingerprints: [first[0]!.fingerprint] })
+      ev.beginPass('design')
+      ev.local(picked, 'a')
+      ev.endPass()
+      fuse.mockClear()
+      expect(ev.edgeCandidates(picked, 'a', modifierId).filter((c) => c.picked)).toHaveLength(1)
+      expect(fuse).not.toHaveBeenCalled()
+    } finally {
+      fuse.mockRestore()
+    }
+  })
 })
 
 /** The replicad prototype that defines fuse(), so a test can count fuses. Frees `sample`. */

@@ -1,4 +1,4 @@
-import { MAX_SHAPE_CODE_LENGTH, type BloKadeDocument, type CarriedShape } from '../document/types'
+import { MAX_CARRIED_SHAPES, MAX_SHAPE_CODE_LENGTH, type BloKadeDocument, type CarriedShape } from '../document/types'
 import type { PluginRegistry } from '../plugins/registry'
 import type { ShapePlugin } from '../plugins/types'
 import { fail, type Result } from '../shared/result'
@@ -18,6 +18,9 @@ interface Checked {
   dispose(): void
 }
 
+/** Room for every shape one design can carry, plus the library's recent checks, so a rebuild never reloads its own shapes. */
+const DEFAULT_LIMIT = MAX_CARRIED_SHAPES + 50
+
 const failed = (problem: string): Checked => ({ result: { ok: false, problem }, dispose: () => undefined })
 
 /** Worker side of Kade's shapes: loads and checks code (cached by hash) and makes each design's shape list. */
@@ -25,7 +28,7 @@ export class KadeShapes {
   /** Oldest first, so the first key is the one to forget. */
   private readonly checked = new Map<string, Promise<Checked>>()
 
-  constructor(private readonly load: ModuleLoader, private readonly base: PluginRegistry, private readonly limit = 50) {}
+  constructor(private readonly load: ModuleLoader, private readonly base: PluginRegistry, private readonly limit = DEFAULT_LIMIT) {}
 
   async inspect(code: string): Promise<InspectResult> {
     return (await this.entry(code)).result

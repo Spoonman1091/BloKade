@@ -59,7 +59,8 @@ export class Evaluator {
         this.warningCache.delete(key)
       }
     }
-    this.pinned = new Set()
+    // Edge picking happens on the design, so only a design pass lets go of its input.
+    if (this.channel === 'design') this.pinned = new Set()
   }
 
   local(doc: BloKadeDocument, id: NodeId): Shape3D {
