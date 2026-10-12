@@ -13,6 +13,7 @@ import { SceneTree } from './SceneTree'
 import { ShapePalette } from './ShapePalette'
 import { Toasts } from './Toasts'
 import { Toolbar } from './Toolbar'
+import { VariablesPanel } from './VariablesPanel'
 
 export function Workspace({ deps }: { deps: AppDeps }) {
   const store = useBloKadeStore()
@@ -35,6 +36,7 @@ export function Workspace({ deps }: { deps: AppDeps }) {
       </main>
       <aside className="right-panel">
         <PropertiesPanel registry={deps.registry} />
+        <VariablesPanel registry={deps.registry} />
       </aside>
       {showDesigns && <DesignsDialog repo={deps.repo} flushAutosave={flushAutosave} onClose={() => setShowDesigns(false)} />}
       <Toasts />

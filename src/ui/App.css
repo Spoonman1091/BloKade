@@ -81,3 +81,8 @@ button { font: inherit; }
 .field-note { margin: -4px 0 6px; color: var(--muted); font-size: 0.8rem; text-align: right; }
 .field-error { margin: -4px 0 6px; color: var(--danger); font-size: 0.8rem; }
 .field input[aria-invalid='true'] { border-color: var(--danger); }
+
+.variable-list { list-style: none; margin: 8px 0; padding: 0; }
+.variable-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 4px; align-items: start; }
+.variable-row .field { grid-template-columns: auto 1fr; }
+.hint code { background: var(--bg); padding: 0 4px; border-radius: 4px; }
