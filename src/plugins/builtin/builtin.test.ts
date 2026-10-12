@@ -17,9 +17,9 @@ const expectedVolumes: Record<string, number> = {
 }
 
 describe('built-in shapes', () => {
-  it('registers all seven built-ins in palette order with no problems', () => {
+  it('registers every built-in in palette order with no problems', () => {
     expect(pluginProblems).toEqual([])
-    expect(registry.list().map((p) => p.id)).toEqual(['box', 'cylinder', 'sphere', 'cone', 'wedge', 'torus', 'text'])
+    expect(registry.list().map((p) => p.id)).toEqual(['box', 'cylinder', 'sphere', 'cone', 'wedge', 'torus', 'text', 'peg', 'socket'])
   })
 
   it.each(Object.entries(expectedVolumes))('%s builds with its defaults', (id, volume) => {
