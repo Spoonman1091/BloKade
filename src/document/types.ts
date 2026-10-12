@@ -67,6 +67,7 @@ export const CURRENT_SCHEMA_VERSION = 2
 export const DEFAULT_GRID_SNAP = 1
 export const DEFAULT_FIT = 0.2
 export const MAX_FIT = 2
+export const MAX_VARIABLES = 200
 /** Longest text a text parameter may hold, in characters. */
 export const MAX_TEXT_PARAM_LENGTH = 40
 export const IDENTITY_TRANSFORM: Transform = { position: [0, 0, 0], rotation: [0, 0, 0] }

@@ -3,7 +3,7 @@ import { variableNameProblem } from '../formulas/variables'
 import { formulaEntries, withFormula } from './fields'
 import { recomputeFormulas, type NormalizeField } from './formula-ops'
 import { DocumentOpError } from './ops'
-import { MAX_FIT, type BloKadeDocument, type SceneNode, type Variable } from './types'
+import { MAX_FIT, MAX_VARIABLES, type BloKadeDocument, type SceneNode, type Variable } from './types'
 
 const namesOf = (doc: BloKadeDocument): string[] => doc.variables.map((v) => v.name)
 
@@ -28,6 +28,7 @@ export function nextVariableName(doc: BloKadeDocument): string {
 }
 
 export function addVariable(doc: BloKadeDocument, name: string, expr: string, normalize: NormalizeField): BloKadeDocument {
+  if (doc.variables.length >= MAX_VARIABLES) throw new DocumentOpError(`A design can have up to ${MAX_VARIABLES} variables.`)
   const problem = variableNameProblem(name, namesOf(doc))
   if (problem) throw new DocumentOpError(problem)
   return recomputeFormulas({ ...doc, variables: [...doc.variables, { name, expr: cleanExpr(expr) }] }, normalize)

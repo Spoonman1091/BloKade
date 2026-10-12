@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { MAX_FORMULA_LENGTH } from '../formulas/formula'
 import { variableNameProblem } from '../formulas/variables'
 import { fail, ok, type Result } from '../shared/result'
-import { MAX_FIT, MAX_TEXT_PARAM_LENGTH, type BloKadeDocument } from './types'
+import { MAX_FIT, MAX_TEXT_PARAM_LENGTH, MAX_VARIABLES, type BloKadeDocument } from './types'
 
 const FIELD_KEY = /^(?:param\.[A-Za-z0-9_]+|position\.[0-2]|rotation\.[0-2])$/
 
@@ -32,7 +32,7 @@ const documentShape = z.object({
   name: z.string(),
   units: z.literal('mm'),
   settings: z.object({ gridSnap: z.number().min(0), fit: z.number().min(0).max(MAX_FIT) }),
-  variables: z.array(variable).max(200),
+  variables: z.array(variable).max(MAX_VARIABLES),
   root: z.array(z.string()),
   nodes: z.record(z.string(), sceneNode),
 })

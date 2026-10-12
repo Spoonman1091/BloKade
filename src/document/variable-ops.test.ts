@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createEmptyDocument, createShapeNode } from './factory'
 import { formulaErrors, setFieldInput, type NormalizeField } from './formula-ops'
 import { addNode, DocumentOpError } from './ops'
-import type { BloKadeDocument } from './types'
+import { MAX_VARIABLES, type BloKadeDocument } from './types'
 import { addVariable, nextVariableName, removeVariable, renameVariable, setFit, setVariableExpr } from './variable-ops'
 
 const same: NormalizeField = (_node, _key, value) => value
@@ -18,6 +18,14 @@ const width = (doc: BloKadeDocument) => {
 }
 
 describe('variable operations', () => {
+  it('refuses a new variable once the design has the most it can hold', () => {
+    const variables = Array.from({ length: MAX_VARIABLES }, (_, i) => ({ name: `v${i}`, expr: '1' }))
+    const full = { ...createEmptyDocument(), variables }
+    expect(MAX_VARIABLES).toBe(200)
+    expect(() => addVariable(full, 'extra', '1', same)).toThrow('A design can have up to 200 variables.')
+    expect(addVariable({ ...full, variables: variables.slice(1) }, 'extra', '1', same).variables).toHaveLength(MAX_VARIABLES)
+  })
+
   it('adds a variable, refusing bad names', () => {
     const doc = addVariable(setup(), 'gap', '1 + fit', same)
     expect(doc.variables.at(-1)).toEqual({ name: 'gap', expr: '1 + fit' })
