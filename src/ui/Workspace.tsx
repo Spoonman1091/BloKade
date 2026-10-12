@@ -6,6 +6,7 @@ import { useGeometrySync } from '../app/useGeometrySync'
 import { useBloKadeStore } from '../store/context'
 import { Viewport } from '../viewport/Viewport'
 import { PropertiesPanel } from './PropertiesPanel'
+import { SceneTree } from './SceneTree'
 import { ShapePalette } from './ShapePalette'
 import { Toasts } from './Toasts'
 
@@ -20,6 +21,7 @@ export function Workspace({ deps }: { deps: AppDeps }) {
       <header className="toolbar"><span className="brand">BloKade</span></header>
       <aside className="left-panel">
         <ShapePalette registry={deps.registry} onAdd={actions.addShape} />
+        <SceneTree registry={deps.registry} />
       </aside>
       <main className="viewport" data-testid="viewport">
         <Viewport registry={deps.registry} />
