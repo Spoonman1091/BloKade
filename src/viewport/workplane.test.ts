@@ -42,4 +42,18 @@ describe('pickFromIntersections', () => {
     expect(pickFromIntersections([{ point: new Vector3(), object: plain }])).toBeNull()
     expect(pickFromIntersections([])).toBeNull()
   })
+
+  it('with `within`, skips hits on objects outside that part', () => {
+    const part = new Object3D()
+    const inside = new Object3D()
+    part.add(inside)
+    const unrelated = new Object3D()
+    const picked = pickFromIntersections([
+      { point: new Vector3(7, 7, 7), face: { normal: new Vector3(1, 0, 0) }, object: unrelated },
+      { point: new Vector3(1, 2, 3), face: { normal: new Vector3(0, 0, 1) }, object: inside },
+    ], part)
+    expect(picked?.point).toEqual([1, 2, 3])
+    expect(pickFromIntersections([{ point: new Vector3(), face: { normal: new Vector3(0, 0, 1) }, object: part }], part)).not.toBeNull()
+    expect(pickFromIntersections([{ point: new Vector3(), face: { normal: new Vector3(0, 0, 1) }, object: unrelated }], part)).toBeNull()
+  })
 })

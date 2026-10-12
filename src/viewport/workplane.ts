@@ -24,9 +24,19 @@ export interface PickableHit {
   readonly object: Object3D
 }
 
-/** The first hit that landed on a face, with its point and outward normal in world space. */
-export function pickFromIntersections(intersections: readonly PickableHit[]): { point: Vec3; normal: Vec3 } | null {
-  const hit = intersections.find((h) => h.face)
+function isInside(object: Object3D, within: Object3D): boolean {
+  for (let o: Object3D | null = object; o; o = o.parent) if (o === within) return true
+  return false
+}
+
+/**
+ * The first hit that landed on a face, with its point and outward normal in world space.
+ * With `within`, only hits on that object or its descendants count (not grids or other parts in front).
+ */
+export function pickFromIntersections(
+  intersections: readonly PickableHit[], within?: Object3D,
+): { point: Vec3; normal: Vec3 } | null {
+  const hit = intersections.find((h) => h.face && (!within || isInside(h.object, within)))
   if (!hit?.face) return null
   const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld)
   return { point: [hit.point.x, hit.point.y, hit.point.z], normal: [normal.x, normal.y, normal.z] }

@@ -34,7 +34,7 @@ export function NodeMesh({ node, displayed, selected, onSelect, onPickFace }: No
   const handleClick = (event: ThreeEvent<MouseEvent>): void => {
     event.stopPropagation()
     if (onPickFace) {
-      const picked = pickFromIntersections(event.intersections)
+      const picked = pickFromIntersections(event.intersections, event.eventObject)
       if (picked) onPickFace(picked.point, picked.normal)
       return
     }
