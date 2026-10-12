@@ -1,19 +1,24 @@
-import { DocumentOpError } from '../document/ops'
+import { DocumentOpError, shapeIdsInUse } from '../document/ops'
 import { MAX_CARRIED_SHAPES, type BloKadeDocument, type CarriedShape } from '../document/types'
 import type { LibraryShape } from './library'
 
 export const TOO_MANY_SHAPES = `A design can carry up to ${MAX_CARRIED_SHAPES} of your shapes. Try a new design for more.`
 
-/** Copies one of Kade's shapes into the design. A shape the design already carries keeps its version. */
+/**
+ * Copies one of Kade's shapes into the design. A shape the design's parts already use keeps its version;
+ * a copy no part uses is replaced by this one.
+ */
 export function carryShape(doc: BloKadeDocument, id: string, shape: CarriedShape): BloKadeDocument {
-  if (Object.hasOwn(doc.plugins, id)) return doc
-  if (Object.keys(doc.plugins).length >= MAX_CARRIED_SHAPES) throw new DocumentOpError(TOO_MANY_SHAPES)
+  const carried = Object.hasOwn(doc.plugins, id)
+  if (carried && shapeIdsInUse(doc).has(id)) return doc
+  if (!carried && Object.keys(doc.plugins).length >= MAX_CARRIED_SHAPES) throw new DocumentOpError(TOO_MANY_SHAPES)
   return { ...doc, plugins: { ...doc.plugins, [id]: { name: shape.name, code: shape.code } } }
 }
 
-/** Library shapes whose code differs from the version this design carries. */
+/** Library shapes whose code differs from the version this design's parts use. */
 export function outdatedShapes(doc: BloKadeDocument, library: readonly LibraryShape[]): LibraryShape[] {
-  return library.filter((shape) => Object.hasOwn(doc.plugins, shape.id) && doc.plugins[shape.id]?.code !== shape.code)
+  const used = shapeIdsInUse(doc)
+  return library.filter((shape) => used.has(shape.id) && Object.hasOwn(doc.plugins, shape.id) && doc.plugins[shape.id]?.code !== shape.code)
 }
 
 /** The design with the library's newest code for every outdated shape (one undo step when applied once). */

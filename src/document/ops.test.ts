@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { createEmptyDocument, createGroupNode, createShapeNode } from './factory'
 import {
   addNode, DocumentOpError, DUPLICATE_OFFSET, duplicateNodes, groupNodes, moveNode, removeNodes,
-  renameDocument, renameNode, setGridSnap, setHidden, setMode, ungroupNode, updateNode,
+  renameDocument, renameNode, setGridSnap, setHidden, setMode, shapeIdsInUse, ungroupNode, updateNode,
 } from './ops'
 import { addModifier } from './modifiers'
 import { worldMatrix } from './transform-math'
@@ -61,6 +61,28 @@ describe('removeNodes', () => {
     const next = removeNodes(doc, ['a'])
     const group = next.nodes[groupId]
     expect(group?.kind === 'group' && group.children).toEqual(['b'])
+  })
+
+  it("drops Kade's shapes that no part uses any more, in the same step", () => {
+    const head = (id: string) => createShapeNode({ id, shapeType: 'my-head', name: 'Head', params: {}, color: '#fff' })
+    const carried = { name: 'Head', code: 'v1' }
+    const start: BloKadeDocument = { ...createEmptyDocument(), plugins: { 'my-head': carried, 'my-cup': { name: 'Cup', code: 'c' } } }
+    const doc = [head('h1'), head('h2'), box('a')].reduce((d, n) => addNode(d, n), start)
+    expect(removeNodes(doc, ['h1']).plugins).toEqual({ 'my-head': carried })
+    expect(removeNodes(doc, ['h1', 'h2']).plugins).toEqual({})
+  })
+
+  it("keeps a shape a part inside a group still uses", () => {
+    const head = createShapeNode({ id: 'h', shapeType: 'my-head', name: 'Head', params: {}, color: '#fff' })
+    const withHead = addNode({ ...createEmptyDocument(), plugins: { 'my-head': { name: 'Head', code: 'v1' } } }, head)
+    const { doc } = groupNodes(addNode(withHead, box('a')), ['h', 'a'])
+    expect(Object.keys(removeNodes(doc, ['a']).plugins)).toEqual(['my-head'])
+  })
+})
+
+describe('shapeIdsInUse', () => {
+  it('lists the shape types parts use', () => {
+    expect([...shapeIdsInUse(threeBoxes())]).toEqual(['box'])
   })
 })
 

@@ -5,7 +5,8 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { buildingGeometryApi, clientFor, fakeDeps } from '../app/testing/fakes'
 import { renderMainScreen, sampleStores } from '../app/testing/main-screen'
-import { createEmptyDocument } from '../document/factory'
+import { createEmptyDocument, createShapeNode } from '../document/factory'
+import { addNode } from '../document/ops'
 import { createMemoryShapeLibrary } from '../kade/library'
 import { ALL_LESSONS } from '../learn/all-lessons'
 import { createLessonStore } from '../learn/lesson-store'
@@ -81,7 +82,9 @@ describe('My shapes in the app', () => {
   it('offers the newest version of a shape the design carries', async () => {
     const code = "export default { name: 'Gear' }"
     const shapes = createMemoryShapeLibrary([{ id: 'my-gear', name: 'Gear', code, updatedAt: 2 }])
-    const store = createBloKadeStore({ designId: 'd', doc: { ...createEmptyDocument(), plugins: { 'my-gear': { name: 'Gear', code: 'older' } } } })
+    const gearPart = createShapeNode({ id: 'g', shapeType: 'my-gear', name: 'Gear', params: {}, color: '#fff' })
+    const doc = addNode({ ...createEmptyDocument(), plugins: { 'my-gear': { name: 'Gear', code: 'older' } } }, gearPart)
+    const store = createBloKadeStore({ designId: 'd', doc })
     renderMainScreen(store, undefined, buildingDeps(shapes))
     await userEvent.click(await screen.findByTestId('use-newest'))
     expect(store.getState().history.present.plugins['my-gear']?.code).toBe(code)

@@ -49,6 +49,12 @@ function stripChild(node: SceneNode, doomed: ReadonlySet<NodeId>): SceneNode {
   return { ...node, children: node.children.filter((c) => !doomed.has(c)) }
 }
 
+/** The shape types the design's parts use (built-in ids and Kade's shape ids alike). */
+export function shapeIdsInUse(doc: BloKadeDocument): Set<string> {
+  return new Set(Object.values(doc.nodes).flatMap((node) => (node.kind === 'shape' ? [node.shapeType] : [])))
+}
+
+/** Removes the parts and their children, and lets go of Kade's shapes no part uses any more (one undo step). */
 export function removeNodes(doc: BloKadeDocument, ids: readonly NodeId[]): BloKadeDocument {
   const doomed = new Set(ids.flatMap((id) => (hasNode(doc, id) ? [id, ...descendantsOf(doc, id)] : [])))
   const nodes = Object.fromEntries(
@@ -56,7 +62,10 @@ export function removeNodes(doc: BloKadeDocument, ids: readonly NodeId[]): BloKa
       .filter(([id]) => !doomed.has(id))
       .map(([id, node]) => [id, stripChild(node, doomed)] as const),
   )
-  return { ...doc, root: doc.root.filter((id) => !doomed.has(id)), nodes }
+  const remaining = { ...doc, root: doc.root.filter((id) => !doomed.has(id)), nodes }
+  const used = shapeIdsInUse(remaining)
+  const plugins = Object.fromEntries(Object.entries(doc.plugins).filter(([id]) => used.has(id)))
+  return { ...remaining, plugins }
 }
 
 function requireGroupParent(doc: BloKadeDocument, parentId: NodeId | null): void {

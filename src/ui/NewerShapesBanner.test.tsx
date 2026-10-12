@@ -3,13 +3,15 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { renderWithStore } from '../app/testing/render'
-import { createEmptyDocument } from '../document/factory'
+import { createEmptyDocument, createShapeNode } from '../document/factory'
+import { addNode } from '../document/ops'
 import { createBloKadeStore } from '../store/store'
 import { NewerShapesBanner } from './NewerShapesBanner'
 
 describe('NewerShapesBanner', () => {
   it('offers the newest version and swaps it in as one undo step', async () => {
-    const doc = { ...createEmptyDocument(), plugins: { 'my-gear': { name: 'Gear', code: 'v1' } } }
+    const gearPart = createShapeNode({ id: 'g', shapeType: 'my-gear', name: 'Gear', params: {}, color: '#fff' })
+    const doc = addNode({ ...createEmptyDocument(), plugins: { 'my-gear': { name: 'Gear', code: 'v1' } } }, gearPart)
     const store = createBloKadeStore({ designId: 'd', doc })
     renderWithStore(<NewerShapesBanner library={[{ id: 'my-gear', name: 'Gear', code: 'v2', updatedAt: 2 }]} />, store)
     expect(screen.getByTestId('newer-shapes')).toHaveTextContent('Gear has a newer version in My shapes.')

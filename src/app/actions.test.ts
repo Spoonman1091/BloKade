@@ -193,8 +193,18 @@ describe("adding Kade's shapes", () => {
     store.getState().undo()
     expect(store.getState().history.present).toBe(before)
   })
-  it('keeps the version a design already carries', () => {
-    const doc = { ...createEmptyDocument(), plugins: { 'my-gear': { name: 'Gear', code: 'older' } } }
+  it('adds the newest code again after the old part was deleted (and drops the old copy with it)', () => {
+    const store = createBloKadeStore({ designId: 'd', doc: createEmptyDocument() })
+    const actions = createActions(store, shapes, codeOf)
+    actions.addShape('my-gear')
+    actions.deleteSelection()
+    expect(store.getState().history.present.plugins).toEqual({})
+    createActions(store, shapes, () => ({ name: 'Gear', code: 'newer' })).addShape('my-gear')
+    expect(store.getState().history.present.plugins['my-gear']?.code).toBe('newer')
+  })
+  it('keeps the version the design\'s parts already use', () => {
+    const gearPart = createShapeNode({ id: 'g', shapeType: 'my-gear', name: 'Gear', params: {}, color: '#fff' })
+    const doc = addNode({ ...createEmptyDocument(), plugins: { 'my-gear': { name: 'Gear', code: 'older' } } }, gearPart)
     const store = createBloKadeStore({ designId: 'd', doc })
     createActions(store, shapes, codeOf).addShape('my-gear')
     expect(store.getState().history.present.plugins['my-gear']?.code).toBe('older')
