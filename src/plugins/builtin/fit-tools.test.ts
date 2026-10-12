@@ -82,3 +82,41 @@ describe('screw hole', () => {
     expect(plugin?.params.clearance).toMatchObject({ formula: 'fit' })
   })
 })
+
+describe('threads', () => {
+  const xMax = (shape: Shape3D): number => {
+    const box = shape.boundingBox
+    try {
+      return box.bounds[1][0]
+    } finally {
+      box.delete()
+      shape.delete()
+    }
+  }
+
+  it('builds an M8 rod and a hole bigger by the extra room', () => {
+    expect(xMax(build('threaded-rod'))).toBeCloseTo(4, 2)
+    expect(xMax(build('threaded-hole', { clearance: 0.2 }))).toBeCloseTo(4.2, 2)
+  })
+
+  it('a rod fits inside its matching hole (Review Focus 4)', () => {
+    const rod = build('threaded-rod', { length: 10 })
+    const hole = build('threaded-hole', { depth: 10, clearance: 0.2 })
+    const sticksOut = rod.cut(hole)
+    try {
+      expect(measureVolume(sticksOut)).toBeLessThan(0.5)
+    } finally {
+      rod.delete()
+      hole.delete()
+      sticksOut.delete()
+    }
+  })
+
+  it('explains threads that are too long', () => {
+    expect(() => build('threaded-rod', { size: 'M6', length: 60 })).toThrow('Threads can be up to 40 turns long')
+  })
+
+  it('still builds a small hole with lots of extra room (Review Focus 4)', () => {
+    expect(volumeOf(build('threaded-hole', { size: 'M6', depth: 10, clearance: 2 }))).toBeGreaterThan(0)
+  })
+})
