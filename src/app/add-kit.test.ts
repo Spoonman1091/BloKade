@@ -52,5 +52,6 @@ describe('addKit', () => {
     expect(position[0]).toBeCloseTo(0, 6)
     expect(position[1]).toBeCloseTo(25, 6)
     expect(position[2]).toBeCloseTo(10, 6)
+    expect(ids.map((id) => doc.nodes[id]?.transform.rotation)).toEqual([[0, 0, 90], [0, 0, 90]])
   })
 })

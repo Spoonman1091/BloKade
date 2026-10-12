@@ -72,6 +72,28 @@ describe('screw hole', () => {
     expect(radiusAtTop(hole)).toBeCloseTo(5.9 / Math.sqrt(3), 3)
   })
 
+  it('puts the nut trap at the bottom of the hole', () => {
+    const hole = build('screw-hole', { style: 'nut', clearance: 0.2 })
+    const slabVolume = (z: number): number => {
+      const slab = createCadToolkit().box(20, 20, 0.5).translate(0, 0, z)
+      const part = hole.intersect(slab)
+      try {
+        return measureVolume(part)
+      } finally {
+        slab.delete()
+        part.delete()
+      }
+    }
+    try {
+      const bottom = slabVolume(0)
+      const top = slabVolume(9.5)
+      expect(bottom).toBeGreaterThan(top * 2)
+      expect(top).toBeCloseTo(Math.PI * 1.7 ** 2 * 0.5, 1)
+    } finally {
+      hole.delete()
+    }
+  })
+
   it('reports a hole too shallow for its head (Review Focus 3)', () => {
     expect(() => build('screw-hole', { style: 'counterbored', depth: 3 })).toThrow('so the screw head fits')
   })
@@ -129,6 +151,18 @@ describe('snap-fit clip and catch', () => {
 
   it('makes the catch slot fit the arm but not the hook', () => {
     expect(volumeOf(build('snap-catch', { clearance: 0.2 }))).toBeCloseTo(1.9 * 6.4 * 5, 3)
+  })
+
+  it('runs the catch slot from 1 mm below to 1 mm above the wall', () => {
+    const catchSlot = build('snap-catch')
+    const box = catchSlot.boundingBox
+    try {
+      expect(box.bounds[0][2]).toBeCloseTo(-1, 3)
+      expect(box.bounds[1][2]).toBeCloseTo(4, 3)
+    } finally {
+      box.delete()
+      catchSlot.delete()
+    }
   })
 
   it('explains an arm too short for its hook', () => {
