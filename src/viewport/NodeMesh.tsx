@@ -41,7 +41,17 @@ export function NodeMesh({ node, displayed, selected, onSelect }: NodeMeshProps)
       onClick={handleClick}
     >
       <mesh geometry={geometry}>
-        <meshStandardMaterial color={isHole ? HOLE_COLOR : node.color} transparent={opacity < 1} opacity={opacity} depthWrite={!isHole} />
+        <meshStandardMaterial
+          color={isHole ? HOLE_COLOR : node.color}
+          transparent={opacity < 1}
+          opacity={opacity}
+          depthWrite={!isHole}
+          polygonOffset
+          polygonOffsetFactor={1}
+          polygonOffsetUnits={1}
+          emissive={selected ? SELECTED_EDGE_COLOR : '#000000'}
+          emissiveIntensity={selected ? 0.25 : 0}
+        />
       </mesh>
       <lineSegments geometry={edges}>
         <lineBasicMaterial color={selected ? SELECTED_EDGE_COLOR : EDGE_COLOR} />
