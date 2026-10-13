@@ -11,13 +11,17 @@ const scaleParam = (value: ParamValue, factor: number | undefined): ParamValue =
 
 /** Turns a size-handle drag (scale per axis) into new plugin parameters. */
 export function paramsFromScale(plugin: ShapePlugin, params: Readonly<Record<string, ParamValue>>, scale: Vec3): ParamValues {
-  const factors = AXES.reduce<Readonly<Record<string, number>>>((acc, axis, i) => {
+  const sizeFactors = AXES.reduce<Readonly<Record<string, number>>>((acc, axis, i) => {
     const target = plugin.size?.[axis]
     const factor = Math.abs(scale[i] ?? 1)
     if (!target || factor === 1) return acc
     const current = acc[target]
     return current === undefined || Math.abs(factor - 1) > Math.abs(current - 1) ? { ...acc, [target]: factor } : acc
   }, {})
+  const followers = Object.fromEntries(
+    Object.entries(plugin.alsoScales ?? {}).map(([key, axis]) => [key, Math.abs(scale[AXES.indexOf(axis)] ?? 1)]),
+  )
+  const factors = { ...followers, ...sizeFactors }
   const scaled = Object.fromEntries(
     Object.entries(params).map(([key, value]) => [key, scaleParam(value, factors[key])]),
   )

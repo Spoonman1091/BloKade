@@ -19,6 +19,11 @@ describe('paramsFromScale', () => {
     expect(paramsFromScale(plugin('cylinder'), { diameter: 20, height: 10 }, [1.5, 0.9, 1]).diameter).toBe(30)
   })
 
+  it("grows a cone's top with its bottom, so a funnel-shaped cone keeps its shape", () => {
+    expect(paramsFromScale(plugin('cone'), { bottomDiameter: 10, topDiameter: 30, height: 20 }, [2, 2, 1]))
+      .toEqual({ bottomDiameter: 20, topDiameter: 60, height: 20 })
+  })
+
   it('rounds to 0.01 mm', () => {
     expect(paramsFromScale(plugin('sphere'), { diameter: 10 }, [1.23456, 1, 1]).diameter).toBe(12.35)
   })
@@ -29,8 +34,8 @@ describe('paramsFromScale', () => {
   })
 
   it('leaves unmapped parameters alone', () => {
-    expect(paramsFromScale(plugin('cone'), { bottomDiameter: 20, topDiameter: 4, height: 20 }, [2, 2, 1]))
-      .toEqual({ bottomDiameter: 40, topDiameter: 4, height: 20 })
+    expect(paramsFromScale(plugin('snap-clip'), { width: 6, thickness: 1.5, length: 12, hook: 1 }, [2, 2, 1]))
+      .toMatchObject({ width: 12, thickness: 1.5, length: 12, hook: 1 })
   })
 
   it('leaves a parameter exactly as it was when its axis did not scale', () => {

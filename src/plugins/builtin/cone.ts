@@ -11,6 +11,7 @@ export default definePlugin({
     height: { type: 'mm', default: 20, label: 'Height' },
   },
   size: { x: 'bottomDiameter', y: 'bottomDiameter', z: 'height' },
+  alsoScales: { topDiameter: 'x' },
   build: ({ bottomDiameter, topDiameter, height }, cad) =>
     cad.revolve([[0, 0], [bottomDiameter / 2, 0], [topDiameter / 2, height], [0, height]]),
 })

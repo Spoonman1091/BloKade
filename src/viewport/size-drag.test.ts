@@ -124,3 +124,23 @@ describe('parts with copies or a mirror', () => {
     expect(sizeHintFor(doc, [], 'size')).toBeNull()
   })
 })
+
+describe('a funnel-shaped cone', () => {
+  it('grows on a side drag and keeps its far side still, like the preview', () => {
+    const cone = registry.get('cone')
+    if (!cone) throw new Error('cone')
+    // Top 30 mm, bottom 10 mm: the top sets the width.
+    const box: Box = { min: [-15, -15, 0], max: [15, 15, 20] }
+    const node: ShapeNode = createShapeNode({
+      shapeType: 'cone', name: 'Cone', params: { bottomDiameter: 10, topDiameter: 30, height: 20 }, color: '#ff6b6b', id: 'c',
+    })
+    const handle = handlesFor(cone, box).find((h) => h.id === 'x+')
+    if (!handle) throw new Error('x+')
+    const start: SizeDragStart = { node, plugin: cone, box, handle, from: ORIGIN }
+    const edited = finishSizeDrag(start, sizeDragFrame(start, [30, 0, 0], FREE))
+    if (!edited) throw new Error('nothing changed')
+    expect(edited.params).toMatchObject({ bottomDiameter: 20, topDiameter: 60 })
+    const width = 60
+    expect(edited.transform.position[0] - width / 2).toBeCloseTo(-15, 6)
+  })
+})

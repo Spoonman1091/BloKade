@@ -76,6 +76,12 @@ export interface ShapePlugin<P extends ParamSpecs = ParamSpecs> {
   readonly params: P
   /** Which number parameter each size handle (x/y/z) changes. */
   readonly size?: { readonly x?: string; readonly y?: string; readonly z?: string }
+  /**
+   * Other number parameters that grow along with one size axis, so the part keeps its shape when a handle stretches
+   * it (a cone's top diameter grows with its bottom). The live preview stretches the whole part, and this makes the
+   * saved part match it.
+   */
+  readonly alsoScales?: { readonly [key: string]: 'x' | 'y' | 'z' }
   /** New parts of this kind start as holes (sockets, screw holes). Missing means solid. */
   readonly mode?: 'hole'
   /** Which palette section lists it. 'hidden' parts are only added by a kit. Missing means 'shapes'. */
