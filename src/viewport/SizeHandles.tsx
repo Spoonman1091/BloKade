@@ -123,13 +123,14 @@ interface HandlesProps {
   readonly plugin: ShapePlugin
   readonly box: Box
   readonly target: Object3D
+  readonly built: DisplayedMesh
   onMeasure(text: string | null): void
 }
 
-function Handles({ node, plugin, box, target, onMeasure }: HandlesProps) {
+function Handles({ node, plugin, box, target, built, onMeasure }: HandlesProps) {
   const group = useRef<Group>(null)
   const handles = useMemo(() => handlesFor(plugin, box), [plugin, box])
-  const drag = useSizeDrag(node, plugin, box, target, onMeasure)
+  const drag = useSizeDrag(node, plugin, box, target, built, onMeasure)
   const hover = useHover(drag.activeHandle !== null)
   useHandleSpots(group)
   const scale = drag.frame?.scale ?? NO_SCALE
@@ -161,5 +162,5 @@ interface SizeHandlesProps {
 /** TinkerCAD-style size handles: drag a side, the top or a bottom corner, and the far side stays put. */
 export function SizeHandles({ node, plugin, displayed, target, onMeasure }: SizeHandlesProps) {
   const box = useMemo(() => meshBox(displayed.mesh.positions, IDENTITY), [displayed.mesh])
-  return box ? <Handles node={node} plugin={plugin} box={box} target={target} onMeasure={onMeasure} /> : null
+  return box ? <Handles node={node} plugin={plugin} box={box} target={target} built={displayed} onMeasure={onMeasure} /> : null
 }

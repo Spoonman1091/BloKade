@@ -1,11 +1,12 @@
 import { useThree } from '@react-three/fiber'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Object3D } from 'three'
 import type { Box } from '../document/box'
 import { updateNode } from '../document/ops'
 import type { ShapeNode } from '../document/types'
 import type { ShapePlugin } from '../plugins/types'
 import { useBloKade, useBloKadeStore } from '../store/context'
+import type { DisplayedMesh } from '../store/merge-build'
 import type { SizeHandle } from './face-handles'
 import { pointerRay, toLocalRay, trackPoint, type PointerSpot } from './handle-drag'
 import { finishSizeDrag, sizeDragFrame, type SizeDragFrame, type SizeDragStart } from './size-drag'
@@ -83,9 +84,12 @@ const keyHandler = (cancel: () => void) => (event: KeyboardEvent): void => {
 /**
  * Runs one handle drag: live preview, one undo step on release, nothing written on Esc. The window listeners
  * go on at the press itself, not in an effect, so a quick press-drag-release can't finish before they exist.
+ *
+ * `built` is the part's mesh as last built. After a release that changed the part, the stretched preview stays
+ * until the next build arrives: dropping it at once would show the old, smaller mesh at the new spot for a moment.
  */
 export function useSizeDrag(
-  node: ShapeNode, plugin: ShapePlugin, box: Box, target: Object3D, onMeasure: (text: string | null) => void,
+  node: ShapeNode, plugin: ShapePlugin, box: Box, target: Object3D, built: DisplayedMesh, onMeasure: (text: string | null) => void,
 ): SizeDragControls {
   const gl = useThree((s) => s.gl)
   const camera = useThree((s) => s.camera)
@@ -96,8 +100,20 @@ export function useSizeDrag(
   const [activeHandle, setActiveHandle] = useState<string | null>(null)
   const last = useRef<SizeDragFrame | null>(null)
   const cancelDrag = useRef<(() => void) | null>(null)
+  /** The build that was showing when a changed part was let go of, while its rebuild is on the way. */
+  const waitingOn = useRef<DisplayedMesh | null>(null)
   // Unmounting mid-drag (selection or tool changed) ends the drag without writing anything.
-  useEffect(() => () => cancelDrag.current?.(), [])
+  useEffect(() => () => {
+    cancelDrag.current?.()
+    if (waitingOn.current) target.scale.set(1, 1, 1)
+  }, [target])
+  // A layout effect, so the new mesh never draws with the old preview stretch on top of it.
+  useLayoutEffect(() => {
+    if (!waitingOn.current || waitingOn.current === built) return
+    waitingOn.current = null
+    resetTarget(target, node)
+    setFrame(null)
+  }, [built, target, node])
 
   const pointOn = (handle: SizeHandle, spot: PointerSpot) =>
     trackPoint(handle, toLocalRay(pointerRay(spot, gl.domElement, camera), node.transform))
@@ -114,16 +130,20 @@ export function useSizeDrag(
 
   const begin = (handle: SizeHandle, spot: PointerSpot): void => {
     const from = pointOn(handle, spot)
-    if (!from || cancelDrag.current) return
+    if (!from || cancelDrag.current || waitingOn.current) return
     const start: SizeDragStart = { node, plugin, box, handle, from }
     const end = (commit: boolean): void => {
       stop()
       cancelDrag.current = null
       if (controls) controls.enabled = true
-      resetTarget(target, node)
       const edited = commit && last.current ? finishSizeDrag(start, last.current) : null
       last.current = null
-      setFrame(null)
+      if (edited) {
+        waitingOn.current = built
+      } else {
+        resetTarget(target, node)
+        setFrame(null)
+      }
       setActiveHandle(null)
       onMeasure(null)
       if (edited) store.getState().apply((d) => updateNode(d, node.id, () => edited))
