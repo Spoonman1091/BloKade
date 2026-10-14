@@ -55,8 +55,13 @@ function setup() {
     act(() => hook.result.current.begin(handle, spotOf(10, 0, 10)))
     act(() => { window.dispatchEvent(new MouseEvent('pointermove', spotOf(to, 0, 10))) })
   }
+  const dragCorner = (): void => {
+    const corner = handlesFor(plugin, BOX).find((h) => h.id === 'corner-x+y+') as SizeHandle
+    act(() => hook.result.current.begin(corner, spotOf(10, 10, 0)))
+    act(() => { window.dispatchEvent(new MouseEvent('pointermove', spotOf(20, 10, 0))) })
+  }
   const release = (): void => act(() => { window.dispatchEvent(new MouseEvent('pointerup')) })
-  return { store, target, hook, drag, release }
+  return { store, target, hook, drag, dragCorner, release }
 }
 
 describe('useSizeDrag', () => {
@@ -95,5 +100,28 @@ describe('useSizeDrag', () => {
     release()
     hook.unmount()
     expect(target.scale.x).toBe(1)
+  })
+})
+
+describe('Shift and Alt during a drag', () => {
+  const key = (type: 'keydown' | 'keyup', name: 'Shift' | 'Alt', held: boolean): void =>
+    act(() => { window.dispatchEvent(new KeyboardEvent(type, { key: name, shiftKey: name === 'Shift' && held, altKey: name === 'Alt' && held })) })
+
+  it('turns snapping off and on again straight away, without moving the mouse', () => {
+    const { target, drag } = setup()
+    drag(30.4)
+    expect(target.scale.x).toBe(2)
+    key('keydown', 'Shift', true)
+    expect(target.scale.x).toBeCloseTo(40.4 / 20, 2)
+    key('keyup', 'Shift', false)
+    expect(target.scale.x).toBe(2)
+  })
+
+  it('keeps proportions as soon as Alt goes down on a corner', () => {
+    const { target, dragCorner } = setup()
+    dragCorner()
+    expect(target.scale.z).toBe(1)
+    key('keydown', 'Alt', true)
+    expect(target.scale.z).toBeCloseTo(1.5, 2)
   })
 })

@@ -49,6 +49,7 @@ function listen(handlers: DragHandlers): () => void {
     ['pointercancel', handlers.cancel, false],
     ['blur', handlers.cancel, false],
     ['keydown', handlers.key as EventListener, true],
+    ['keyup', handlers.key as EventListener, true],
   ]
   for (const [type, fn, capture] of pairs) window.addEventListener(type, fn, capture)
   return () => {
@@ -74,11 +75,18 @@ function swallowNextClick(): void {
   const timer = window.setTimeout(stop, 0)
 }
 
-/** Every key is swallowed while dragging, so design shortcuts can't change the part under the pointer. Esc cancels. */
-const keyHandler = (cancel: () => void) => (event: KeyboardEvent): void => {
+/** Shift (snapping off) and Alt (keep proportions) change the preview the moment they go down or up. */
+const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Shift', 'Alt'])
+
+/**
+ * Every key is swallowed while dragging, so design shortcuts can't change the part under the pointer. Esc cancels;
+ * Shift and Alt redraw the preview at once, without waiting for the mouse to move.
+ */
+const keyHandler = (cancel: () => void, modifiers: (event: KeyboardEvent) => void) => (event: KeyboardEvent): void => {
   event.preventDefault()
   event.stopPropagation()
-  if (event.key === 'Escape') cancel()
+  if (event.type === 'keydown' && event.key === 'Escape') cancel()
+  else if (MODIFIER_KEYS.has(event.key)) modifiers(event)
 }
 
 /**
@@ -118,7 +126,7 @@ export function useSizeDrag(
   const pointOn = (handle: SizeHandle, spot: PointerSpot) =>
     trackPoint(handle, toLocalRay(pointerRay(spot, gl.domElement, camera), node.transform))
 
-  const show = (start: SizeDragStart, event: PointerEvent): void => {
+  const show = (start: SizeDragStart, event: PointerSpot): void => {
     const to = pointOn(start.handle, event)
     if (!to) return
     const next = sizeDragFrame(start, to, { snap: event.shiftKey ? 0 : gridSnap, keepProportions: event.altKey })
@@ -132,6 +140,14 @@ export function useSizeDrag(
     const from = pointOn(handle, spot)
     if (!from || cancelDrag.current || waitingOn.current) return
     const start: SizeDragStart = { node, plugin, box, handle, from }
+    // Where the pointer last was, so Shift or Alt can redraw the preview there.
+    let pointer: PointerSpot = spot
+    const move = (event: PointerEvent): void => {
+      pointer = event
+      show(start, event)
+    }
+    const modifiers = (event: KeyboardEvent): void =>
+      show(start, { clientX: pointer.clientX, clientY: pointer.clientY, shiftKey: event.shiftKey, altKey: event.altKey })
     const end = (commit: boolean): void => {
       stop()
       cancelDrag.current = null
@@ -148,7 +164,7 @@ export function useSizeDrag(
       onMeasure(null)
       if (edited) store.getState().apply((d) => updateNode(d, node.id, () => edited))
     }
-    const stop = listen({ move: (e) => show(start, e), up: () => { end(true); swallowNextClick() }, cancel: () => end(false), key: keyHandler(() => end(false)) })
+    const stop = listen({ move, up: () => { end(true); swallowNextClick() }, cancel: () => end(false), key: keyHandler(() => end(false), modifiers) })
     cancelDrag.current = () => end(false)
     // OrbitControls saw this press first; turning it off now stops it from spinning the camera as the mouse moves.
     if (controls) controls.enabled = false
