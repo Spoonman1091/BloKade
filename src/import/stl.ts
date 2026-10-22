@@ -53,10 +53,12 @@ function readAscii(buffer: ArrayBuffer): Float32Array {
 
 function readVertices(buffer: ArrayBuffer): Float32Array {
   if (isBinary(buffer)) return readBinary(buffer)
+  const padded = isPaddedBinary(buffer)
   try {
-    return readAscii(buffer)
+    const ascii = readAscii(buffer)
+    return ascii.length === 0 && padded ? readBinary(buffer) : ascii
   } catch (error) {
-    if (error instanceof StlError && isPaddedBinary(buffer)) return readBinary(buffer)
+    if (error instanceof StlError && padded) return readBinary(buffer)
     throw error
   }
 }

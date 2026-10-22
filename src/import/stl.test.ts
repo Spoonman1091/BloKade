@@ -22,4 +22,10 @@ describe('parseStl', () => {
     padded.set(new Uint8Array(file))
     expect(parseStl(padded.buffer).triangles.length).toBe(36)
   })
+  it('reads a padded binary file whose header starts with solid', () => {
+    const file = binaryStl(cubeMesh(10), 'solid exported by CAD')
+    const padded = new Uint8Array(file.byteLength + 16)
+    padded.set(new Uint8Array(file))
+    expect(parseStl(padded.buffer).triangles.length).toBe(36)
+  })
 })
