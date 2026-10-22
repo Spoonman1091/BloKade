@@ -14,6 +14,7 @@ import { closedMeshFor3mf, createGeometryApi, ExportError } from './api'
 import { Evaluator } from './evaluate'
 import { exportTargets, looseHoles } from './export-targets'
 import { addImportedPart } from '../document/models'
+import { binaryStl } from '../import/testing/stl-files'
 import { cubeMesh, importInput, openCubeMesh } from './testing/meshes'
 import { initTestOC } from './testing/oc-node'
 import { meshVolume, parseBinaryStl } from './testing/stl'
@@ -36,6 +37,11 @@ function design(): BloKadeDocument {
 const newApi = () => createGeometryApi(new Evaluator(registry, createCadToolkit()), new KadeShapes(fileModuleLoader, registry))
 
 describe('geometry api', () => {
+  it('prepares an STL file for import', async () => {
+    const result = await newApi().prepareStl(binaryStl(cubeMesh(10)))
+    expect(result).toMatchObject({ ok: true, model: { size: [10, 10, 10] } })
+  })
+
   it('rebuilds every top-level part into a mesh', async () => {
     const result = await newApi().rebuild(design())
     expect(Object.keys(result.nodes).sort()).toEqual(['ball', 'g'])

@@ -1,4 +1,5 @@
 import type { BloKadeDocument, EdgeFingerprint, NodeId } from '../document/types'
+import type { PrepareResult } from '../import/prepare'
 import type { InspectResult } from '../kade/meta'
 
 export interface MeshData {
@@ -47,6 +48,8 @@ export interface GeometryApi {
   overlap(doc: BloKadeDocument, a: NodeId, b: NodeId): Promise<OverlapResult>
   /** Loads and checks one of Kade's shapes: its name, icon and settings, or a friendly problem. */
   inspect(code: string): Promise<InspectResult>
+  /** Reads, cleans and simplifies an STL file for import. Never throws: a bad file gives a friendly message. */
+  prepareStl(bytes: ArrayBuffer): Promise<PrepareResult>
   /** Kade's code (by code hash) that got an earlier worker stuck: never load or build it; it fails with TOO_LONG. */
   skipShapes(hashes: readonly string[]): Promise<void>
 }

@@ -28,6 +28,7 @@ function fakeWorker(running: readonly string[] = []) {
       edgeCandidates: async () => [],
       overlap: async () => ({ status: 'none' }),
       inspect: async () => ({ ok: false, problem: 'unused' }),
+      prepareStl: async (bytes) => ({ ok: false, message: `got ${bytes.byteLength} bytes` }),
       skipShapes: async (hashes) => { skipped.push(hashes) },
     },
     terminate: vi.fn(),
@@ -130,6 +131,12 @@ describe('GeometryClient', () => {
     const client = new GeometryClient(() => handle)
     expect((await client.exportStl(doc('x'))).byteLength).toBe(84)
     expect((await client.export3mf(doc('x'), ['a'])).byteLength).toBe(10)
+  })
+
+  it('prepares STL files through the worker', async () => {
+    const { handle } = fakeWorker()
+    const client = new GeometryClient(() => handle)
+    expect(await client.prepareStl(new ArrayBuffer(12))).toEqual({ ok: false, message: 'got 12 bytes' })
   })
 
   it('forwards STEP export and edge candidates to the worker', async () => {

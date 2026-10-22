@@ -38,6 +38,7 @@ const apiReady = initBrowserOC().then(() =>
 
 const api: GeometryApi = {
   rebuild: async (doc, channel) => (await apiReady).rebuild(doc, channel),
+  prepareStl: async (bytes) => (await apiReady).prepareStl(bytes),
   exportStl: async (doc, ids) => (await apiReady).exportStl(doc, ids),
   export3mf: async (doc, ids) => (await apiReady).export3mf(doc, ids),
   exportStep: async (doc, ids) => (await apiReady).exportStep(doc, ids),

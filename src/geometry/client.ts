@@ -1,4 +1,6 @@
+import * as Comlink from 'comlink'
 import type { BloKadeDocument, NodeId } from '../document/types'
+import type { PrepareResult } from '../import/prepare'
 import type { InspectResult } from '../kade/meta'
 import type { BuildChannel, BuildResult, EdgeCandidate, GeometryApi, OverlapResult } from './types'
 
@@ -64,6 +66,11 @@ export class GeometryClient {
       this.inspects = [...this.inspects, { code, resolve, reject }]
       this.pump()
     })
+  }
+
+  /** Hands the file to the worker without copying it; the buffer is empty here afterwards. */
+  prepareStl(bytes: ArrayBuffer): Promise<PrepareResult> {
+    return this.call((api) => api.prepareStl(Comlink.transfer(bytes, [bytes])))
   }
 
   exportStl(doc: BloKadeDocument, ids?: readonly NodeId[]): Promise<ArrayBuffer> {

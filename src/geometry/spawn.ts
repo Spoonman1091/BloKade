@@ -13,6 +13,7 @@ export function spawnGeometryWorker(): WorkerHandle {
   return {
     api: {
       rebuild: (doc, channel) => remote.rebuild(doc, channel),
+      prepareStl: (bytes) => remote.prepareStl(bytes),
       exportStl: (doc, ids) => remote.exportStl(doc, ids),
       export3mf: (doc, ids) => remote.export3mf(doc, ids),
       exportStep: (doc, ids) => remote.exportStep(doc, ids),

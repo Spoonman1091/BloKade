@@ -21,6 +21,7 @@ export function fakeInspect(code: string): InspectResult {
 export function fakeGeometryApi(overrides: Partial<GeometryApi> = {}): GeometryApi {
   return {
     rebuild: async () => ({ nodes: {} }),
+    prepareStl: async () => ({ ok: false, message: 'Importing files is not available in this test.' }),
     exportStl: async () => new ArrayBuffer(84),
     export3mf: async () => new ArrayBuffer(22),
     exportStep: async () => new TextEncoder().encode('ISO-10303-21;').buffer as ArrayBuffer,

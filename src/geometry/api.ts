@@ -5,6 +5,7 @@ import type { KadeShapes } from '../kade/kade-shapes'
 import { NodeBuildError, type Evaluator } from './evaluate'
 import { featureEdges } from './feature-edges'
 import { exportTargets } from './export-targets'
+import { prepareStl } from '../import/prepare'
 import { UNEXPECTED } from './messages'
 import { findOverlap, OverlapError } from './overlap'
 import { write3mf } from './export-3mf'
@@ -91,6 +92,7 @@ export function createGeometryApi(evaluator: Evaluator, shapes: KadeShapes): Geo
   }
   return {
     rebuild: (doc, channel = 'design') => withShapes(doc, () => rebuild(evaluator, doc, channel)),
+    prepareStl: (bytes) => prepareStl(bytes),
     exportStl: (doc, ids) => exported(doc, ids, (shape) => shape.blobSTL({ binary: true, ...EXPORT_QUALITY }).arrayBuffer()),
     export3mf: (doc, ids) => exported(doc, ids, (shape) => {
       const mesh = shape.mesh(EXPORT_QUALITY)
