@@ -67,7 +67,7 @@ test('a file that is not a model says so and adds nothing', async ({ page }) => 
   await expect(page.getByRole('treeitem')).toHaveCount(0)
 })
 
-test('an imported model survives saving to a file and loading it again', async ({ page }) => {
+test('an imported model survives saving to a file and loading it again', async ({ page, browser }) => {
   await start(page)
   await importCube(page)
   await page.getByTestId('open-designs').click()
@@ -75,12 +75,15 @@ test('an imported model survives saving to a file and loading it again', async (
   await page.getByRole('button', { name: 'Save to file' }).click()
   const saved = await (await download).path()
 
-  const other = await page.context().newPage()
+  const fresh = await browser.newContext()
+  const other = await fresh.newPage()
   await start(other)
+  await expect(other.getByRole('treeitem')).toHaveCount(0)
   await other.getByTestId('open-designs').click()
   await other.getByTestId('load-file').setInputFiles(saved)
   await expect(other.getByRole('button', { name: 'Save to file' })).toBeHidden()
   await other.getByRole('treeitem', { name: 'cube-20' }).click()
   await expect(other.getByTestId('param-width')).toHaveValue('20')
   await expect(problems(other)).toHaveCount(0)
+  await fresh.close()
 })
