@@ -48,3 +48,14 @@ export function sphereMesh(diameter: number, segments: number, rings: number): T
   ).flat()
   return { vertices, triangles: [...caps, ...bands] }
 }
+
+/** What addImportedPart needs to add a test mesh as a part, with the mesh's own size. */
+export function importInput(mesh: TestMesh, name = 'Model') {
+  const vertices = new Float32Array(mesh.vertices)
+  const [min, max] = [0, 1, 2].map((axis) => {
+    const values = mesh.vertices.filter((_, i) => i % 3 === axis)
+    return [Math.min(...values), Math.max(...values)] as const
+  }).reduce<[number[], number[]]>(([lo, hi], [a, b]) => [[...lo, a], [...hi, b]], [[], []])
+  const size = [0, 1, 2].map((i) => (max?.[i] ?? 0) - (min?.[i] ?? 0)) as [number, number, number]
+  return { name, vertices, triangles: new Uint32Array(mesh.triangles), size, color: '#ffffff' }
+}

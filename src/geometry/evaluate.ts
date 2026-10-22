@@ -1,5 +1,6 @@
 import type { Shape3D } from 'replicad'
 import { modifiersOf } from '../document/modifiers'
+import { decodeModel, IMPORTED_SHAPE } from '../document/models'
 import type { BloKadeDocument, GroupNode, Modifier, NodeId, SceneNode, ShapeNode } from '../document/types'
 import type { CadToolkit } from '../plugins/cad-types'
 import { resolveParams } from '../plugins/params'
@@ -7,9 +8,38 @@ import type { PluginRegistry } from '../plugins/registry'
 import type { ParamValues, ShapePlugin } from '../plugins/types'
 import { runKadeBuild, type KadeBuild } from '../kade/run-build'
 import { findEdgeCandidates } from './edge-candidates'
+import { meshSolid } from './mesh-solid'
 import { applyModifiers, ModifierError } from './modifiers'
 import { placeShape } from './transform'
 import type { BuildChannel, EdgeCandidate, ModifierWarnings } from './types'
+
+const MODEL_MISSING = 'This imported model is missing from the design. Import it again.'
+const MODEL_DAMAGED = 'This imported model is damaged. Import it again.'
+
+interface DecodedModel {
+  readonly vertices: Float32Array
+  readonly triangles: Uint32Array
+}
+
+/** True when the arrays make whole vertices and triangles, and every triangle points at a vertex. */
+function isWellFormed({ vertices, triangles }: DecodedModel): boolean {
+  const count = vertices.length / 3
+  return vertices.length % 3 === 0 && triangles.length % 3 === 0 && triangles.every((index) => index < count)
+}
+
+/** The model's own size on each axis (1 for a flat axis, so scaling never divides by zero). */
+function extentOf(vertices: Float32Array): [number, number, number] {
+  return [0, 1, 2].map((axis) => {
+    let [low, high] = [Infinity, -Infinity]
+    for (let i = axis; i < vertices.length; i += 3) {
+      low = Math.min(low, vertices[i] ?? 0)
+      high = Math.max(high, vertices[i] ?? 0)
+    }
+    return high - low > 0 ? high - low : 1
+  }) as [number, number, number]
+}
+
+const numberParam = (value: unknown): number => (typeof value === 'number' && value > 0 ? value : 1)
 
 export class NodeBuildError extends Error {
   override name = 'NodeBuildError'
@@ -29,6 +59,8 @@ const enabledModifiers = (node: SceneNode): readonly Modifier[] => modifiersOf(n
 /** Builds solids from the document with a per-node cache. Returned shapes are owned by the cache. */
 export class Evaluator {
   private readonly cache = new Map<string, Shape3D>()
+  /** Imported models, decoded once. Keyed by model id, which is a hash of the content. */
+  private readonly decoded = new Map<string, DecodedModel>()
   private readonly warningCache = new Map<string, Readonly<Record<string, string>>>()
   private passWarnings = new Map<NodeId, Readonly<Record<string, string>>>()
   private channel: BuildChannel = 'design'
@@ -101,7 +133,7 @@ export class Evaluator {
   }
 
   private base(doc: BloKadeDocument, node: SceneNode): Shape3D {
-    return node.kind === 'shape' ? this.shapeLocal(node) : this.groupLocal(doc, node)
+    return node.kind === 'shape' ? this.shapeLocal(doc, node) : this.groupLocal(doc, node)
   }
 
   private modified(base: Shape3D, modifiers: readonly Modifier[], key: string, id: NodeId): Shape3D {
@@ -178,7 +210,8 @@ export class Evaluator {
     })
   }
 
-  private shapeLocal(node: ShapeNode): Shape3D {
+  private shapeLocal(doc: BloKadeDocument, node: ShapeNode): Shape3D {
+    if (node.shapeType === IMPORTED_SHAPE) return this.importedLocal(doc, node)
     const plugin = this.registry.get(node.shapeType)
     if (!plugin) {
       throw new NodeBuildError(`BloKade doesn't know the shape "${node.shapeType}". Is its plugin missing?`, node.id)
@@ -191,6 +224,46 @@ export class Evaluator {
         throw new NodeBuildError(`${plugin.name} couldn't be built: ${messageOf(error)}`, node.id)
       }
     })
+  }
+
+  private importedLocal(doc: BloKadeDocument, node: ShapeNode): Shape3D {
+    const model = this.modelFor(doc, node)
+    return this.entry(this.shapeKey(node), () => {
+      try {
+        return meshSolid(this.scaled(model, node), model.triangles)
+      } catch (error) {
+        throw new NodeBuildError(`Imported model couldn't be built: ${messageOf(error)}`, node.id)
+      }
+    })
+  }
+
+  /** The part's model, decoded and checked. A bad one is treated like a missing one. */
+  private modelFor(doc: BloKadeDocument, node: ShapeNode): DecodedModel {
+    const id = node.params.model
+    const stored = typeof id === 'string' && Object.hasOwn(doc.models, id) ? doc.models[id] : undefined
+    if (typeof id !== 'string' || !stored) throw new NodeBuildError(MODEL_MISSING, node.id)
+    const known = this.decoded.get(id)
+    if (known) return known
+    const model = this.decode(stored, node)
+    this.decoded.set(id, model)
+    return model
+  }
+
+  private decode(stored: Parameters<typeof decodeModel>[0], node: ShapeNode): DecodedModel {
+    try {
+      const model = decodeModel(stored)
+      if (isWellFormed(model)) return model
+    } catch {
+      // Text that isn't valid base64 is the same problem as wrong-sized arrays.
+    }
+    throw new NodeBuildError(MODEL_DAMAGED, node.id)
+  }
+
+  /** The model's vertices stretched to the part's width, depth and height. */
+  private scaled(model: DecodedModel, node: ShapeNode): Float32Array {
+    const extent = extentOf(model.vertices)
+    const factor = [node.params.width, node.params.depth, node.params.height].map((v, axis) => numberParam(v) / (extent[axis] ?? 1))
+    return model.vertices.map((value, i) => value * (factor[i % 3] ?? 1))
   }
 
   private buildShape(plugin: ShapePlugin, params: ParamValues): Shape3D {

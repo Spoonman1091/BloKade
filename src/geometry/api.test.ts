@@ -13,6 +13,8 @@ import { fileModuleLoader } from '../kade/testing/file-loader'
 import { closedMeshFor3mf, createGeometryApi, ExportError } from './api'
 import { Evaluator } from './evaluate'
 import { exportTargets, looseHoles } from './export-targets'
+import { addImportedPart } from '../document/models'
+import { cubeMesh, importInput, openCubeMesh } from './testing/meshes'
 import { initTestOC } from './testing/oc-node'
 import { meshVolume, parseBinaryStl } from './testing/stl'
 import { countOpenEdges, weldMesh } from './weld'
@@ -159,5 +161,33 @@ describe("designs carrying Kade's shapes (a fresh worker, an empty library)", ()
     const robot = result.nodes.robot
     expect(robot?.status === 'error' && robot.message).toBe(`Robot couldn't be built: ${TOO_LONG}`)
     expect(result.nodes.box?.status).toBe('ok')
+  })
+})
+
+describe('geometry api imported parts', () => {
+  const importedCube = () => addImportedPart(createEmptyDocument('Cube'), importInput(cubeMesh(10)))
+
+  it('draws only the sharp edges of an imported part', async () => {
+    const { doc, id } = importedCube()
+    const node = (await newApi().rebuild(doc)).nodes[id]
+    expect(node?.status).toBe('ok')
+    if (node?.status === 'ok') expect(node.mesh.edges.length).toBe(12 * 6)
+  })
+
+  it('exports an imported part as a closed mesh', async () => {
+    const { doc } = importedCube()
+    const { vertices, triangles } = parseBinaryStl(await newApi().exportStl(doc))
+    const welded = weldMesh(vertices, triangles)
+    expect(countOpenEdges(welded.triangles)).toBe(0)
+    expect(meshVolume(welded.vertices, welded.triangles)).toBeCloseTo(1000, 1)
+  })
+
+  it('never throws out of a cut with a model that has gaps, and explains any problem kindly', async () => {
+    const { doc, id } = addImportedPart(createEmptyDocument(), importInput(openCubeMesh(20)))
+    const withHole = addNode(doc, shape('hole', 'cylinder', { diameter: 10, height: 40 }, [0, 0, -10]))
+    const grouped = groupNodes(setMode(withHole, ['hole'], 'hole'), [id, 'hole'], 'g').doc
+    const group = (await newApi().rebuild(grouped)).nodes.g
+    if (group?.status === 'error') expect(group.message).not.toMatch(/Standard_|BRep|TopoDS|\n\s+at /)
+    else expect(group?.status).toBe('ok')
   })
 })

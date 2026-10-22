@@ -1,7 +1,9 @@
 import type { Shape3D } from 'replicad'
+import { containsImported } from '../document/models'
 import type { BloKadeDocument, NodeId } from '../document/types'
 import type { KadeShapes } from '../kade/kade-shapes'
 import { NodeBuildError, type Evaluator } from './evaluate'
+import { featureEdges } from './feature-edges'
 import { exportTargets } from './export-targets'
 import { UNEXPECTED } from './messages'
 import { findOverlap, OverlapError } from './overlap'
@@ -27,7 +29,10 @@ export function closedMeshFor3mf(
 
 function buildNode(evaluator: Evaluator, doc: BloKadeDocument, id: NodeId): NodeBuild {
   try {
-    return { status: 'ok', mesh: toMeshData(evaluator.local(doc, id)) }
+    const mesh = toMeshData(evaluator.local(doc, id))
+    // An imported model is a mesh of tiny faces, so draw only its sharp edges instead of every triangle.
+    const shown = containsImported(doc, id) ? { ...mesh, edges: featureEdges(mesh.positions, mesh.indices) } : mesh
+    return { status: 'ok', mesh: shown }
   } catch (error) {
     if (error instanceof NodeBuildError) return { status: 'error', message: error.message }
     console.error('Unexpected geometry failure', error)

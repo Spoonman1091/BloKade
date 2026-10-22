@@ -12,6 +12,8 @@ import { definePlugin, type ShapePlugin } from '../plugins/types'
 import type { KadeBuild } from '../kade/run-build'
 import { Evaluator, NodeBuildError } from './evaluate'
 import { shapeBox } from './edge-info'
+import { addImportedPart } from '../document/models'
+import { cubeMesh, importInput } from './testing/meshes'
 import { initTestOC } from './testing/oc-node'
 
 beforeAll(initTestOC)
@@ -327,5 +329,42 @@ describe('Evaluator build channels', () => {
     const box = pass(evaluator, design, 'design', 'b')
     pass(evaluator, single('s', 'sphere', { diameter: 10 }), 'design', 's')
     expect(pass(evaluator, design, 'design', 'b')).not.toBe(box)
+  })
+})
+
+describe('Evaluator imported parts', () => {
+  const withCube = (size = 10) => addImportedPart(createEmptyDocument(), importInput(cubeMesh(size)))
+
+  it('builds an imported part at its size', () => {
+    const { doc, id } = withCube()
+    expect(shapeBox(newEvaluator().local(doc, id))).toMatchObject({ min: [-5, -5, 0], max: [5, 5, 10] })
+  })
+
+  it('stretches only the axis that changed', () => {
+    const { doc, id } = withCube()
+    const wider = updateNode(doc, id, (node) => (node.kind === 'shape' ? { ...node, params: { ...node.params, width: 30 } } : node))
+    const box = shapeBox(newEvaluator().local(wider, id))
+    expect(box.min).toEqual([-15, -5, 0])
+    expect(box.max).toEqual([15, 5, 10])
+  })
+
+  it('cuts an imported part with a hole', () => {
+    const { doc, id } = withCube(20)
+    const withHole = addNode(doc, shape('hole', 'cylinder', { diameter: 10, height: 40 }, [0, 0, -10]))
+    const grouped = groupNodes(setMode(withHole, ['hole'], 'hole'), [id, 'hole'], 'g').doc
+    expect(measureVolume(newEvaluator().local(grouped, 'g'))).toBeCloseTo(8000 - Math.PI * 25 * 20, 0)
+  })
+
+  it('explains a missing model', () => {
+    const { doc, id } = withCube()
+    const error = buildError(() => newEvaluator().local({ ...doc, models: {} }, id))
+    expect(error.message).toBe('This imported model is missing from the design. Import it again.')
+  })
+
+  it('explains a damaged model', () => {
+    const { doc, id } = withCube()
+    const [modelId, model] = Object.entries(doc.models)[0] as [string, (typeof doc.models)[string]]
+    const damaged = { ...doc, models: { [modelId]: { ...model, triangles: btoa('abcd') } } }
+    expect(buildError(() => newEvaluator().local(damaged, id)).message).toBe('This imported model is damaged. Import it again.')
   })
 })
