@@ -59,4 +59,26 @@ describe('useStlImport', () => {
     act(() => result.current.cancel())
     expect(result.current.pending).toBeNull()
   })
+
+  it('ignores a second file while the first is being read', async () => {
+    const prepareStl = vi.fn(() => new Promise(() => undefined))
+    const { result } = setup(prepareStl)
+    act(() => { result.current.choose(fileOf()); result.current.choose(fileOf()) })
+    await waitFor(() => expect(prepareStl).toHaveBeenCalled())
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)) })
+    expect(prepareStl).toHaveBeenCalledTimes(1)
+  })
+
+  it('ignores a file while the dialog is open', async () => {
+    const model = preparedModel(cubeMesh(1))
+    const prepareStl = vi.fn(async () => ({ ok: true, model }))
+    const { result } = setup(prepareStl)
+    act(() => result.current.choose(fileOf()))
+    await waitFor(() => expect(result.current.pending).not.toBeNull())
+    const before = result.current.pending
+    act(() => result.current.choose(fileOf()))
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)) })
+    expect(prepareStl).toHaveBeenCalledTimes(1)
+    expect(result.current.pending).toBe(before)
+  })
 })

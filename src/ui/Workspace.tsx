@@ -33,7 +33,7 @@ import { NewerShapesBanner } from './NewerShapesBanner'
 import { PropertiesPanel } from './PropertiesPanel'
 import { SceneTree } from './SceneTree'
 import { ShapePalette } from './ShapePalette'
-import { stlFileOf } from './stl-drop'
+import { handleStlDrop } from './stl-drop'
 import { Toasts } from './Toasts'
 import { Toolbar } from './Toolbar'
 import { VariablesPanel } from './VariablesPanel'
@@ -113,12 +113,7 @@ function DesignPanes({ deps, store, actions, shapes, lessons, session, stl }: De
           onImport={stl.choose} importBusy={stl.busy} />
         <SceneTree registry={shapes.registry} />
       </aside>
-      <main className="viewport" data-testid="viewport" onDragOver={(e) => e.preventDefault()} onDrop={(e) => {
-        const file = stlFileOf(e.dataTransfer.files)
-        if (!file) return
-        e.preventDefault()
-        stl.choose(file)
-      }}>
+      <main className="viewport" data-testid="viewport" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleStlDrop(e, stl.choose)}>
         <Viewport registry={shapes.registry} onToggleEdge={actions.togglePickedEdge} />
         <EmptyNudge lessons={lessons} onStart={() => {
           const first = TUTORIALS[0]

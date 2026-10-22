@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import type { GeometryClient } from '../geometry/client'
 import { MAX_STL_BYTES, NOT_STL, TOO_BIG_FILE } from '../import/limits'
 import type { PreparedModel } from '../import/prepare'
@@ -22,14 +22,21 @@ export interface StlImport {
 export function useStlImport(client: GeometryClient, store: BloKadeStore): StlImport {
   const [pending, setPending] = useState<PendingImport | null>(null)
   const [busy, setBusy] = useState(false)
+  // Read by `choose` so a drop during a read or an open dialog is ignored, never from a stale render.
+  const occupied = useRef(false)
 
   const read = useCallback(async (file: File): Promise<void> => {
+    occupied.current = true
     setBusy(true)
     try {
       const result = await client.prepareStl(await file.arrayBuffer())
       if (result.ok) setPending({ fileName: file.name, model: result.model })
-      else store.getState().notify(result.message)
+      else {
+        occupied.current = false
+        store.getState().notify(result.message)
+      }
     } catch {
+      occupied.current = false
       store.getState().notify(NOT_STL)
     } finally {
       setBusy(false)
@@ -37,6 +44,7 @@ export function useStlImport(client: GeometryClient, store: BloKadeStore): StlIm
   }, [client, store])
 
   const choose = useCallback((file: File): void => {
+    if (occupied.current) return
     if (file.size > MAX_STL_BYTES) return store.getState().notify(TOO_BIG_FILE)
     void read(file)
   }, [read, store])
@@ -44,9 +52,13 @@ export function useStlImport(client: GeometryClient, store: BloKadeStore): StlIm
   const confirm = useCallback((unit: ImportUnit): void => {
     if (!pending) return
     importPart(store, pending.fileName, pending.model, unit)
+    occupied.current = false
     setPending(null)
   }, [pending, store])
 
-  const cancel = useCallback(() => setPending(null), [])
+  const cancel = useCallback(() => {
+    occupied.current = false
+    setPending(null)
+  }, [])
   return { pending, busy, choose, confirm, cancel }
 }
