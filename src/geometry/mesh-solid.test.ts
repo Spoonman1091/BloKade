@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { createCadToolkit } from '../plugins/cad'
 import { shapeBox } from './edge-info'
 import { meshSolid } from './mesh-solid'
-import { cubeMesh, sphereMesh } from './testing/meshes'
+import { cubeMesh, openCubeMesh, sphereMesh } from './testing/meshes'
 import { initTestOC } from './testing/oc-node'
 
 describe('meshSolid', () => {
@@ -35,5 +35,19 @@ describe('meshSolid', () => {
     const volume = measureVolume(meshSolid(vertices, triangles))
     expect(volume).toBeGreaterThan(0.95 * ((4 / 3) * Math.PI * 1000))
     expect(volume).toBeLessThan((4 / 3) * Math.PI * 1000)
+  })
+
+  it('still builds a mesh with a gap in it', () => {
+    const { vertices, triangles } = openCubeMesh(10)
+    expect(() => meshSolid(vertices, triangles)).not.toThrow()
+  })
+
+  it('turns an inside-out mesh the right way round', () => {
+    const { vertices, triangles } = cubeMesh(20)
+    const flipped = triangles.map((v, i) => (i % 3 === 1 ? triangles[i + 1] : i % 3 === 2 ? triangles[i - 1] : v) ?? 0)
+    const solid = meshSolid(vertices, flipped)
+    expect(measureVolume(solid)).toBeCloseTo(8000, 3)
+    const hole = createCadToolkit().cylinder(10, 40).translateZ(-10)
+    expect(measureVolume(solid.cut(hole))).toBeCloseTo(8000 - Math.PI * 25 * 20, 0)
   })
 })

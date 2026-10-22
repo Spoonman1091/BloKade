@@ -1,4 +1,4 @@
-import { cast, getOC, type Shape3D } from 'replicad'
+import { cast, getOC, measureVolume, type Shape3D } from 'replicad'
 
 const STL_HEADER_BYTES = 80
 const STL_TRIANGLE_BYTES = 50
@@ -63,6 +63,19 @@ function sewShell(oc: OC, faces: InstanceType<OC['TopoDS_Shape']>, track: Dispos
   return firstShell(oc, sewn, track)
 }
 
+/** Wraps the solid, turning it right way out if the mesh was wound inside-out (negative volume). */
+function rightWayOut(oc: OC, solid: InstanceType<OC['TopoDS_Solid']>): Shape3D {
+  const shape = cast(solid) as Shape3D
+  if (measureVolume(shape) >= 0) return shape
+  shape.delete()
+  const flipped = solid.Reversed()
+  const copy = oc.TopoDS.Solid(flipped)
+  const result = cast(copy) as Shape3D
+  flipped.delete()
+  copy.delete()
+  return result
+}
+
 /** Turns triangles (flat x, y, z vertices and three vertex indices per triangle) into a solid. */
 export function meshSolid(vertices: ArrayLike<number>, triangles: ArrayLike<number>): Shape3D {
   if (triangles.length < 3) throw new Error('This model has no shape in it.')
@@ -73,7 +86,7 @@ export function meshSolid(vertices: ArrayLike<number>, triangles: ArrayLike<numb
     track.push(faces)
     if (!readFaces(oc, binaryStl(vertices, triangles), faces)) throw new Error('This model could not be read.')
     const shell = sewShell(oc, faces, track)
-    if (!shell) throw new Error('This model has holes in it, so it is not a solid.')
+    if (!shell) throw new Error('This model has no shape in it.')
     const unify = new oc.ShapeUpgrade_UnifySameDomain(shell, true, true, false)
     track.push(unify)
     unify.Build()
@@ -85,7 +98,7 @@ export function meshSolid(vertices: ArrayLike<number>, triangles: ArrayLike<numb
     maker.Add(merged)
     const solid = maker.Solid()
     track.push(solid)
-    return cast(solid) as Shape3D
+    return rightWayOut(oc, solid)
   } finally {
     track.forEach((d) => d.delete())
   }
