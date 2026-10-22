@@ -29,6 +29,11 @@ describe('helpFor', () => {
     expect(helpFor('lesson-start-first-shape', 'Start')).not.toBeNull()
   })
 
+  it('has help for importing an STL', () => {
+    for (const id of ['import-stl', 'import-units', 'import-confirm', 'import-cancel']) expect(helpFor(id), id).not.toBeNull()
+    expect(helpFor('import-stl')?.card).toContain('**Import STL**')
+  })
+
   it('has no help for unknown ids', () => {
     expect(helpFor('nope')).toBeNull()
   })

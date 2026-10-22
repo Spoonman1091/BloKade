@@ -1,12 +1,15 @@
 // @vitest-environment jsdom
-import { cleanup, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { preparedModel } from '../app/testing/prepared'
 import { buildingGeometryApi, clientFor, fakeDeps } from '../app/testing/fakes'
 import { renderMainScreen, sampleStores } from '../app/testing/main-screen'
+import { cubeMesh } from '../geometry/testing/meshes'
 import { createMemoryShapeLibrary } from '../kade/library'
 import { ALL_LESSONS } from '../learn/all-lessons'
 import { createLessonStore } from '../learn/lesson-store'
+import { ImportDialog } from '../ui/ImportDialog'
 import { helpFor, helpKeyOf } from './lookup'
 
 vi.mock('../viewport/Viewport', () => ({ Viewport: () => null }))
@@ -42,6 +45,13 @@ describe('help coverage', () => {
     cleanup()
     lessons.getState().begin('first-shape', 'empty')
     renderMainScreen(sampleStores()[3]!, lessons)
+    expect(missingHelp()).toEqual([])
+  })
+})
+
+describe('help coverage in the import dialog', () => {
+  it('has help for every control in the import dialog', () => {
+    render(<ImportDialog fileName="a.stl" model={preparedModel(cubeMesh(20), { simplified: true, hasGaps: true })} onImport={() => {}} onCancel={() => {}} />)
     expect(missingHelp()).toEqual([])
   })
 })

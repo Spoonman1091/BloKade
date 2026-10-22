@@ -259,6 +259,14 @@ separate from your designs: use **💾 Save to file** to keep a copy.
 Kade's code runs only inside the geometry engine's worker, never on the page. A shape that never finishes building
 (an endless loop) is stopped after 30 seconds and shows "This shape took too long to build".
 
+### Importing models
+
+Press **Import STL** (left side) or drop an STL file on the 3D view. The model becomes a part you can move, size and cut with holes.
+
+- **Where to get models:** STL files come from sites like Thingiverse and from programs like TinkerCAD.
+- **Units:** an STL file doesn't say how big a unit is. BloKade shows the size it found. If that looks too small or too big, pick another unit in the window and check again.
+- **Big models:** very detailed models are simplified so they stay quick to work with. Round edges and Bevel edges aren't offered on imported models.
+
 ## How it's built
 
 - `src/document`: the design "recipe" (shapes, groups, transforms) and immutable edits
