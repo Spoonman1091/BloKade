@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { cubeMesh, openCubeMesh, sphereMesh } from '../geometry/testing/meshes'
-import { MAX_STL_BYTES, NO_TRIANGLES, NOT_STL, TOO_BIG_FILE } from './limits'
+import { createEmptyDocument } from '../document/factory'
+import { addImportedPart, encodeModel } from '../document/models'
+import { validateDocument } from '../document/schema'
+import { FLAT_MODEL, MAX_IMPORT_TRIANGLES, MAX_STL_BYTES, NO_TRIANGLES, NOT_STL, TOO_BIG_FILE } from './limits'
 import { prepareStl } from './prepare'
 import { binaryStl, shifted } from './testing/stl-files'
 
@@ -37,6 +40,28 @@ describe('prepareStl edge cases', () => {
     const flat = { vertices: [1, 1, 1], triangles: [0, 0, 0] }
     expect(await prepareStl(binaryStl(flat))).toEqual({ ok: false, message: NO_TRIANGLES })
   })
+})
+
+describe('prepareStl stored limits', () => {
+  it('drops vertices that only collapsed triangles used, so they cannot stretch the size', async () => {
+    const withSpeck = { vertices: [...cubeMesh(10).vertices, 500, 500, 500], triangles: [...cubeMesh(10).triangles, 8, 8, 8] }
+    const result = await prepareStl(binaryStl(withSpeck))
+    expect(result).toMatchObject({ ok: true, model: { size: [10, 10, 10] } })
+    expect(result.ok && result.model.vertices.length / 3).toBe(8)
+  })
+  it('refuses a model that is flat in any direction', async () => {
+    const flat = { vertices: [0, 0, 0, 10, 0, 0, 0, 10, 0], triangles: [0, 1, 2] }
+    expect(await prepareStl(binaryStl(flat))).toEqual({ ok: false, message: FLAT_MODEL })
+  })
+  it('a model at the triangle limit can be stored and opened again', async () => {
+    const mesh = sphereMesh(40, 100, 51) // 2 * 100 * 50 = 10,000 triangles
+    const result = await prepareStl(binaryStl(mesh))
+    if (!result.ok) throw new Error(result.message)
+    expect(result.model.triangleCount).toBe(MAX_IMPORT_TRIANGLES)
+    const { doc } = addImportedPart(createEmptyDocument(), { name: 'Ball', ...result.model, color: '#ffffff' })
+    expect(validateDocument(JSON.parse(JSON.stringify(doc)))).toMatchObject({ ok: true })
+    expect(encodeModel('Ball', result.model.vertices, result.model.triangles).model.triangles.length).toBeGreaterThan(0)
+  }, 60000)
 })
 
 describe.skipIf(!process.env.BLOKADE_TIMING)('prepareStl timing', () => {

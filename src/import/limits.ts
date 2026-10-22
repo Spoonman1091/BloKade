@@ -2,6 +2,10 @@
 export const MAX_STL_BYTES = 50 * 1024 * 1024
 /** Most triangles one imported model keeps (measured in Task 1). */
 export const MAX_IMPORT_TRIANGLES = 10000
+/** Most triangles a stored model may have; designs saved with up to this many must still open. */
+export const MAX_STORED_TRIANGLES = 10000
+/** Most vertices a stored model may have (three per triangle at worst). */
+export const MAX_STORED_VERTICES = MAX_STORED_TRIANGLES * 3
 /** Most imported models in one project. */
 export const MAX_MODELS = 20
 
@@ -15,3 +19,5 @@ export const TOO_LARGE_SIZE = 'This is bigger than BloKade allows (2000 mm). Try
 export function simplifiedNote(count: number): string {
   return `This model was very detailed, so BloKade simplified it to ${count.toLocaleString('en-US')} triangles. It will look a little smoother.`
 }
+export const TOO_DETAILED = "This model is too detailed for BloKade, even after simplifying it."
+export const FLAT_MODEL = "This model is completely flat, so BloKade can't make a solid from it."

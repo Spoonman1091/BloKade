@@ -59,3 +59,14 @@ export function importInput(mesh: TestMesh, name = 'Model') {
   const size = [0, 1, 2].map((i) => (max?.[i] ?? 0) - (min?.[i] ?? 0)) as [number, number, number]
   return { name, vertices, triangles: new Uint32Array(mesh.triangles), size, color: '#ffffff' }
 }
+
+/** `side`³ small separate cubes (each `edge` wide, `pitch` apart), so no triangle can be merged with a neighbour's. */
+export function cubeLattice(side: number, edge: number, pitch: number): TestMesh {
+  const cells = Array.from({ length: side ** 3 }, (_, i) => [i % side, Math.floor(i / side) % side, Math.floor(i / side ** 2)] as const)
+  const parts = cells.map(([x, y, z], n) => {
+    const cube = cubeMesh(edge)
+    const vertices = cube.vertices.map((v, i) => v + [x * pitch, y * pitch, z * pitch][i % 3]!)
+    return { vertices, triangles: cube.triangles.map((t) => t + n * 8) }
+  })
+  return { vertices: parts.flatMap((p) => p.vertices), triangles: parts.flatMap((p) => p.triangles) }
+}

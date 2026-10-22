@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { MAX_FORMULA_LENGTH } from '../formulas/formula'
 import { variableNameProblem } from '../formulas/variables'
 import { fail, ok, type Result } from '../shared/result'
-import { MAX_IMPORT_TRIANGLES, MAX_MODELS } from '../import/limits'
+import { MAX_MODELS, MAX_STORED_TRIANGLES, MAX_STORED_VERTICES } from '../import/limits'
 import { FIELD_KEY_PATTERN, isFieldKey } from './fields'
 import {
   MAX_CARRIED_SHAPES, MAX_EDGE_SIZE, MAX_FIT, MAX_MODIFIERS, MAX_OFFSET, MAX_PATTERN_ANGLE, MAX_PATTERN_COUNT,
@@ -66,8 +66,8 @@ const carriedShapes = z.record(z.string().regex(SHAPE_ID_PATTERN), carriedShape)
 
 /** Longest base64 text for this many bytes (rounded up, plus padding slack). */
 const base64Limit = (bytes: number): number => Math.ceil((bytes * 4) / 3) + 4
-const VERTEX_BYTES = 3 * MAX_IMPORT_TRIANGLES * 12
-const TRIANGLE_BYTES = MAX_IMPORT_TRIANGLES * 12
+const VERTEX_BYTES = MAX_STORED_VERTICES * 12
+const TRIANGLE_BYTES = MAX_STORED_TRIANGLES * 12
 const base64 = /^[A-Za-z0-9+/]*={0,2}$/
 const importedModel = z.object({
   name: z.string().max(100),
