@@ -53,4 +53,15 @@ describe('ShapePalette', () => {
     render(<ShapePalette registry={registry} mine={[]} kits={KITS} onAdd={vi.fn()} onAddKit={vi.fn()} />)
     expect(within(screen.getByRole('region', { name: 'My shapes' })).getByText(/Make your own/)).toBeInTheDocument()
   })
+
+  it('offers Import STL only when it can, and passes the chosen file on', async () => {
+    const { unmount } = render(<ShapePalette registry={registry} kits={KITS} onAdd={vi.fn()} onAddKit={vi.fn()} />)
+    expect(screen.queryByTestId('import-stl')).toBeNull()
+    unmount()
+    const onImport = vi.fn()
+    render(<ShapePalette registry={registry} kits={KITS} onAdd={vi.fn()} onAddKit={vi.fn()} onImport={onImport} />)
+    const file = new File(['x'], 'a.stl')
+    await userEvent.upload(screen.getByTestId('import-stl'), file)
+    expect(onImport).toHaveBeenCalledWith(file)
+  })
 })

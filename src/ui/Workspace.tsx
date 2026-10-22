@@ -7,6 +7,7 @@ import type { DesignSession } from '../app/design-session'
 import { exportDesign, type ExportFormat } from '../app/export'
 import { useShortcuts } from '../app/shortcuts'
 import { useAutosave } from '../app/useAutosave'
+import { useStlImport, type StlImport } from '../app/useStlImport'
 import { useEdgeCandidates } from '../app/useEdgeCandidates'
 import { useGeometrySync } from '../app/useGeometrySync'
 import { useShapeSetup, type ShapeSetup } from '../app/useShapeSetup'
@@ -25,12 +26,14 @@ import { DesignsDialog } from './DesignsDialog'
 import { EmptyNudge } from './EmptyNudge'
 import { HelpMode } from './HelpMode'
 import { HelpTooltips } from './HelpTooltips'
+import { ImportDialog } from './ImportDialog'
 import { LessonsPanel } from './LessonsPanel'
 import { MyShapesScreen } from './MyShapesScreen'
 import { NewerShapesBanner } from './NewerShapesBanner'
 import { PropertiesPanel } from './PropertiesPanel'
 import { SceneTree } from './SceneTree'
 import { ShapePalette } from './ShapePalette'
+import { stlFileOf } from './stl-drop'
 import { Toasts } from './Toasts'
 import { Toolbar } from './Toolbar'
 import { VariablesPanel } from './VariablesPanel'
@@ -98,23 +101,31 @@ interface DesignPanesProps {
   shapes: ShapeSetup
   lessons: LessonStore
   session: DesignSession
+  stl: StlImport
 }
 
 /** The design screen's left, middle and right panes. */
-function DesignPanes({ deps, store, actions, shapes, lessons, session }: DesignPanesProps) {
+function DesignPanes({ deps, store, actions, shapes, lessons, session, stl }: DesignPanesProps) {
   return (
     <>
       <aside className="left-panel">
-        <ShapePalette registry={shapes.registry} mine={shapes.registry.mine()} kits={KITS} onAdd={actions.addShape} onAddKit={actions.addKit} />
+        <ShapePalette registry={shapes.registry} mine={shapes.registry.mine()} kits={KITS} onAdd={actions.addShape} onAddKit={actions.addKit}
+          onImport={stl.choose} importBusy={stl.busy} />
         <SceneTree registry={shapes.registry} />
       </aside>
-      <main className="viewport" data-testid="viewport">
+      <main className="viewport" data-testid="viewport" onDragOver={(e) => e.preventDefault()} onDrop={(e) => {
+        const file = stlFileOf(e.dataTransfer.files)
+        if (!file) return
+        e.preventDefault()
+        stl.choose(file)
+      }}>
         <Viewport registry={shapes.registry} onToggleEdge={actions.togglePickedEdge} />
         <EmptyNudge lessons={lessons} onStart={() => {
           const first = TUTORIALS[0]
           if (first) void startLesson(session, lessons, first)
         }} />
         <NewerShapesBanner library={shapes.library} />
+        {stl.busy && <div className="viewport-hint" role="status">Reading the model…</div>}
       </main>
       <aside className="right-panel">
         <PropertiesPanel registry={shapes.registry} onCheckOverlap={() => void checkOverlap(store, deps.client)} />
@@ -130,6 +141,7 @@ export function Workspace({ deps, lessons: injected }: { deps: AppDeps; lessons?
   // Rebuilt whenever the shape list changes, so Add knows about shapes checked after the first render.
   const actions = useMemo(() => createActions(store, shapes.registry, shapes.carriedCodeOf), [store, shapes.registry, shapes.carriedCodeOf])
   const [showDesigns, setShowDesigns] = useState(false)
+  const stl = useStlImport(deps.client, store)
   useGeometrySync(store, deps.client)
   useEdgeCandidates(store, deps.client)
   const flushAutosave = useAutosave(store, deps.repo, deps.openTabChannel)
@@ -140,7 +152,7 @@ export function Workspace({ deps, lessons: injected }: { deps: AppDeps; lessons?
   const help = useHelpControls(lessons)
   const editor = useEditorScreen(shapes.editor)
   // The code box is typing, not design editing: Delete or Ctrl+Z there must never change the design.
-  useShortcuts(actions, !showDesigns && !help.helpMode && !editor.open)
+  useShortcuts(actions, !showDesigns && !stl.pending && !help.helpMode && !editor.open)
   const onExport = (format: ExportFormat): void => void exportDesign({ client: deps.client, store, format })
   const layers = <HelpLayers store={store} lessons={lessons} help={help} />
 
@@ -159,7 +171,8 @@ export function Workspace({ deps, lessons: injected }: { deps: AppDeps; lessons?
       <Toolbar actions={actions} onExport={onExport} onOpenDesigns={() => setShowDesigns(true)}
         learnOpen={lessonsOpen} onLearn={() => lessons.getState().togglePanel()}
         helpMode={help.helpMode} onHelpMode={help.toggle} onMyShapes={editor.show} />
-      <DesignPanes deps={deps} store={store} actions={actions} shapes={shapes} lessons={lessons} session={session} />
+      <DesignPanes deps={deps} store={store} actions={actions} shapes={shapes} lessons={lessons} session={session} stl={stl} />
+      {stl.pending && <ImportDialog fileName={stl.pending.fileName} model={stl.pending.model} onImport={stl.confirm} onCancel={stl.cancel} />}
       {lessonsOpen && <LessonsPanel lessons={lessons} session={session} />}
       {showDesigns && <DesignsDialog repo={deps.repo} flushAutosave={flushAutosave} onClose={() => setShowDesigns(false)} />}
       {layers}

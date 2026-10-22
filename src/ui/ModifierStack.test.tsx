@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
-import { act, screen } from '@testing-library/react'
+import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { createActions } from '../app/actions'
 import { renderWithStore } from '../app/testing/render'
+import { addImportedPart } from '../document/models'
+import { cubeMesh, importInput } from '../geometry/testing/meshes'
 import { createEmptyDocument } from '../document/factory'
 import { registry } from '../plugins/index'
 import { createBloKadeStore } from '../store/store'
@@ -92,5 +94,14 @@ describe('ModifierStack', () => {
     const nodeId = store.getState().selection[0] ?? ''
     act(() => store.getState().applyBuild('d', { nodes: {}, warnings: { [nodeId]: { [mods()[0]?.id ?? '']: 'Lost track of 1 edge' } } }))
     expect(screen.getByTestId('mod-warning-0')).toHaveTextContent('Lost track of 1 edge')
+  })
+
+  it('leaves Round edges and Chamfer out for an imported part', () => {
+    const { store } = setup()
+    const doc = store.getState().history.present
+    const { doc: next, id } = addImportedPart(doc, importInput(cubeMesh(10)))
+    act(() => { store.getState().apply(() => next); store.getState().select([id]) })
+    const options = within(screen.getByTestId('add-modifier')).getAllByRole('option').map((o) => (o as HTMLOptionElement).value)
+    expect(options).toEqual(['', 'linearPattern', 'circularPattern', 'mirror'])
   })
 })

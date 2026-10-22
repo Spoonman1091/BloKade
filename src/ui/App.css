@@ -203,3 +203,7 @@ body.help-mode, body.help-mode * { cursor: help !important; }
 
 /* The size-handle tip sits inside drei's <Html>, so it is placed next to the handle, not fixed to the window. */
 .help-tooltip.size-handle-tip { position: absolute; top: 12px; left: 12px; width: max-content; }
+
+.import-size { font-size: 1.1rem; font-variant-numeric: tabular-nums; margin: 4px 0 8px; }
+.import-too-large { color: #b3261e; margin: 6px 0; }
+.palette-button[aria-disabled="true"] { opacity: 0.5; cursor: progress; }

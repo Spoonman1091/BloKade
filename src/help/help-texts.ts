@@ -29,6 +29,11 @@ export const HELP_TEXTS: Readonly<Record<string, HelpEntry>> = {
   'help-mode': { tip: 'Help mode: click anything to learn what it does.', card: 'In help mode, clicking a button shows what it does instead of doing it. Press Esc or ❓ again to stop.' },
   'my-shapes': { tip: 'Opens My shapes, where you write your own shapes in code.', card: 'My shapes is where you make shapes with code. Write a few lines, watch the preview, then add your shape to the design. The coding lessons start there too.' },
   'panel-my-shapes': { tip: 'Shapes you made yourself.', card: 'Every shape you write in 🧩 My shapes appears here. Click one to add it to your design.' },
+  // Import
+  'import-stl': { tip: 'Brings in a 3D model from an STL file.', card: 'Click **Import STL** and pick an STL file, for example from Thingiverse or TinkerCAD. You can also drop the file on the 3D view. The model becomes a part you can move, size and cut with holes.' },
+  'import-units': { tip: 'Says what units the file uses.', card: "STL files don't say how big a unit is. If the size looks too small or too big, try another unit." },
+  'import-confirm': { tip: 'Adds the model to your design.', card: 'Adds the model as a new part. One **Undo** takes it away again.' },
+  'import-cancel': { tip: 'Closes this without adding anything.', card: "Closes this window. Your design doesn't change." },
   // My shapes
   'back-to-design': { tip: 'Goes back to your design. Your shapes are saved.', card: 'Back to my design shows your design again, just as you left it. Your shapes are saved as you type.' },
   'panel-library': { tip: 'All the shapes you have made.', card: 'Your shapes live in this browser. Click one to open its code. Save a shape to a file to keep a copy or move it to another computer.' },

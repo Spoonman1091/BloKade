@@ -1,8 +1,12 @@
+import { containsImported } from '../document/models'
 import { addModifier, MODIFIER_LABELS, MODIFIER_TYPES, modifiersOf, moveModifier, removeModifier, setModifierEnabled } from '../document/modifiers'
 import type { FieldKey, ModifierType, SceneNode } from '../document/types'
 import { useBloKade } from '../store/context'
 import { ModifierCard } from './ModifierCard'
 import { MODIFIER_ICONS } from './modifier-icons'
+
+/** Edge rounding needs a real solid's edges, which an imported mesh doesn't have. */
+const NO_IMPORT_MODIFIERS: ReadonlySet<ModifierType> = new Set(['fillet', 'chamfer'])
 
 interface ModifierStackProps {
   node: SceneNode
@@ -13,6 +17,7 @@ interface ModifierStackProps {
 /** Round edges, repeat and mirror for one part, applied top to bottom. */
 export function ModifierStack({ node, errors, setField }: ModifierStackProps) {
   const apply = useBloKade((s) => s.apply)
+  const imported = useBloKade((s) => containsImported(s.history.present, node.id))
   const warnings = useBloKade((s) => (Object.hasOwn(s.modifierWarnings, node.id) ? s.modifierWarnings[node.id] : undefined))
   const modifiers = modifiersOf(node)
   const add = (type: ModifierType): void => apply((d) => addModifier(d, node.id, type).doc)
@@ -33,7 +38,7 @@ export function ModifierStack({ node, errors, setField }: ModifierStackProps) {
       <select className="add-modifier" data-testid="add-modifier" aria-label="Add a modifier" value=""
         onChange={(e) => { if (e.target.value) add(e.target.value as ModifierType) }}>
         <option value="">+ Add a modifier…</option>
-        {MODIFIER_TYPES.map((t) => <option key={t} value={t}>{MODIFIER_ICONS[t]} {MODIFIER_LABELS[t]}</option>)}
+        {MODIFIER_TYPES.filter((t) => !imported || !NO_IMPORT_MODIFIERS.has(t)).map((t) => <option key={t} value={t}>{MODIFIER_ICONS[t]} {MODIFIER_LABELS[t]}</option>)}
       </select>
     </div>
   )
