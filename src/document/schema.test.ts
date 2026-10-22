@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyDocument, createGroupNode, createShapeNode } from './factory'
+import { MAX_STORED_TRIANGLES, MAX_STORED_VERTICES } from '../import/limits'
+import { encodeModel } from './models'
 import { addNode } from './ops'
 import { validateDocument } from './schema'
 import { MAX_CARRIED_SHAPES, MAX_SHAPE_CODE_LENGTH, type BloKadeDocument, type SceneNode } from './types'
@@ -168,4 +170,13 @@ describe('carried shapes', () => {
 it('accepts true and false as part settings', () => {
   const node = createShapeNode({ id: 'n', shapeType: 'x', name: 'X', params: { round: true, hollow: false }, color: '#fff' })
   expect(validateDocument(addNode(createEmptyDocument('Test'), node)).ok).toBe(true)
+})
+
+describe('stored imported models', () => {
+  it('still opens a design saved with a model of 10,000 triangles and as many vertices as that allows', () => {
+    const vertices = new Float32Array(MAX_STORED_VERTICES * 3)
+    const triangles = new Uint32Array(MAX_STORED_TRIANGLES * 3)
+    const { id, model } = encodeModel('Big', vertices, triangles)
+    expect(validateDocument({ ...createEmptyDocument('Test'), models: { [id]: model } }).ok).toBe(true)
+  })
 })

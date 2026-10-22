@@ -1,7 +1,7 @@
 /** Biggest STL file BloKade will open. */
 export const MAX_STL_BYTES = 50 * 1024 * 1024
-/** Most triangles one imported model keeps (measured in Task 1). */
-export const MAX_IMPORT_TRIANGLES = 10000
+/** Most triangles one imported model keeps. Lowered from 10,000 after timing group builds (see mesh-solid.timing.test.ts). */
+export const MAX_IMPORT_TRIANGLES = 5000
 /** Most triangles a stored model may have; designs saved with up to this many must still open. */
 export const MAX_STORED_TRIANGLES = 10000
 /** Most vertices a stored model may have (three per triangle at worst). */

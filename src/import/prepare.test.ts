@@ -54,7 +54,7 @@ describe('prepareStl stored limits', () => {
     expect(await prepareStl(binaryStl(flat))).toEqual({ ok: false, message: FLAT_MODEL })
   })
   it('a model at the triangle limit can be stored and opened again', async () => {
-    const mesh = sphereMesh(40, 100, 51) // 2 * 100 * 50 = 10,000 triangles
+    const mesh = sphereMesh(40, MAX_IMPORT_TRIANGLES / 100, 51) // 2 * segments * 50 = exactly the limit
     const result = await prepareStl(binaryStl(mesh))
     if (!result.ok) throw new Error(result.message)
     expect(result.model.triangleCount).toBe(MAX_IMPORT_TRIANGLES)
