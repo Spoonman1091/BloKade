@@ -11,10 +11,16 @@ import { createRegistry } from '../plugins/registry'
 import { definePlugin, type ShapePlugin } from '../plugins/types'
 import type { KadeBuild } from '../kade/run-build'
 import { Evaluator, NodeBuildError } from './evaluate'
+import { MeshSolidError, meshSolid } from './mesh-solid'
 import { shapeBox } from './edge-info'
 import { addImportedPart } from '../document/models'
 import { cubeMesh, importInput } from './testing/meshes'
 import { initTestOC } from './testing/oc-node'
+
+vi.mock('./mesh-solid', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./mesh-solid')>()
+  return { ...actual, meshSolid: vi.fn(actual.meshSolid) }
+})
 
 beforeAll(initTestOC)
 
@@ -366,5 +372,27 @@ describe('Evaluator imported parts', () => {
     const [modelId, model] = Object.entries(doc.models)[0] as [string, (typeof doc.models)[string]]
     const damaged = { ...doc, models: { [modelId]: { ...model, triangles: btoa('abcd') } } }
     expect(buildError(() => newEvaluator().local(damaged, id)).message).toBe('This imported model is damaged. Import it again.')
+  })
+
+  it('says the same friendly thing whatever went wrong inside OpenCascade', () => {
+    const { doc, id } = withCube()
+    vi.mocked(meshSolid).mockImplementationOnce(() => { throw 9437840 })
+    const message = buildError(() => newEvaluator().local(doc, id)).message
+    expect(message).toBe("This imported model couldn't be built. Try importing it again, or try a simpler model.")
+    expect(message).not.toMatch(/\d{3}/)
+  })
+
+  it('keeps the clear messages the mesh builder wrote itself', () => {
+    const { doc, id } = withCube()
+    vi.mocked(meshSolid).mockImplementationOnce(() => { throw new MeshSolidError('This model has no shape in it.') })
+    expect(buildError(() => newEvaluator().local(doc, id)).message).toBe("Imported model couldn't be built: This model has no shape in it.")
+  })
+
+  it('sizes the part by the same clamped numbers it is cached by', () => {
+    const { doc, id } = withCube()
+    const huge = updateNode(doc, id, (node) => (node.kind === 'shape' ? { ...node, params: { ...node.params, width: 5000 } } : node))
+    const box = shapeBox(newEvaluator().local(huge, id))
+    expect(box.min[0]).toBeCloseTo(-1000)
+    expect(box.max[0]).toBeCloseTo(1000)
   })
 })

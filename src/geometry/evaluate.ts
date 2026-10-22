@@ -8,7 +8,7 @@ import type { PluginRegistry } from '../plugins/registry'
 import type { ParamValues, ShapePlugin } from '../plugins/types'
 import { runKadeBuild, type KadeBuild } from '../kade/run-build'
 import { findEdgeCandidates } from './edge-candidates'
-import { meshSolid } from './mesh-solid'
+import { MeshSolidError, meshSolid } from './mesh-solid'
 import { applyModifiers, ModifierError } from './modifiers'
 import { placeShape } from './transform'
 import type { BuildChannel, EdgeCandidate, ModifierWarnings } from './types'
@@ -47,6 +47,8 @@ export class NodeBuildError extends Error {
     super(message)
   }
 }
+
+const IMPORT_BUILD_FAILED = "This imported model couldn't be built. Try importing it again, or try a simpler model."
 
 const messageOf = (error: unknown): string => (error instanceof Error ? error.message : String(error))
 const stableKey = (values: Readonly<Record<string, unknown>>): string =>
@@ -232,7 +234,8 @@ export class Evaluator {
       try {
         return meshSolid(this.scaled(model, node), model.triangles)
       } catch (error) {
-        throw new NodeBuildError(`Imported model couldn't be built: ${messageOf(error)}`, node.id)
+        const reason = error instanceof MeshSolidError ? `Imported model couldn't be built: ${error.message}` : IMPORT_BUILD_FAILED
+        throw new NodeBuildError(reason, node.id)
       }
     })
   }
@@ -262,7 +265,9 @@ export class Evaluator {
   /** The model's vertices stretched to the part's width, depth and height. */
   private scaled(model: DecodedModel, node: ShapeNode): Float32Array {
     const extent = extentOf(model.vertices)
-    const factor = [node.params.width, node.params.depth, node.params.height].map((v, axis) => numberParam(v) / (extent[axis] ?? 1))
+    const plugin = this.registry.get(IMPORTED_SHAPE)
+    const params = plugin ? resolveParams(plugin, node.params) : node.params
+    const factor = [params.width, params.depth, params.height].map((v, axis) => numberParam(v) / (extent[axis] ?? 1))
     return model.vertices.map((value, i) => value * (factor[i % 3] ?? 1))
   }
 

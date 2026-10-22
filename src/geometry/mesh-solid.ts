@@ -3,6 +3,11 @@ import { cast, getOC, measureVolume, type Shape3D } from 'replicad'
 const STL_HEADER_BYTES = 80
 const STL_TRIANGLE_BYTES = 50
 
+/** A problem with the model's shape, worded for kids; anything else that goes wrong here is OpenCascade's own. */
+export class MeshSolidError extends Error {
+  override name = 'MeshSolidError'
+}
+
 let fileCounter = 0
 
 type OC = ReturnType<typeof getOC>
@@ -78,15 +83,15 @@ function rightWayOut(oc: OC, solid: InstanceType<OC['TopoDS_Solid']>): Shape3D {
 
 /** Turns triangles (flat x, y, z vertices and three vertex indices per triangle) into a solid. */
 export function meshSolid(vertices: ArrayLike<number>, triangles: ArrayLike<number>): Shape3D {
-  if (triangles.length < 3) throw new Error('This model has no shape in it.')
+  if (triangles.length < 3) throw new MeshSolidError('This model has no shape in it.')
   const oc = getOC()
   const track: Disposable[] = []
   try {
     const faces = new oc.TopoDS_Shape()
     track.push(faces)
-    if (!readFaces(oc, binaryStl(vertices, triangles), faces)) throw new Error('This model could not be read.')
+    if (!readFaces(oc, binaryStl(vertices, triangles), faces)) throw new MeshSolidError('This model could not be read.')
     const shell = sewShell(oc, faces, track)
-    if (!shell) throw new Error('This model has no shape in it.')
+    if (!shell) throw new MeshSolidError('This model has no shape in it.')
     const unify = new oc.ShapeUpgrade_UnifySameDomain(shell, true, true, false)
     track.push(unify)
     unify.Build()
