@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
+import { withoutUnusedModels } from '../document/models'
 import { createAutosaver, type Autosaver } from '../persistence/autosave'
 import type { DesignRepository } from '../persistence/repository'
 import { createTabGuard, openTabChannel, type TabChannel } from '../persistence/tab-guard'
@@ -25,7 +26,7 @@ export function useAutosave(
       },
     })
     const autosaver = createAutosaver({
-      save: (id, doc) => repo.save(id, doc),
+      save: (id, doc) => repo.save(id, withoutUnusedModels(doc)),
       onError: (error) => {
         console.error('Autosave failed', error)
         store.getState().notify(AUTOSAVE_BROKEN)

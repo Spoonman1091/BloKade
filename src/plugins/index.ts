@@ -7,7 +7,7 @@ const kades = import.meta.glob<unknown>(['../../plugins/**/*.{js,ts}', '!../../p
 
 const BUILTIN_ORDER = [
   'box', 'cylinder', 'sphere', 'cone', 'wedge', 'torus', 'text',
-  'peg', 'socket', 'screw-hole', 'threaded-rod', 'threaded-hole', 'snap-clip', 'snap-catch',
+  'peg', 'socket', 'screw-hole', 'threaded-rod', 'threaded-hole', 'snap-clip', 'snap-catch', 'imported',
 ]
 const orderOf = (path: string): number => {
   const index = BUILTIN_ORDER.findIndex((name) => path.endsWith(`/${name}.ts`))

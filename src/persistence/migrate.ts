@@ -14,6 +14,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
   2: (doc) => ({ ...doc }),
   // Version 4 (Milestone 6) lets a design carry the code of Kade's own shapes.
   3: (doc) => ({ ...doc, plugins: {} }),
+  // Version 5 lets a design carry the triangles of imported STL models.
+  4: (doc) => ({ ...doc, models: {} }),
 }
 
 const NOT_A_DESIGN = "This file isn't a BloKade design."

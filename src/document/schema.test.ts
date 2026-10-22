@@ -52,7 +52,7 @@ describe('validateDocument', () => {
   })
 
   it('rejects an unknown schema version', () => {
-    expect(errorOf({ ...createEmptyDocument(), schemaVersion: 5 })).toContain('damaged')
+    expect(errorOf({ ...createEmptyDocument(), schemaVersion: 6 })).toContain('damaged')
   })
 
   it('rejects things that are not designs at all', () => {

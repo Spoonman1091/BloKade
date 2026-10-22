@@ -1,3 +1,4 @@
+import { withoutUnusedModels } from '../document/models'
 import { validateDocument } from '../document/schema'
 import type { BloKadeDocument } from '../document/types'
 import { fail, ok, type Result } from '../shared/result'
@@ -21,7 +22,7 @@ export function parseDesignFile(text: string): Result<BloKadeDocument> {
   return json.ok ? parseDesign(json.value) : json
 }
 
-export const serializeDesign = (doc: BloKadeDocument): string => JSON.stringify(doc, null, 2)
+export const serializeDesign = (doc: BloKadeDocument): string => JSON.stringify(withoutUnusedModels(doc), null, 2)
 
 export function fileNameFor(doc: BloKadeDocument, extension: 'blokade' | 'stl' | '3mf' | 'step'): string {
   const slug = doc.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')

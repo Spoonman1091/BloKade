@@ -21,6 +21,8 @@ export interface TextParamSpec {
   /** At most this many characters (never more than MAX_TEXT_PARAM_LENGTH). */
   readonly maxLength?: number
   readonly label: string
+  /** Built-in shapes only: the part stores this value itself, so the properties panel doesn't show it. */
+  readonly hidden?: true
 }
 
 export interface ChoiceOption {

@@ -132,8 +132,15 @@ export interface CarriedShape {
   readonly code: string
 }
 
+/** An imported STL model. `vertices` and `triangles` are base64 of little-endian Float32Array and Uint32Array data. */
+export interface ImportedModel {
+  readonly name: string
+  readonly vertices: string
+  readonly triangles: string
+}
+
 export interface BloKadeDocument {
-  readonly schemaVersion: 4
+  readonly schemaVersion: 5
   readonly name: string
   readonly units: 'mm'
   readonly settings: DocumentSettings
@@ -142,9 +149,11 @@ export interface BloKadeDocument {
   readonly nodes: Readonly<Record<NodeId, SceneNode>>
   /** The code of every one of Kade's shapes this design uses, by shape id. */
   readonly plugins: Readonly<Record<string, CarriedShape>>
+  /** The imported models this design uses, by model id. */
+  readonly models: Readonly<Record<string, ImportedModel>>
 }
 
-export const CURRENT_SCHEMA_VERSION = 4
+export const CURRENT_SCHEMA_VERSION = 5
 /** Kade's shape code can be up to this many characters. */
 export const MAX_SHAPE_CODE_LENGTH = 50_000
 /** A design can carry up to this many of Kade's shapes. */

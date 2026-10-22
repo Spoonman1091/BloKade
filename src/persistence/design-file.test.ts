@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyDocument, createShapeNode } from '../document/factory'
-import { addNode } from '../document/ops'
+import { addImportedPart } from '../document/models'
+import { addNode, removeNodes } from '../document/ops'
+import { cubeMesh } from '../geometry/testing/meshes'
 import { fileNameFor, parseDesignFile, serializeDesign } from './design-file'
+
+function importedGear() {
+  const mesh = cubeMesh(10)
+  return addImportedPart(createEmptyDocument('Gears'), {
+    name: 'Gear', vertices: new Float32Array(mesh.vertices), triangles: new Uint32Array(mesh.triangles), size: [10, 10, 10], color: '#fff',
+  })
+}
 
 describe('design files', () => {
   it('round-trips a design', () => {
@@ -25,6 +34,24 @@ describe('design files', () => {
     expect(loaded.ok && loaded.value.plugins).toEqual(doc.plugins)
   })
 
+  it('leaves unused models out of the saved file', () => {
+    const { doc, id } = importedGear()
+    const removed = removeNodes(doc, [id])
+    const loaded = parseDesignFile(serializeDesign(removed))
+    expect(loaded.ok && loaded.value.models).toEqual({})
+  })
+
+  it('keeps a model its part uses through save and load', () => {
+    const { doc } = importedGear()
+    expect(parseDesignFile(serializeDesign(doc))).toEqual({ ok: true, value: doc })
+  })
+
+  it('still opens a design whose part names a model that is missing', () => {
+    const { doc } = importedGear()
+    const orphaned = { ...doc, models: {} }
+    expect(parseDesignFile(serializeDesign(orphaned)).ok).toBe(true)
+  })
+
   it('makes friendly file names', () => {
     expect(fileNameFor(createEmptyDocument("Kade's Phone Stand!"), 'stl')).toBe('kade-s-phone-stand.stl')
     expect(fileNameFor(createEmptyDocument('***'), '3mf')).toBe('design.3mf')
@@ -42,7 +69,7 @@ describe('design files', () => {
     })
     const result = parseDesignFile(v1)
     if (!result.ok) throw new Error(result.error)
-    expect(result.value.schemaVersion).toBe(4)
+    expect(result.value.schemaVersion).toBe(5)
     expect(result.value.settings).toEqual({ gridSnap: 0.5, fit: 0.2 })
     expect(result.value.variables).toEqual([])
     expect(result.value.nodes.a).toMatchObject({

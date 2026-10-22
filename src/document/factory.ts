@@ -27,6 +27,7 @@ export function createEmptyDocument(name = 'Untitled design'): BloKadeDocument {
     root: [],
     nodes: {},
     plugins: {},
+    models: {},
   }
 }
 

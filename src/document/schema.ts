@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { MAX_FORMULA_LENGTH } from '../formulas/formula'
 import { variableNameProblem } from '../formulas/variables'
 import { fail, ok, type Result } from '../shared/result'
+import { MAX_IMPORT_TRIANGLES, MAX_MODELS } from '../import/limits'
 import { FIELD_KEY_PATTERN, isFieldKey } from './fields'
 import {
   MAX_CARRIED_SHAPES, MAX_EDGE_SIZE, MAX_FIT, MAX_MODIFIERS, MAX_OFFSET, MAX_PATTERN_ANGLE, MAX_PATTERN_COUNT,
@@ -63,8 +64,21 @@ const carriedShape = z.object({
 const carriedShapes = z.record(z.string().regex(SHAPE_ID_PATTERN), carriedShape)
   .refine((shapes) => Object.keys(shapes).length <= MAX_CARRIED_SHAPES, `A design can carry up to ${MAX_CARRIED_SHAPES} of your shapes`)
 
+/** Longest base64 text for this many bytes (rounded up, plus padding slack). */
+const base64Limit = (bytes: number): number => Math.ceil((bytes * 4) / 3) + 4
+const VERTEX_BYTES = 3 * MAX_IMPORT_TRIANGLES * 12
+const TRIANGLE_BYTES = MAX_IMPORT_TRIANGLES * 12
+const base64 = /^[A-Za-z0-9+/]*={0,2}$/
+const importedModel = z.object({
+  name: z.string().max(100),
+  vertices: z.string().max(base64Limit(VERTEX_BYTES)).regex(base64),
+  triangles: z.string().max(base64Limit(TRIANGLE_BYTES)).regex(base64),
+})
+const importedModels = z.record(z.string().regex(/^[0-9a-f]{8}-[0-9a-z]+$/), importedModel)
+  .refine((models) => Object.keys(models).length <= MAX_MODELS, `A design can have up to ${MAX_MODELS} imported models`)
+
 const documentShape = z.object({
-  schemaVersion: z.literal(4),
+  schemaVersion: z.literal(5),
   name: z.string(),
   units: z.literal('mm'),
   settings: z.object({ gridSnap: z.number().min(0), fit: z.number().min(0).max(MAX_FIT) }),
@@ -72,6 +86,7 @@ const documentShape = z.object({
   root: z.array(z.string()),
   nodes: z.record(z.string(), sceneNode),
   plugins: carriedShapes,
+  models: importedModels,
 })
 
 type DocShape = z.infer<typeof documentShape>

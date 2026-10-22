@@ -4,26 +4,33 @@ import { migrateDocument } from './migrate'
 
 describe('migrateDocument', () => {
   it('passes current documents through', () => {
-    expect(migrateDocument({ schemaVersion: 4, name: 'x' })).toEqual({ ok: true, value: { schemaVersion: 4, name: 'x' } })
+    expect(migrateDocument({ schemaVersion: 5, name: 'x' })).toEqual({ ok: true, value: { schemaVersion: 5, name: 'x' } })
   })
 
   it('gives version 3 designs an empty list of carried shapes', () => {
     const v3 = { ...createEmptyDocument(), schemaVersion: 3 } as Record<string, unknown>
     delete v3.plugins
     const result = migrateDocument(v3)
-    expect(result.ok && result.value).toMatchObject({ schemaVersion: 4, plugins: {} })
+    expect(result.ok && result.value).toMatchObject({ schemaVersion: 5, plugins: {}, models: {} })
+  })
+
+  it('gives version 4 designs an empty list of imported models', () => {
+    const v4 = { ...createEmptyDocument(), schemaVersion: 4 } as Record<string, unknown>
+    delete v4.models
+    const result = migrateDocument(v4)
+    expect(result.ok && result.value).toMatchObject({ schemaVersion: 5, models: {} })
   })
 
   it('upgrades version 1 designs with no variables and the default fit gap', () => {
     expect(migrateDocument({ schemaVersion: 1, name: 'x', settings: { gridSnap: 0.5 } })).toEqual({
       ok: true,
-      value: { schemaVersion: 4, name: 'x', settings: { gridSnap: 0.5, fit: 0.2 }, variables: [], plugins: {} },
+      value: { schemaVersion: 5, name: 'x', settings: { gridSnap: 0.5, fit: 0.2 }, variables: [], plugins: {}, models: {} },
     })
   })
 
   it('upgrades version 2 designs without changing them', () => {
     expect(migrateDocument({ schemaVersion: 2, name: 'x', variables: [] })).toEqual({
-      ok: true, value: { schemaVersion: 4, name: 'x', variables: [], plugins: {} },
+      ok: true, value: { schemaVersion: 5, name: 'x', variables: [], plugins: {}, models: {} },
     })
   })
 

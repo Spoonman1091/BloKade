@@ -6,7 +6,9 @@ import { createActions } from '../app/actions'
 import { boxMesh } from '../app/testing/meshes'
 import { renderWithStore } from '../app/testing/render'
 import { createEmptyDocument, createShapeNode } from '../document/factory'
+import { addImportedPart } from '../document/models'
 import { addNode, updateNode } from '../document/ops'
+import { cubeMesh } from '../geometry/testing/meshes'
 import { MAX_MM, MIN_MM } from '../plugins/params'
 import { registry } from '../plugins/index'
 import { createBloKadeStore } from '../store/store'
@@ -48,6 +50,23 @@ describe("PropertiesPanel with one of Kade's shapes", () => {
     act(() => store.getState().applyBuild('d', { nodes: { h: { status: 'error', message: 'Robot head couldn\'t be built: Line 3: oops' } } }))
     expect(screen.getByText("This shape's code has a problem, so its size can't change yet.")).toBeInTheDocument()
     expect(screen.queryByText(/plugin/)).toBeNull()
+  })
+})
+
+describe('PropertiesPanel with an imported model', () => {
+  it('shows Width, Depth and Height but no Model field', () => {
+    const mesh = cubeMesh(10)
+    const { doc, id } = addImportedPart(createEmptyDocument(), {
+      name: 'Gear', vertices: new Float32Array(mesh.vertices), triangles: new Uint32Array(mesh.triangles), size: [10, 10, 10], color: '#fff',
+    })
+    const store = createBloKadeStore({ designId: 'd', doc })
+    renderWithStore(<PropertiesPanel registry={registry} />, store)
+    act(() => store.getState().select([id]))
+    expect(screen.getByLabelText(/^Width/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Depth/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Height/)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Model/)).toBeNull()
+    expect(screen.queryByTestId('param-model')).toBeNull()
   })
 })
 

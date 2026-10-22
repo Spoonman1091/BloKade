@@ -43,7 +43,7 @@ export function ShapeSettings({ node, errors, setField, registry }: FieldsProps 
   return (
     <>
       <h3>Size</h3>
-      {Object.entries<ParamSpec>(plugin.params).map(([key, spec]) => (
+      {Object.entries<ParamSpec>(plugin.params).filter(([, spec]) => !(spec.type === 'text' && spec.hidden)).map(([key, spec]) => (
         <ParamField key={key} node={node} name={key} spec={spec} errors={errors} setField={setField} setRaw={setRaw} />
       ))}
     </>
