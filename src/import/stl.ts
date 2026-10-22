@@ -25,6 +25,13 @@ function isBinary(buffer: ArrayBuffer): boolean {
   return COUNT_END + TRIANGLE_BYTES * count === buffer.byteLength
 }
 
+/** True for a binary STL followed by extra bytes, which some exporters add. */
+function isPaddedBinary(buffer: ArrayBuffer): boolean {
+  if (buffer.byteLength < COUNT_END) return false
+  const count = new DataView(buffer).getUint32(HEADER_BYTES, true)
+  return buffer.byteLength >= COUNT_END + TRIANGLE_BYTES * count
+}
+
 function readBinary(buffer: ArrayBuffer): Float32Array {
   const view = new DataView(buffer)
   const count = view.getUint32(HEADER_BYTES, true)
@@ -44,9 +51,19 @@ function readAscii(buffer: ArrayBuffer): Float32Array {
   return Float32Array.from(numbers)
 }
 
+function readVertices(buffer: ArrayBuffer): Float32Array {
+  if (isBinary(buffer)) return readBinary(buffer)
+  try {
+    return readAscii(buffer)
+  } catch (error) {
+    if (error instanceof StlError && isPaddedBinary(buffer)) return readBinary(buffer)
+    throw error
+  }
+}
+
 /** Reads a binary or ASCII STL into unwelded triangles. Throws StlError. */
 export function parseStl(buffer: ArrayBuffer): RawStl {
-  const vertices = isBinary(buffer) ? readBinary(buffer) : readAscii(buffer)
+  const vertices = readVertices(buffer)
   if (vertices.length === 0) throw new StlError(NO_TRIANGLES)
   if (!vertices.every(Number.isFinite)) throw new StlError(NOT_STL)
   return { vertices, triangles: Uint32Array.from({ length: vertices.length / 3 }, (_, i) => i) }

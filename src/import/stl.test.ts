@@ -16,4 +16,10 @@ describe('parseStl', () => {
   it('refuses an STL with no triangles', () => {
     expect(() => parseStl(binaryStl({ vertices: [], triangles: [] }))).toThrow(NO_TRIANGLES)
   })
+  it('reads a binary file with padding bytes at the end', () => {
+    const file = binaryStl(cubeMesh(10))
+    const padded = new Uint8Array(file.byteLength + 16)
+    padded.set(new Uint8Array(file))
+    expect(parseStl(padded.buffer).triangles.length).toBe(36)
+  })
 })

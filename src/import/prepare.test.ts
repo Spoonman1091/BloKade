@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { cubeMesh, openCubeMesh, sphereMesh } from '../geometry/testing/meshes'
-import { MAX_STL_BYTES, NOT_STL, TOO_BIG_FILE } from './limits'
+import { MAX_STL_BYTES, NO_TRIANGLES, NOT_STL, TOO_BIG_FILE } from './limits'
 import { prepareStl } from './prepare'
 import { binaryStl, shifted } from './testing/stl-files'
 
@@ -30,4 +30,21 @@ describe('prepareStl', () => {
   it('refuses a file over 50 MB without reading it', async () => {
     expect(await prepareStl(new ArrayBuffer(MAX_STL_BYTES + 1))).toEqual({ ok: false, message: TOO_BIG_FILE })
   })
+})
+
+describe('prepareStl edge cases', () => {
+  it('refuses a file of only collapsed triangles', async () => {
+    const flat = { vertices: [1, 1, 1], triangles: [0, 0, 0] }
+    expect(await prepareStl(binaryStl(flat))).toEqual({ ok: false, message: NO_TRIANGLES })
+  })
+})
+
+describe.skipIf(!process.env.BLOKADE_TIMING)('prepareStl timing', () => {
+  it('prepares about a million triangles', async () => {
+    const file = binaryStl(sphereMesh(100, 708, 708))
+    const start = performance.now()
+    const result = await prepareStl(file)
+    console.info(`prepareStl ~1M triangles: ${Math.round(performance.now() - start)} ms, triangleCount ${result.ok ? result.model.triangleCount : result.message}`)
+    expect(result.ok).toBe(true)
+  }, 120000)
 })

@@ -1,6 +1,6 @@
 import { countOpenEdges, weldMesh } from '../geometry/weld'
 import type { Vec3 } from '../document/types'
-import { MAX_IMPORT_TRIANGLES, MAX_STL_BYTES, NOT_STL, TOO_BIG_FILE } from './limits'
+import { MAX_IMPORT_TRIANGLES, MAX_STL_BYTES, NO_TRIANGLES, NOT_STL, TOO_BIG_FILE } from './limits'
 import { simplifyMesh } from './simplify'
 import { parseStl, StlError } from './stl'
 
@@ -42,11 +42,13 @@ function centred(vertices: Float32Array, { min, max }: Bounds): Float32Array {
 async function prepare(buffer: ArrayBuffer, maxTriangles: number): Promise<PreparedModel> {
   const raw = parseStl(buffer)
   const welded = weldMesh(raw.vertices, raw.triangles)
+  if (welded.triangles.length === 0) throw new StlError(NO_TRIANGLES)
   const weldedMesh = { vertices: Float32Array.from(welded.vertices), triangles: Uint32Array.from(welded.triangles) }
   const simplified = weldedMesh.triangles.length / 3 > maxTriangles
   const { vertices, triangles } = simplified
     ? await simplifyMesh(weldedMesh.vertices, weldedMesh.triangles, maxTriangles)
     : weldedMesh
+  if (triangles.length === 0) throw new StlError(NO_TRIANGLES)
   const bounds = boundsOf(vertices)
   const size: Vec3 = [bounds.max[0] - bounds.min[0], bounds.max[1] - bounds.min[1], bounds.max[2] - bounds.min[2]]
   return {
