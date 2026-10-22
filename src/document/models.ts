@@ -8,7 +8,7 @@ import type { BloKadeDocument, ImportedModel, NodeId, Vec3 } from './types'
 /** The shape type of a part made from an imported model. */
 export const IMPORTED_SHAPE = 'imported'
 
-export const TOO_MANY_MODELS = `This design already has ${MAX_MODELS} imported models. Delete one you don't use first.`
+export const TOO_MANY_MODELS = `This design already has ${MAX_MODELS} imported models. Delete a part that uses one, then try again.`
 
 /** Bytes turned into text in one call, so a big model can't overflow the call stack. */
 const CHUNK_BYTES = 32 * 1024
@@ -52,17 +52,18 @@ interface ImportedPartInput {
   rotation?: Vec3
 }
 
-/** Stores the model (once) and adds a part that uses it. */
+/** Stores the model (once) and adds a part that uses it. Models no part uses are dropped; undo still has them in the history. */
 export function addImportedPart(doc: BloKadeDocument, input: ImportedPartInput): { doc: BloKadeDocument; id: NodeId } {
   const { id: modelId, model } = encodeModel(input.name, input.vertices, input.triangles)
-  const known = Object.hasOwn(doc.models, modelId)
-  if (!known && Object.keys(doc.models).length >= MAX_MODELS) throw new DocumentOpError(TOO_MANY_MODELS)
+  const current = withoutUnusedModels(doc)
+  const known = Object.hasOwn(current.models, modelId)
+  if (!known && Object.keys(current.models).length >= MAX_MODELS) throw new DocumentOpError(TOO_MANY_MODELS)
   const [width, depth, height] = input.size
   const node = createShapeNode({
     shapeType: IMPORTED_SHAPE, name: input.name, params: { model: modelId, width, depth, height },
     color: input.color, position: input.position, rotation: input.rotation,
   })
-  const withModel = known ? doc : { ...doc, models: { ...doc.models, [modelId]: model } }
+  const withModel = known ? current : { ...current, models: { ...current.models, [modelId]: model } }
   return { doc: addNode(withModel, node), id: node.id }
 }
 

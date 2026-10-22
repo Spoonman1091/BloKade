@@ -72,7 +72,21 @@ describe('imported models in the document', () => {
     let doc = createEmptyDocument()
     for (let i = 1; i <= 20; i += 1) doc = addImportedPart(doc, part(`M${i}`, i)).doc
     expect(Object.keys(doc.models)).toHaveLength(20)
-    expect(() => addImportedPart(doc, part('One too many', 21))).toThrow("This design already has 20 imported models. Delete one you don't use first.")
+    expect(() => addImportedPart(doc, part('One too many', 21))).toThrow("This design already has 20 imported models. Delete a part that uses one, then try again.")
     expect(() => addImportedPart(doc, part('Same as one', 5))).not.toThrow()
+  })
+
+  it('does not count models no part uses against the limit, and drops them when adding', () => {
+    let doc = createEmptyDocument()
+    const ids: string[] = []
+    for (let i = 1; i <= 20; i += 1) {
+      const added = addImportedPart(doc, part(`M${i}`, i))
+      doc = added.doc
+      ids.push(added.id)
+    }
+    const emptied = removeNodes(doc, ids)
+    expect(Object.keys(emptied.models)).toHaveLength(20)
+    const next = addImportedPart(emptied, part('Twenty-first', 21)).doc
+    expect(Object.keys(next.models)).toHaveLength(1)
   })
 })
