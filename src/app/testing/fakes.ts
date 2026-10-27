@@ -27,6 +27,7 @@ export function fakeGeometryApi(overrides: Partial<GeometryApi> = {}): GeometryA
     exportStep: async () => new TextEncoder().encode('ISO-10303-21;').buffer as ArrayBuffer,
     edgeCandidates: async () => [],
     overlap: async () => ({ status: 'none' }),
+    printCheck: async () => ({ status: 'nothing' }),
     inspect: async (code) => fakeInspect(code),
     skipShapes: async () => undefined,
     ...overrides,

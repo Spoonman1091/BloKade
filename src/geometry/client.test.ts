@@ -27,6 +27,7 @@ function fakeWorker(running: readonly string[] = []) {
       exportStep: async () => new ArrayBuffer(5),
       edgeCandidates: async () => [],
       overlap: async () => ({ status: 'none' }),
+      printCheck: async () => ({ status: 'nothing' }),
       inspect: async () => ({ ok: false, problem: 'unused' }),
       prepareStl: async (bytes) => ({ ok: false, message: `got ${bytes.byteLength} bytes` }),
       skipShapes: async (hashes) => { skipped.push(hashes) },
@@ -158,6 +159,18 @@ describe('GeometryClient', () => {
       terminate: () => undefined,
     }))
     await expect(client.overlap(createEmptyDocument(), 'a', 'b')).resolves.toBe(result)
+  })
+})
+
+describe('GeometryClient print check', () => {
+  it('forwards print checks to the worker', async () => {
+    const result = { status: 'nothing' } as const
+    const base = fakeWorker().handle
+    const client = new GeometryClient(() => ({
+      api: { ...base.api, printCheck: async () => result },
+      terminate: () => undefined,
+    }))
+    await expect(client.printCheck(createEmptyDocument())).resolves.toBe(result)
   })
 })
 

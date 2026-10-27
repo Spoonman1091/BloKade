@@ -36,6 +36,21 @@ export type OverlapResult =
   | { readonly status: 'none' }
   | { readonly status: 'overlap'; readonly volume: number; readonly mesh: MeshData }
 
+/** One kind of print problem: how much there is (floating: pieces; overhang: mm²) and where, in world coordinates. */
+export interface PrintIssue { readonly amount: number; readonly mesh: MeshData }
+export interface ThinIssue { readonly veryThin: boolean; readonly mesh: MeshData }
+
+/** What the print check found. `thinFinished` is false when thin-wall checking ran out of time. */
+export type PrintCheckResult =
+  | { readonly status: 'nothing' }
+  | {
+    readonly status: 'checked'
+    readonly floating: PrintIssue | null
+    readonly thin: ThinIssue | null
+    readonly overhang: PrintIssue | null
+    readonly thinFinished: boolean
+  }
+
 /** Which screen a rebuild is for. Each keeps its own cache entries, so the preview and the design don't push each other out. */
 export type BuildChannel = 'design' | 'preview'
 
@@ -46,6 +61,8 @@ export interface GeometryApi {
   exportStep(doc: BloKadeDocument, ids?: readonly NodeId[]): Promise<ArrayBuffer>
   edgeCandidates(doc: BloKadeDocument, nodeId: NodeId, modifierId: string): Promise<EdgeCandidate[]>
   overlap(doc: BloKadeDocument, a: NodeId, b: NodeId): Promise<OverlapResult>
+  /** Looks for floating pieces, thin walls and overhangs in everything that would be exported. */
+  printCheck(doc: BloKadeDocument): Promise<PrintCheckResult>
   /** Loads and checks one of Kade's shapes: its name, icon and settings, or a friendly problem. */
   inspect(code: string): Promise<InspectResult>
   /** Reads, cleans and simplifies an STL file for import. Never throws: a bad file gives a friendly message. */

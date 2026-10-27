@@ -2,7 +2,7 @@ import * as Comlink from 'comlink'
 import type { BloKadeDocument, NodeId } from '../document/types'
 import type { PrepareResult } from '../import/prepare'
 import type { InspectResult } from '../kade/meta'
-import type { BuildChannel, BuildResult, EdgeCandidate, GeometryApi, OverlapResult } from './types'
+import type { BuildChannel, BuildResult, EdgeCandidate, GeometryApi, OverlapResult, PrintCheckResult } from './types'
 
 export interface WorkerHandle {
   readonly api: GeometryApi
@@ -91,6 +91,10 @@ export class GeometryClient {
 
   overlap(doc: BloKadeDocument, a: NodeId, b: NodeId): Promise<OverlapResult> {
     return this.call((api) => api.overlap(doc, a, b))
+  }
+
+  printCheck(doc: BloKadeDocument): Promise<PrintCheckResult> {
+    return this.call((api) => api.printCheck(doc))
   }
 
   dispose(): void {

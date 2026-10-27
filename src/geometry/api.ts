@@ -8,6 +8,7 @@ import { exportTargets } from './export-targets'
 import { prepareStl } from '../import/prepare'
 import { UNEXPECTED } from './messages'
 import { findOverlap, OverlapError } from './overlap'
+import { findPrintProblems, PrintCheckError } from './print-check'
 import { write3mf } from './export-3mf'
 import { EXPORT_QUALITY, toMeshData } from './tessellate'
 import type { BuildChannel, BuildResult, GeometryApi, NodeBuild } from './types'
@@ -16,6 +17,9 @@ import { countOpenEdges, weldMesh } from './weld'
 export class ExportError extends Error {
   override name = 'ExportError'
 }
+
+/** There is no visible solid part to export. */
+export class NothingToExportError extends ExportError {}
 
 const HAS_GAPS = "This shape has tiny gaps, so it can't be saved as 3MF. Try ⬇ STL, or change its size a little."
 
@@ -62,9 +66,9 @@ function placedForExport(evaluator: Evaluator, doc: BloKadeDocument, id: NodeId)
 }
 
 /** One fused solid for export. The caller must delete() it. */
-function exportShape(evaluator: Evaluator, doc: BloKadeDocument, ids?: readonly NodeId[]): Shape3D {
+export function exportShape(evaluator: Evaluator, doc: BloKadeDocument, ids?: readonly NodeId[]): Shape3D {
   const [first, ...rest] = exportTargets(doc, ids).map((id) => placedForExport(evaluator, doc, id))
-  if (!first) throw new ExportError("There's nothing to export. Add a solid shape (holes and hidden parts aren't exported).")
+  if (!first) throw new NothingToExportError("There's nothing to export. Add a solid shape (holes and hidden parts aren't exported).")
   return rest.reduce((acc, shape) => {
     const next = acc.fuse(shape)
     acc.delete()
@@ -114,6 +118,15 @@ export function createGeometryApi(evaluator: Evaluator, shapes: KadeShapes): Geo
       } catch (error) {
         if (error instanceof OverlapError) throw new Error(error.message)
         console.error('Unexpected overlap failure', error)
+        throw new Error(UNEXPECTED)
+      }
+    }),
+    printCheck: (doc) => withShapes(doc, () => {
+      try {
+        return findPrintProblems(evaluator, doc)
+      } catch (error) {
+        if (error instanceof PrintCheckError) throw new Error(error.message)
+        console.error('Unexpected print check failure', error)
         throw new Error(UNEXPECTED)
       }
     }),

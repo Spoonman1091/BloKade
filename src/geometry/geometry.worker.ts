@@ -44,6 +44,7 @@ const api: GeometryApi = {
   exportStep: async (doc, ids) => (await apiReady).exportStep(doc, ids),
   edgeCandidates: async (doc, nodeId, modifierId) => (await apiReady).edgeCandidates(doc, nodeId, modifierId),
   overlap: async (doc, a, b) => (await apiReady).overlap(doc, a, b),
+  printCheck: async (doc) => (await apiReady).printCheck(doc),
   inspect: async (code) => (await apiReady).inspect(code),
   skipShapes: async (hashes) => (await apiReady).skipShapes(hashes),
 }

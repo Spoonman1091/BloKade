@@ -19,6 +19,7 @@ export function spawnGeometryWorker(): WorkerHandle {
       exportStep: (doc, ids) => remote.exportStep(doc, ids),
       edgeCandidates: (doc, nodeId, modifierId) => remote.edgeCandidates(doc, nodeId, modifierId),
       overlap: (doc, a, b) => remote.overlap(doc, a, b),
+      printCheck: (doc) => remote.printCheck(doc),
       inspect: (code) => remote.inspect(code),
       skipShapes: (hashes) => remote.skipShapes(hashes),
     },

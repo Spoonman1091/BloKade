@@ -5,7 +5,7 @@ import { buildTriangleGrid } from './spatial-grid'
 export const FLOAT_GAP = 0.05
 export const OVERHANG_COS = Math.cos(Math.PI / 4)
 export const PLATE_TOUCH = 0.05
-export const MIN_OVERHANG_AREA = 4 // mm²
+export const MIN_OVERHANG_AREA = 600 // mm²: a default sphere (186) and ring (564) round off to a point on the plate
 export const THIN_WALL = 0.8
 export const VERY_THIN_WALL = 0.4
 export const THIN_TIME_LIMIT_MS = 5000
