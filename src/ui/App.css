@@ -207,3 +207,8 @@ body.help-mode, body.help-mode * { cursor: help !important; }
 .import-size { font-size: 1.1rem; font-variant-numeric: tabular-nums; margin: 4px 0 8px; }
 .import-too-large { color: #b3261e; margin: 6px 0; }
 .palette-button[aria-disabled="true"] { opacity: 0.5; cursor: progress; }
+
+.viewport-warning {
+  position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); max-width: calc(100% - 180px);
+  padding: 6px 12px; border-radius: 8px; background: #e53935; color: #fff; font-size: 0.9rem;
+}

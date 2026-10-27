@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 import { act, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createActions } from '../app/actions'
 import { renderWithStore } from '../app/testing/render'
 import { createEmptyDocument } from '../document/factory'
 import { registry } from '../plugins/index'
+import { printerStore } from '../printers/printer-store'
+import { DEFAULT_PRINTER } from '../printers/printers'
 import { createBloKadeStore } from '../store/store'
 import { Toolbar } from './Toolbar'
 
@@ -22,6 +24,18 @@ function setup() {
 }
 
 describe('Toolbar', () => {
+  afterEach(() => printerStore.getState().setPrinter(DEFAULT_PRINTER))
+
+  it('picks the printer, starting on the A1 mini', async () => {
+    setup()
+    const picker = screen.getByRole('combobox', { name: 'Printer' })
+    expect(picker).toHaveValue(DEFAULT_PRINTER)
+    expect(screen.getByRole('option', { name: 'Bambu Lab A1 mini (180 × 180 × 180 mm)' })).toBeInTheDocument()
+    await userEvent.selectOptions(picker, 'none')
+    expect(printerStore.getState().printerId).toBe('none')
+    expect(screen.getByRole('option', { name: 'No printer (endless grid)' })).toBeInTheDocument()
+  })
+
   it('enables buttons only when they can do something', () => {
     const { store, actions } = setup()
     expect(screen.getByTestId('undo')).toBeDisabled()

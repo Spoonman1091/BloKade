@@ -186,6 +186,9 @@ Lesson progress is kept in this browser. In a private window the lessons still w
 - **Text:** the 🔤 Text shape makes raised letters. Change the words in Properties.
 - **Line up:** select two or more parts (Shift-click) and use the Line up buttons.
 - **Snapping:** while dragging, a part snaps flush against parts within 2 mm. Hold **Shift** to move freely.
+- **Printer:** pick your printer in the toolbar (it starts on the Bambu Lab A1 mini) and the 3D view shows its
+  plate. A part that hangs off the plate or is too tall turns red, and a warning says so. **No printer** brings back
+  the endless grid. Your choice is remembered in this browser.
 - **Workplane:** press 📐 Workplane, then click any face. New shapes are built on that face. **Ground** goes back to the floor.
 
 ### Round & repeat

@@ -1,6 +1,8 @@
 import type { Actions } from '../app/actions'
 import type { ExportFormat } from '../app/export'
 import { canRedo, canUndo } from '../history/history'
+import { printerStore, usePrinterId } from '../printers/printer-store'
+import { NO_PRINTER, PRINTERS, printerLabel } from '../printers/printers'
 import { useBloKade } from '../store/context'
 import type { ToolMode } from '../store/store'
 
@@ -71,6 +73,7 @@ export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn, 
         {onFace && <button type="button" className="tool-button" data-testid="workplane-reset"
           title="Build on the ground again" onClick={actions.resetWorkplane}>Ground</button>}
       </div>
+      <PrinterPicker />
       <label className="toolbar-group">
         Snap
         <select data-help="grid-snap" aria-label="Grid snap" value={gridSnap} onChange={(event) => actions.setGridSnap(Number(event.target.value))}>
@@ -83,5 +86,19 @@ export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn, 
         <button type="button" className="tool-button" data-testid="export-step" title="STEP: for other CAD programs" onClick={() => onExport('step')}>⬇ STEP</button>
       </div>
     </header>
+  )
+}
+
+/** Which printer's plate the 3D view shows and checks parts against. */
+function PrinterPicker() {
+  const printerId = usePrinterId()
+  return (
+    <label className="toolbar-group">
+      Printer
+      <select data-help="printer" aria-label="Printer" value={printerId} onChange={(event) => printerStore.getState().setPrinter(event.target.value)}>
+        {PRINTERS.map((p) => <option key={p.id} value={p.id}>{printerLabel(p)}</option>)}
+        <option value={NO_PRINTER}>No printer (endless grid)</option>
+      </select>
+    </label>
   )
 }

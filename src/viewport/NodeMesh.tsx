@@ -9,6 +9,12 @@ import { toBufferGeometry, toEdgeGeometry } from './three-geometry'
 
 const EDGE_COLOR = '#2b3445'
 const SELECTED_EDGE_COLOR = '#ff8a00'
+/**
+ * A part that doesn't fit the printer shows a bright, glowing red with red edges until it does, so it stands
+ * apart from parts that are simply coloured red.
+ */
+const MISFIT_COLOR = '#ff1a1a'
+const MISFIT_GLOW = 0.45
 
 interface NodeMeshProps {
   node: SceneNode
@@ -19,9 +25,11 @@ interface NodeMeshProps {
   onPickFace?(point: Vec3, normal: Vec3): void
   /** Set while picking edges: clicks pass through to the edge lines and don't select the part. */
   passive?: boolean
+  /** True when the part hangs off the printer's plate or is too tall for it. */
+  misfit?: boolean
 }
 
-export function NodeMesh({ node, displayed, selected, onSelect, onPickFace, passive }: NodeMeshProps) {
+export function NodeMesh({ node, displayed, selected, onSelect, onPickFace, passive, misfit }: NodeMeshProps) {
   const geometry = useMemo(() => toBufferGeometry(displayed.mesh), [displayed.mesh])
   const edges = useMemo(() => toEdgeGeometry(displayed.mesh), [displayed.mesh])
   useEffect(() => () => {
@@ -55,19 +63,19 @@ export function NodeMesh({ node, displayed, selected, onSelect, onPickFace, pass
         {/* three.js bakes transparency into the shader at compile time, so a new key rebuilds the material when it flips */}
         <meshStandardMaterial
           key={opacity < 1 ? 'transparent' : 'opaque'}
-          color={isHole ? HOLE_COLOR : node.color}
+          color={isHole ? HOLE_COLOR : misfit ? MISFIT_COLOR : node.color}
           transparent={opacity < 1}
           opacity={opacity}
           depthWrite={!isHole}
           polygonOffset
           polygonOffsetFactor={1}
           polygonOffsetUnits={1}
-          emissive={selected ? SELECTED_EDGE_COLOR : '#000000'}
-          emissiveIntensity={selected ? 0.25 : 0}
+          emissive={misfit && !isHole ? MISFIT_COLOR : selected ? SELECTED_EDGE_COLOR : '#000000'}
+          emissiveIntensity={misfit && !isHole ? MISFIT_GLOW : selected ? 0.25 : 0}
         />
       </mesh>
       <lineSegments geometry={edges} raycast={() => null}>
-        <lineBasicMaterial color={selected ? SELECTED_EDGE_COLOR : EDGE_COLOR} />
+        <lineBasicMaterial color={selected ? SELECTED_EDGE_COLOR : misfit && !isHole ? MISFIT_COLOR : EDGE_COLOR} />
       </lineSegments>
     </group>
   )
