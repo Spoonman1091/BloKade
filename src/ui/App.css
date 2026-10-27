@@ -219,3 +219,7 @@ body.help-mode, body.help-mode * { cursor: help !important; }
 }
 .viewport-warning-button:hover { background: #ffe9e8; }
 .viewport-warning-button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.print-check { position: relative; border-bottom: 1px solid var(--border); }
+.print-check-close { position: absolute; top: 8px; right: 8px; border: 0; background: none; cursor: pointer; font-size: 1rem; color: var(--muted); }
+.print-check-line { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; font-size: 0.9rem; }
+.print-check-swatch { flex: none; width: 14px; height: 14px; margin-top: 3px; border-radius: 3px; border: 1px solid rgba(0, 0, 0, 0.25); }

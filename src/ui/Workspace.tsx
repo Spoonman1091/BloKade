@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useStore } from 'zustand'
 import { checkOverlap } from '../app/check-overlap'
+import { checkPrint } from '../app/check-print'
 import { createActions, type Actions } from '../app/actions'
 import type { AppDeps } from '../app/deps'
 import type { DesignSession } from '../app/design-session'
@@ -35,6 +36,7 @@ import { SceneTree } from './SceneTree'
 import { ShapePalette } from './ShapePalette'
 import { handleStlDrop } from './stl-drop'
 import { Toasts } from './Toasts'
+import { PrintCheckPanel } from './PrintCheckPanel'
 import { Toolbar } from './Toolbar'
 import { VariablesPanel } from './VariablesPanel'
 
@@ -123,6 +125,7 @@ function DesignPanes({ deps, store, actions, shapes, lessons, session, stl }: De
         {stl.busy && <div className="viewport-hint" role="status">Reading the model…</div>}
       </main>
       <aside className="right-panel">
+        <PrintCheckPanel />
         <PropertiesPanel registry={shapes.registry} onCheckOverlap={() => void checkOverlap(store, deps.client)} />
         <VariablesPanel registry={shapes.registry} />
       </aside>
@@ -165,7 +168,8 @@ export function Workspace({ deps, lessons: injected }: { deps: AppDeps; lessons?
     <div className={lessonsOpen ? 'workspace with-lessons' : 'workspace'}>
       <Toolbar actions={actions} onExport={onExport} onOpenDesigns={() => setShowDesigns(true)}
         learnOpen={lessonsOpen} onLearn={() => lessons.getState().togglePanel()}
-        helpMode={help.helpMode} onHelpMode={help.toggle} onMyShapes={editor.show} />
+        helpMode={help.helpMode} onHelpMode={help.toggle} onMyShapes={editor.show}
+        onCheckPrint={() => void checkPrint(store, deps.client)} />
       <DesignPanes deps={deps} store={store} actions={actions} shapes={shapes} lessons={lessons} session={session} stl={stl} />
       {stl.pending && <ImportDialog fileName={stl.pending.fileName} model={stl.pending.model} onImport={stl.confirm} onCancel={stl.cancel} />}
       {lessonsOpen && <LessonsPanel lessons={lessons} session={session} />}

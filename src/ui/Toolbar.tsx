@@ -29,9 +29,10 @@ interface ToolbarProps {
   onHelpMode(): void
   /** Opens 🧩 My shapes. The button only shows when this is given. */
   onMyShapes?(): void
+  onCheckPrint(): void
 }
 
-export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn, helpMode, onHelpMode, onMyShapes }: ToolbarProps) {
+export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn, helpMode, onHelpMode, onMyShapes, onCheckPrint }: ToolbarProps) {
   const undoable = useBloKade((s) => canUndo(s.history))
   const redoable = useBloKade((s) => canRedo(s.history))
   const count = useBloKade((s) => s.selection.length)
@@ -39,6 +40,7 @@ export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn, 
   const gridSnap = useBloKade((s) => s.history.present.settings.gridSnap)
   const picking = useBloKade((s) => s.pickingWorkplane)
   const onFace = useBloKade((s) => s.workplane !== null)
+  const printChecking = useBloKade((s) => s.printChecking)
   const designName = useBloKade((s) => s.history.present.name)
 
   return (
@@ -74,6 +76,9 @@ export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn, 
           title="Build on the ground again" onClick={actions.resetWorkplane}>Ground</button>}
       </div>
       <PrinterPicker />
+      <button type="button" className="tool-button" data-testid="check-print" disabled={printChecking} onClick={onCheckPrint}>
+        {printChecking ? 'Checking…' : '🔍 Check print'}
+      </button>
       <label className="toolbar-group">
         Snap
         <select data-help="grid-snap" aria-label="Grid snap" value={gridSnap} onChange={(event) => actions.setGridSnap(Number(event.target.value))}>

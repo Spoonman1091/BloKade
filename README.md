@@ -190,6 +190,9 @@ Lesson progress is kept in this browser. In a private window the lessons still w
 - **Printer:** pick your printer in the toolbar (it starts on the Bambu Lab A1 mini) and the 3D view shows its
   plate. A part that hangs off the plate or is too tall turns red, and a warning says so. **No printer** brings back
   the endless grid. Your choice is remembered in this browser.
+- **🔍 Check print:** press *Check print* in the toolbar to look for trouble before you print. Pieces floating in the
+  air glow purple, walls that are too thin glow yellow, and parts hanging over empty space (they'd need supports) glow
+  orange. The answer goes away when you change the design, and it never stops you from exporting.
 - **Put on plate:** select parts and click **⬇ Put on plate** (or press **D**) to set them on the plate and back inside
   its edges. The red warning has the same button for parts that hang off. Nothing turns or changes size.
 - **Workplane:** press 📐 Workplane, then click any face. New shapes are built on that face. **Ground** goes back to the floor.

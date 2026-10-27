@@ -89,6 +89,9 @@ export const HELP_TEXTS: Readonly<Record<string, HelpEntry>> = {
   'rot-y': { tip: 'Tips the part left or right, in degrees.', card: 'Rotation y turns the part around the front-back line.', tutorial: 'move-turn-size' },
   'rot-z': { tip: 'Spins the part like a turntable, in degrees.', card: 'Rotation z turns the part around the up line, like spinning a top.', tutorial: 'move-turn-size' },
   'add-modifier': { tip: 'Adds a change to this part: round edges, repeat or mirror.', card: 'Modifiers change a part after it is made. They run from top to bottom, and you can turn each one off with its checkbox.', tutorial: 'round-repeat' },
+  'check-print': { tip: 'Looks for things that could go wrong when you print.', card: 'Check print looks for pieces floating in the air, walls that are too thin, and parts that hang over empty space. Problems light up on your design. You can still save and export.' },
+  'print-check-result': { tip: 'What Check print found.', card: 'Each coloured line matches the glow on your design. Fix a problem and press Check print again. The answer goes away when you change the design.' },
+  'print-check-close': { tip: 'Hides the print check answer.', card: 'Closes the Check print answer and the glow on your design.' },
   'check-overlap': { tip: 'Checks if the two selected parts bump into each other.', card: 'Check overlap shows in red where two parts take up the same space. Parts that should slide together must not overlap.', tutorial: 'perfect-fit' },
   // Variables
   fit: { tip: 'Extra room so printed parts slide together. Bigger = looser.', card: 'Fit gap is how much bigger holes are than the parts that go in them. If your printed parts are too tight, make it bigger.', tutorial: 'perfect-fit' },

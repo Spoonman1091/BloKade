@@ -19,8 +19,9 @@ function setup() {
   const onLearn = vi.fn()
   const onHelpMode = vi.fn()
   const onMyShapes = vi.fn()
-  renderWithStore(<Toolbar actions={actions} onExport={onExport} onOpenDesigns={onOpenDesigns} learnOpen={false} onLearn={onLearn} helpMode={false} onHelpMode={onHelpMode} onMyShapes={onMyShapes} />, store)
-  return { store, actions, onExport, onOpenDesigns, onLearn, onHelpMode, onMyShapes, doc: () => store.getState().history.present }
+  const onCheckPrint = vi.fn()
+  renderWithStore(<Toolbar actions={actions} onExport={onExport} onOpenDesigns={onOpenDesigns} learnOpen={false} onLearn={onLearn} helpMode={false} onHelpMode={onHelpMode} onMyShapes={onMyShapes} onCheckPrint={onCheckPrint} />, store)
+  return { store, actions, onCheckPrint, onExport, onOpenDesigns, onLearn, onHelpMode, onMyShapes, doc: () => store.getState().history.present }
 }
 
 describe('Toolbar', () => {
@@ -34,6 +35,17 @@ describe('Toolbar', () => {
     await userEvent.selectOptions(picker, 'none')
     expect(printerStore.getState().printerId).toBe('none')
     expect(screen.getByRole('option', { name: 'No printer (endless grid)' })).toBeInTheDocument()
+  })
+
+  it('checks the print, and shows it is working', async () => {
+    const { store, onCheckPrint } = setup()
+    const button = screen.getByTestId('check-print')
+    expect(button).toHaveTextContent('🔍 Check print')
+    await userEvent.click(button)
+    expect(onCheckPrint).toHaveBeenCalledTimes(1)
+    act(() => store.getState().setPrintChecking(true))
+    expect(button).toHaveTextContent('Checking…')
+    expect(button).toBeDisabled()
   })
 
   it('enables buttons only when they can do something', () => {

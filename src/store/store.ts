@@ -1,7 +1,7 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import { DocumentOpError } from '../document/ops'
 import type { BloKadeDocument, NodeId, Vec3 } from '../document/types'
-import type { BuildResult, EdgeCandidate, ModifierWarnings, OverlapResult } from '../geometry/types'
+import type { BuildResult, EdgeCandidate, ModifierWarnings, OverlapResult, PrintCheckResult } from '../geometry/types'
 import { commit, createHistory, redo, undo, type History } from '../history/history'
 import { mergeBuild, type DisplayedMesh } from './merge-build'
 
@@ -26,6 +26,12 @@ export interface OverlapView {
   readonly result: OverlapResult
 }
 
+/** The last Check print answer, with the design it was run on. */
+export interface PrintCheckView {
+  readonly doc: BloKadeDocument
+  readonly result: PrintCheckResult
+}
+
 export interface BloKadeState {
   readonly designId: string
   readonly history: History<BloKadeDocument>
@@ -47,6 +53,11 @@ export interface BloKadeState {
   readonly edgeCandidates: readonly EdgeCandidate[] | null
   readonly overlap: OverlapView | null
   setOverlap(overlap: OverlapView | null): void
+  readonly printCheck: PrintCheckView | null
+  setPrintCheck(view: PrintCheckView | null): void
+  /** True while Check print is waiting for the engine. */
+  readonly printChecking: boolean
+  setPrintChecking(checking: boolean): void
   setPickingEdges(picking: EdgePicking | null): void
   setEdgeCandidates(candidates: readonly EdgeCandidate[] | null): void
   setWorkplane(workplane: Workplane | null): void
@@ -73,6 +84,8 @@ export function createBloKadeStore(init: { designId: string; doc: BloKadeDocumen
     history: createHistory(init.doc),
     selection: [],
     overlap: null,
+    printCheck: null,
+    printChecking: false,
     tool: 'move',
     meshes: {},
     errors: {},
@@ -114,9 +127,11 @@ export function createBloKadeStore(init: { designId: string; doc: BloKadeDocumen
       return { history, selection: pruneSelection(history.present, s.selection) }
     }),
     setOverlap: (overlap) => set({ overlap }),
+    setPrintCheck: (printCheck) => set({ printCheck }),
+    setPrintChecking: (printChecking) => set({ printChecking }),
     openDesign: (designId, doc) =>
       set({ designId, history: createHistory(doc), selection: [], meshes: {}, errors: {}, workplane: null, pickingWorkplane: false,
-        modifierWarnings: {}, pickingEdges: null, edgeCandidates: null, overlap: null }),
+        modifierWarnings: {}, pickingEdges: null, edgeCandidates: null, overlap: null, printCheck: null }),
     applyBuild: (designId, result) => {
       if (designId !== get().designId) return
       set((s) => ({ ...mergeBuild(s.meshes, result), modifierWarnings: result.warnings ?? {}, engineReady: true }))

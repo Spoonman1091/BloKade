@@ -12,6 +12,7 @@ import { FitWarning } from './FitWarning'
 import { EdgeOverlay } from './EdgeOverlay'
 import { NodeMesh } from './NodeMesh'
 import { OverlapMesh } from './OverlapMesh'
+import { PrintCheckMeshes } from './PrintCheckMeshes'
 import { PrinterPlate } from './PrinterPlate'
 import { sizeHintFor } from './size-drag'
 import { TransformHandles } from './TransformHandles'
@@ -69,6 +70,7 @@ export function Viewport({ registry, onToggleEdge }: { registry: PluginRegistry;
         })}
         <EdgeOverlay onToggle={onToggleEdge} />
         <OverlapMesh />
+        <PrintCheckMeshes />
         {workplane && <WorkplaneMarker workplane={workplane} />}
         {!pickingEdges && <TransformHandles registry={registry} onMeasure={setMeasurement} />}
         <OrbitControls makeDefault />
