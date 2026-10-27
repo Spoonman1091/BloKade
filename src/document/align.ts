@@ -2,7 +2,7 @@ import { boxEdge, unionBox, type Axis, type Box, type BoxEdge } from './box'
 import { DocumentOpError, updateNode } from './ops'
 import type { BloKadeDocument, NodeId, Vec3 } from './types'
 
-const tidy = (v: number): number => {
+export const tidy = (v: number): number => {
   const r = Math.round(v * 1e6) / 1e6
   return Object.is(r, -0) ? 0 : r
 }
