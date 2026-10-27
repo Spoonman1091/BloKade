@@ -168,6 +168,7 @@ Lesson progress is kept in this browser. In a private window the lessons still w
 | Alt (while dragging a corner) | Keep the shape's proportions |
 | Shift (while dragging) | Turn snapping off |
 | H | Switch between solid and hole |
+| D | Put on plate |
 | Ctrl/Cmd + G | Group (holes cut out of solids) |
 | Ctrl/Cmd + Shift + G | Ungroup |
 | Ctrl/Cmd + D | Duplicate |
@@ -189,6 +190,8 @@ Lesson progress is kept in this browser. In a private window the lessons still w
 - **Printer:** pick your printer in the toolbar (it starts on the Bambu Lab A1 mini) and the 3D view shows its
   plate. A part that hangs off the plate or is too tall turns red, and a warning says so. **No printer** brings back
   the endless grid. Your choice is remembered in this browser.
+- **Put on plate:** select parts and click **⬇ Put on plate** (or press **D**) to set them on the plate and back inside
+  its edges. The red warning has the same button for parts that hang off. Nothing turns or changes size.
 - **Workplane:** press 📐 Workplane, then click any face. New shapes are built on that face. **Ground** goes back to the floor.
 
 ### Round & repeat

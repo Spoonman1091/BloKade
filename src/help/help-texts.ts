@@ -22,6 +22,8 @@ export const HELP_TEXTS: Readonly<Record<string, HelpEntry>> = {
   'workplane-reset': { tip: 'Builds on the floor again.', card: 'Ground puts the workplane back on the floor grid, where new shapes normally appear.', tutorial: 'workplane' },
   printer: { tip: 'Shows the plate of the printer you print on.', card: 'Pick your printer and the 3D view shows its plate. A part that hangs off the plate or is too tall to print turns red. Pick No printer for the endless grid.' },
   'fit-warning': { tip: "Some parts won't fit on your printer.", card: 'A red part hangs off the plate or is too tall for your printer. Move it onto the plate, or make it smaller. You can still save and export it.' },
+  'put-on-plate': { tip: 'Drops the part onto the plate.', card: 'Puts the picked parts down on the plate, and back inside its edges if they hang off. Press D for the same thing.' },
+  'fit-put-on-plate': { tip: 'Brings parts that hang off back onto the plate.', card: 'Slides the parts that hang off the plate back inside its edges and sets them down on it. Nothing gets turned or resized.' },
   'grid-snap': { tip: 'How far parts jump when you drag them.', card: 'Snap makes dragged parts jump in steps, like 1 mm, so they line up neatly. Pick Off to drag smoothly.' },
   'export-stl': { tip: 'Downloads an STL file for your 3D printer’s slicer.', card: 'STL is the file most slicers open. It holds the shape of everything that isn’t a loose hole.', tutorial: 'ready-to-print' },
   'export-3mf': { tip: 'Downloads a 3MF file, which keeps colours too.', card: '3MF is a newer printer file. Slicers like PrusaSlicer and Bambu Studio open it and keep your colours.', tutorial: 'ready-to-print' },

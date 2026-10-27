@@ -13,6 +13,7 @@ import { TextField } from './NumberField'
 import { ModifierStack } from './ModifierStack'
 import { OverlapCheck } from './OverlapCheck'
 import { ParamField } from './ParamField'
+import { PutOnPlateButton } from './PutOnPlateButton'
 import { ValueField } from './ValueField'
 
 const AXES = [['x', 0], ['y', 1], ['z', 2]] as const
@@ -64,6 +65,7 @@ function Placement({ node, errors, setField }: FieldsProps) {
     <>
       <h3>Position (mm)</h3>
       {row('position', 'pos')}
+      <PutOnPlateButton />
       <h3>Rotation (°)</h3>
       {row('rotation', 'rot')}
     </>
@@ -84,6 +86,7 @@ export function PropertiesPanel({ registry, onCheckOverlap }: { registry: Plugin
       <section className="panel" aria-label="Properties">
         <h2 data-help="panel-properties">Properties</h2>
         <p className="hint">{selection.length} parts selected. Group them, or pick one to change it.</p>
+        <PutOnPlateButton />
         <AlignTools />
         {onCheckOverlap && <OverlapCheck onCheck={onCheckOverlap} />}
       </section>

@@ -3,7 +3,7 @@ import type { Actions } from './actions'
 
 export type ShortcutAction =
   | 'delete' | 'duplicate' | 'group' | 'ungroup' | 'undo' | 'redo'
-  | 'toggleHole' | 'toolMove' | 'toolRotate' | 'toolSize' | 'cancel'
+  | 'toggleHole' | 'putOnPlate' | 'toolMove' | 'toolRotate' | 'toolSize' | 'cancel'
 
 export interface KeyInput {
   readonly key: string
@@ -34,6 +34,7 @@ const PLAIN: Readonly<Record<string, ShortcutAction>> = {
   delete: 'delete',
   backspace: 'delete',
   h: 'toggleHole',
+  d: 'putOnPlate',
   m: 'toolMove',
   r: 'toolRotate',
   s: 'toolSize',
@@ -59,6 +60,7 @@ export function runShortcut(action: ShortcutAction, actions: Actions): void {
     undo: actions.undo,
     redo: actions.redo,
     toggleHole: actions.toggleHole,
+    putOnPlate: actions.putOnPlate,
     toolMove: () => actions.setTool('move'),
     toolRotate: () => actions.setTool('rotate'),
     toolSize: () => actions.setTool('size'),

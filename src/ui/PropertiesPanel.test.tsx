@@ -187,4 +187,29 @@ describe('PropertiesPanel', () => {
     await userEvent.click(screen.getByTestId('align-x-min'))
     expect(store.getState().history.present.nodes[b]?.transform.position[0]).toBe(0)
   })
+
+  it('offers Put on plate for one part or several, but not for none', async () => {
+    const { store, actions } = setup()
+    expect(screen.queryByTestId('put-on-plate')).toBeNull()
+    act(() => actions.addShape('box'))
+    expect(screen.getByTestId('put-on-plate')).toBeInTheDocument()
+    act(() => actions.addShape('box'))
+    act(() => store.getState().select(store.getState().history.present.root))
+    expect(screen.getByTestId('put-on-plate')).toBeInTheDocument()
+    act(() => store.getState().select([]))
+    expect(screen.queryByTestId('put-on-plate')).toBeNull()
+  })
+
+  it('Put on plate drops the selected part to the floor', async () => {
+    const { store, actions } = setup()
+    act(() => actions.addShape('box'))
+    const [id] = store.getState().history.present.root
+    if (!id) throw new Error('missing part')
+    act(() => {
+      store.getState().apply((d) => updateNode(d, id, (n) => ({ ...n, transform: { ...n.transform, position: [0, 0, 12] } })))
+      store.getState().applyBuild('d', { nodes: { [id]: { status: 'ok', mesh: boxMesh(20, 20, 20) } } })
+    })
+    await userEvent.click(screen.getByTestId('put-on-plate'))
+    expect(store.getState().history.present.nodes[id]?.transform.position[2]).toBe(0)
+  })
 })

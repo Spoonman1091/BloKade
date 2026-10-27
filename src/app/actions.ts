@@ -3,12 +3,15 @@ import {
   DocumentOpError, duplicateNodes, groupNodes, removeNodes, setGridSnap, setMode, ungroupNode,
 } from '../document/ops'
 import type { BloKadeDocument, CarriedShape, NodeId } from '../document/types'
+import { printerById } from '../printers/printers'
+import { printerStore } from '../printers/printer-store'
 import { carryShape, unaddableNotice } from '../kade/carried'
 import { KITS } from '../plugins/kits'
 import type { PluginRegistry } from '../plugins/registry'
 import type { BloKadeStore, ToolMode } from '../store/store'
 import { addKit as addKitParts } from './add-kit'
 import { addPart } from './add-part'
+import { putSelectionOnPlate } from './put-on-plate'
 import { createEdgeActions, type EdgeActions } from './edge-actions'
 import { createFieldNormalizer } from './field-normalizer'
 import { nextSelection } from './selection'
@@ -22,6 +25,8 @@ export interface Actions extends EdgeActions {
   groupSelection(): void
   ungroupSelection(): void
   toggleHole(): void
+  /** D: sets the selected parts on the plate, and back inside its edges if they hang off. */
+  putOnPlate(): void
   selectNode(id: NodeId, additive: boolean): void
   clearSelection(): void
   /** Esc: stop picking edges or choosing a workplane if that's happening (keeping the current one), otherwise deselect. */
@@ -122,6 +127,7 @@ export function createActions(
       const allHoles = selection.every((id) => Object.hasOwn(nodes, id) && nodes[id]?.mode === 'hole')
       state().apply((doc) => setMode(doc, selection, allHoles ? 'solid' : 'hole'))
     },
+    putOnPlate: () => putSelectionOnPlate(store, printerById(printerStore.getState().printerId)),
     selectNode: (id, additive) => state().select(nextSelection(state().selection, id, additive)),
     clearSelection: () => state().select([]),
     cancel: () => {

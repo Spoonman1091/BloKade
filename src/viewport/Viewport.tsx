@@ -2,12 +2,13 @@ import { GizmoHelper, GizmoViewport, OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { useState } from 'react'
 import { Object3D } from 'three'
+import { putOnPlateIds } from '../app/put-on-plate'
 import { nextSelection } from '../app/selection'
 import type { EdgeFingerprint, NodeId, Vec3 } from '../document/types'
 import type { PluginRegistry } from '../plugins/registry'
 import { usePrinter } from '../printers/printer-store'
-import { useBloKade } from '../store/context'
-import { RichText } from '../ui/RichText'
+import { useBloKade, useBloKadeStore } from '../store/context'
+import { FitWarning } from './FitWarning'
 import { EdgeOverlay } from './EdgeOverlay'
 import { NodeMesh } from './NodeMesh'
 import { OverlapMesh } from './OverlapMesh'
@@ -22,6 +23,7 @@ import { workplaneFromHit } from './workplane'
 Object3D.DEFAULT_UP.set(0, 0, 1)
 
 export function Viewport({ registry, onToggleEdge }: { registry: PluginRegistry; onToggleEdge(fingerprint: EdgeFingerprint): void }) {
+  const store = useBloKadeStore()
   const doc = useBloKade((s) => s.history.present)
   const meshes = useBloKade((s) => s.meshes)
   const selection = useBloKade((s) => s.selection)
@@ -78,7 +80,7 @@ export function Viewport({ registry, onToggleEdge }: { registry: PluginRegistry;
       {picking && <div className="viewport-hint" role="status">Click a face to build on it. Click empty space to build on the ground again.</div>}
       {pickingEdges && <div className="viewport-hint" role="status">Click edges to choose them. Click empty space or press Esc when you're done.</div>}
       {sizeHint && !picking && !pickingEdges && <div className="viewport-hint" role="status" data-testid="size-hint">{sizeHint}</div>}
-      {fit.warning && <div className="viewport-warning" role="alert" data-testid="fit-warning" data-help="fit-warning"><RichText text={fit.warning} /></div>}
+      <FitWarning warning={fit.warning} offPlateIds={fit.offPlateIds} onPutOnPlate={(ids) => putOnPlateIds(store, ids, printer)} />
       {!engineReady && <div className="viewport-overlay">Warming up the geometry engine…</div>}
     </>
   )

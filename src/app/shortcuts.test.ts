@@ -17,6 +17,8 @@ describe('matchShortcut', () => {
     [key('z', { metaKey: true, shiftKey: true }), 'redo'],
     [key('y', { ctrlKey: true }), 'redo'],
     [key('h'), 'toggleHole'],
+    [key('d'), 'putOnPlate'],
+    [key('D', { ctrlKey: true }), 'duplicate'],
     [key('m'), 'toolMove'],
     [key('r'), 'toolRotate'],
     [key('s'), 'toolSize'],
@@ -27,6 +29,10 @@ describe('matchShortcut', () => {
 
   it('ignores keys while typing in a field', () => {
     expect(matchShortcut(key('Backspace', { target: { tagName: 'INPUT' } as unknown as EventTarget }))).toBeNull()
+  })
+
+  it('ignores D while typing in a field', () => {
+    expect(matchShortcut(key('d', { target: { tagName: 'INPUT' } as unknown as EventTarget }))).toBeNull()
   })
 
   it('ignores unknown keys and Alt combos', () => {
@@ -42,13 +48,15 @@ describe('runShortcut', () => {
       deleteSelection: vi.fn(), duplicateSelection: vi.fn(), groupSelection: vi.fn(), ungroupSelection: vi.fn(),
       undo: vi.fn(), redo: vi.fn(), toggleHole: vi.fn(), setTool: vi.fn(), clearSelection: vi.fn(),
       addShape: vi.fn(), addKit: vi.fn(), selectNode: vi.fn(), setGridSnap: vi.fn(), toggleWorkplanePicking: vi.fn(), resetWorkplane: vi.fn(), cancel: vi.fn(),
-      startPickingEdges: vi.fn(), stopPickingEdges: vi.fn(), togglePickedEdge: vi.fn(),
+      putOnPlate: vi.fn(), startPickingEdges: vi.fn(), stopPickingEdges: vi.fn(), togglePickedEdge: vi.fn(),
     } satisfies Actions
     runShortcut('toolRotate', actions)
     runShortcut('group', actions)
     runShortcut('cancel', actions)
+    runShortcut('putOnPlate', actions)
     expect(actions.setTool).toHaveBeenCalledWith('rotate')
     expect(actions.groupSelection).toHaveBeenCalledOnce()
     expect(actions.cancel).toHaveBeenCalledOnce()
+    expect(actions.putOnPlate).toHaveBeenCalledOnce()
   })
 })
