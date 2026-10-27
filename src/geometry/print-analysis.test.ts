@@ -57,6 +57,17 @@ describe('overhangTriangles', () => {
     expect(overhangTriangles(t, 0).area).toBeCloseTo(400, 6)
   })
 
+  it('does not report a bowl resting on its bottom point', () => {
+    // A cone-shaped bowl: apex on the plate, rim 1 mm up per 0.5 mm out, so it faces down steeply.
+    const ring = Array.from({ length: 8 }, (_, i) => [Math.cos(i * Math.PI / 4), Math.sin(i * Math.PI / 4), 0.5] as const)
+    const vertices = [0, 0, 0, ...ring.flat()]
+    const triangles = ring.flatMap((_, i) => [0, 1 + i, 1 + ((i + 1) % 8)])
+    const flipped = triangles.map((v, i) => (i % 3 === 0 ? v : triangles[i % 3 === 1 ? i + 1 : i - 1]!))
+    expect(overhangTriangles({ vertices, triangles: flipped }, 0)).toEqual({ picked: [], area: 0 })
+    expect(overhangTriangles({ vertices: vertices.map((v, i) => (i % 3 === 2 ? v + 5 : v)), triangles: flipped }, 0).picked)
+      .toHaveLength(8)
+  })
+
   it('ignores an exact 45 degree slope but flags a 30 degree one', () => {
     const slope = (rise: number): TriangleSoup => ({
       vertices: [0, 0, 10, 0, 10, 10 + rise, 10, 0, 10], triangles: [0, 1, 2],

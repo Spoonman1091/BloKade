@@ -47,8 +47,8 @@ describe('findPrintProblems', () => {
   })
 
   it('finds the overhang of a T shape', () => {
-    const result = checked(docOf(box('stem', 10, 10, 30), box('bar', 60, 30, 6, [0, 0, 30])))
-    expect(result.overhang?.amount).toBeGreaterThan(1000)
+    const result = checked(docOf(box('stem', 10, 10, 20), box('bar', 40, 10, 5, [0, 0, 20])))
+    expect(result.overhang?.amount).toBeGreaterThan(100)
     expect(result.overhang?.mesh.positions.length).toBeGreaterThan(0)
   })
 

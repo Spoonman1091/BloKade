@@ -5,7 +5,7 @@ import { buildTriangleGrid } from './spatial-grid'
 export const FLOAT_GAP = 0.05
 export const OVERHANG_COS = Math.cos(Math.PI / 4)
 export const PLATE_TOUCH = 0.05
-export const MIN_OVERHANG_AREA = 600 // mm²: a default sphere (186) and ring (564) round off to a point on the plate
+export const MIN_OVERHANG_AREA = 4 // mm²
 export const THIN_WALL = 0.8
 export const VERY_THIN_WALL = 0.4
 export const THIN_TIME_LIMIT_MS = 5000
@@ -51,21 +51,54 @@ function faceOf(a: Vec, b: Vec, c: Vec): { readonly normal: Vec; readonly area: 
     : { normal: [n[0] / length, n[1] / length, n[2] / length], area: length / 2 }
 }
 
-/** Triangles facing down steeper than 45° that hang above the plate, and their total area. */
+const WELD_SCALE = 1e4
+
+const weldKey = (p: Vec): string => p.map((v) => Math.round(v * WELD_SCALE)).join(',')
+
+/** Groups triangles that share a corner position (welded by rounding, as faces don't share vertices). */
+function connectedRegions(tris: readonly (readonly [Vec, Vec, Vec])[]): readonly (readonly number[])[] {
+  const parent = tris.map((_, i) => i)
+  const find = (i: number): number => {
+    let root = i
+    while (parent[root] !== root) root = parent[root]!
+    parent[i] = root
+    return root
+  }
+  const owner = new Map<string, number>()
+  tris.forEach((tri, i) => tri.forEach((p) => {
+    const key = weldKey(p)
+    const seen = owner.get(key)
+    if (seen === undefined) owner.set(key, i)
+    else parent[find(i)] = find(seen)
+  }))
+  const regions = new Map<number, number[]>()
+  tris.forEach((_, i) => regions.set(find(i), [...(regions.get(find(i)) ?? []), i]))
+  return [...regions.values()]
+}
+
+/**
+ * Down-facing triangles (steeper than 45°) in regions that don't touch the plate, and their total area.
+ * A region that reaches the plate grows up from it (a sphere's or ring's underside), so it prints fine.
+ */
 export function overhangTriangles(
   soup: TriangleSoup, plateZ: number,
 ): { readonly picked: readonly number[]; readonly area: number } {
-  const picked: number[] = []
-  let area = 0
+  const down: number[] = []
+  const tris: (readonly [Vec, Vec, Vec])[] = []
+  const areas: number[] = []
   for (let t = 0; t < triangleCount(soup); t++) {
-    const [a, b, c] = corners(soup, t)
-    const face = faceOf(a, b, c)
+    const tri = corners(soup, t)
+    const face = faceOf(...tri)
     if (face.normal[2] >= -OVERHANG_COS - COS_TOLERANCE) continue
-    if (Math.min(a[2], b[2], c[2]) <= plateZ + PLATE_TOUCH) continue
-    picked.push(t)
-    area += face.area
+    down.push(t)
+    tris.push(tri)
+    areas.push(face.area)
   }
-  return { picked, area }
+  const kept = connectedRegions(tris)
+    .filter((region) => region.every((i) => tris[i]!.every((p) => p[2] > plateZ + PLATE_TOUCH)))
+    .flat()
+    .sort((x, y) => x - y)
+  return { picked: kept.map((i) => down[i]!), area: kept.reduce((sum, i) => sum + areas[i]!, 0) }
 }
 
 /** Distance along `dir` from `origin` to the triangle, or null on a miss (Möller–Trumbore). */
