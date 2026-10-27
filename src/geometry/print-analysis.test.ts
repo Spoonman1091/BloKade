@@ -68,6 +68,20 @@ describe('overhangTriangles', () => {
       .toHaveLength(8)
   })
 
+  it('groups one huge connected region in linear time', () => {
+    const n = 150 // 150 x 150 quads = 45,000 down-facing triangles, one region, raised 5 mm
+    const vertices = Array.from({ length: (n + 1) ** 2 }, (_, i) => [i % (n + 1), Math.floor(i / (n + 1)), 5]).flat()
+    const triangles = Array.from({ length: n * n }, (_, q) => {
+      const a = Math.floor(q / n) * (n + 1) + (q % n)
+      return [a, a + n + 1, a + 1, a + 1, a + n + 1, a + n + 2]
+    }).flat()
+    const started = performance.now()
+    const r = overhangTriangles({ vertices, triangles }, 0)
+    expect(performance.now() - started).toBeLessThan(1000)
+    expect(r.picked).toHaveLength(2 * n * n)
+    expect(r.area).toBeCloseTo(n * n, 6)
+  })
+
   it('ignores an exact 45 degree slope but flags a 30 degree one', () => {
     const slope = (rise: number): TriangleSoup => ({
       vertices: [0, 0, 10, 0, 10, 10 + rise, 10, 0, 10], triangles: [0, 1, 2],

@@ -59,10 +59,12 @@ const weldKey = (p: Vec): string => p.map((v) => Math.round(v * WELD_SCALE)).joi
 function connectedRegions(tris: readonly (readonly [Vec, Vec, Vec])[]): readonly (readonly number[])[] {
   const parent = tris.map((_, i) => i)
   const find = (i: number): number => {
-    let root = i
-    while (parent[root] !== root) root = parent[root]!
-    parent[i] = root
-    return root
+    let node = i
+    while (parent[node] !== node) {
+      parent[node] = parent[parent[node]!]!
+      node = parent[node]!
+    }
+    return node
   }
   const owner = new Map<string, number>()
   tris.forEach((tri, i) => tri.forEach((p) => {
@@ -72,7 +74,12 @@ function connectedRegions(tris: readonly (readonly [Vec, Vec, Vec])[]): readonly
     else parent[find(i)] = find(seen)
   }))
   const regions = new Map<number, number[]>()
-  tris.forEach((_, i) => regions.set(find(i), [...(regions.get(find(i)) ?? []), i]))
+  tris.forEach((_, i) => {
+    const root = find(i)
+    const members = regions.get(root)
+    if (members) members.push(i)
+    else regions.set(root, [i])
+  })
   return [...regions.values()]
 }
 
