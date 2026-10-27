@@ -21,7 +21,7 @@ test('a part moved off the A1 mini plate turns red with a warning, and back', as
   await expect(page.getByRole('combobox', { name: 'Printer' })).toHaveValue('bambu-a1-mini')
   await expect(page.getByTestId('fit-warning')).toBeHidden()
   await setField(page, 'pos-x', '200')
-  await expect(page.getByTestId('fit-warning')).toHaveText("Box doesn't fit on the Bambu Lab A1 mini. Move it onto the plate or make it smaller.")
+  await expect(page.getByTestId('fit-warning')).toContainText("Box doesn't fit on the Bambu Lab A1 mini. Move it onto the plate or make it smaller.")
   await expect(misfits(page)).not.toHaveAttribute('data-misfits', '')
   await setField(page, 'pos-x', '0')
   await expect(page.getByTestId('fit-warning')).toBeHidden()
@@ -36,4 +36,13 @@ test('a part taller than the printer says so, and No printer turns the check off
   await expect(page.getByTestId('fit-warning')).toBeHidden()
   await page.reload()
   await expect(page.getByRole('combobox', { name: 'Printer' })).toHaveValue('none')
+})
+
+test('the warning bar\'s Put on plate button brings a stray part back', async ({ page }) => {
+  await boxOnPlate(page)
+  await setField(page, 'pos-x', '200')
+  await expect(page.getByTestId('fit-warning')).toBeVisible()
+  await page.getByTestId('fit-put-on-plate').click()
+  await expect(page.getByTestId('fit-warning')).toBeHidden()
+  await expect(page.getByTestId('pos-x')).toHaveValue('80')
 })
