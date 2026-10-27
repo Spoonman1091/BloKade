@@ -83,6 +83,33 @@ describe('thinTriangles', () => {
     expect(thinTriangles(boxSoup(0, 0, 0, 20, 20, 0.3)).veryThin).toBe(true)
   })
 
+  it('keeps what it found when the clock runs out after the first 500 triangles', () => {
+    const plates = Array.from({ length: 60 }, (_, i) => boxSoup(i * 30, 0, 0, 20, 20, 0.5))
+    const soup = plates.reduce(concat) // 720 triangles
+    let total = 0
+    thinTriangles(soup, () => total++)
+    let calls = 0
+    const r = thinTriangles(soup, () => (++calls >= total ? 6000 : 0))
+    expect(r.finished).toBe(false)
+    expect(r.picked.length).toBeGreaterThan(0)
+  })
+
+  it('handles a 150 mm box rotated about two axes quickly', () => {
+    const box = boxSoup(0, 0, 0, 150, 150, 150)
+    const [c1, s1, c2, s2] = [Math.cos(0.5236), Math.sin(0.5236), Math.cos(0.6981), Math.sin(0.6981)]
+    const vertices: number[] = []
+    for (let i = 0; i < box.vertices.length; i += 3) {
+      const [x, y, z] = [box.vertices[i]!, box.vertices[i + 1]!, box.vertices[i + 2]!]
+      const [y1, z1] = [y * c1 - z * s1, y * s1 + z * c1]
+      vertices.push(x * c2 + z1 * s2, y1, -x * s2 + z1 * c2)
+    }
+    const t0 = performance.now()
+    const r = thinTriangles({ vertices, triangles: box.triangles })
+    expect(performance.now() - t0).toBeLessThan(2000)
+    expect(r.finished).toBe(true)
+    expect(r.picked).toEqual([])
+  })
+
   it('stops the thin check when out of time', () => {
     let calls = 0
     const r = thinTriangles(boxSoup(0, 0, 0, 20, 20, 0.5), () => (calls++ === 0 ? 0 : 6000))

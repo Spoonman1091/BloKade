@@ -94,12 +94,14 @@ export function thinTriangles(
   const count = triangleCount(soup)
   const tris = Array.from({ length: count }, (_, t) => corners(soup, t))
   const faces = tris.map(([a, b, c]) => faceOf(a, b, c))
-  const grid = buildTriangleGrid(soup.vertices, soup.triangles)
   const started = now()
+  const timedOut = () => now() - started > THIN_TIME_LIMIT_MS
+  const grid = buildTriangleGrid(soup.vertices, soup.triangles, { shouldStop: timedOut })
+  if (!grid) return { picked: [], veryThin: false, finished: false }
   const picked: number[] = []
   let veryThin = false
   for (let t = 0; t < count; t++) {
-    if (t % TIME_CHECK_EVERY === 0 && now() - started > THIN_TIME_LIMIT_MS) {
+    if (t % TIME_CHECK_EVERY === 0 && timedOut()) {
       return { picked, veryThin, finished: false }
     }
     const [a, b, c] = tris[t]!
