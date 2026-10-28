@@ -13,11 +13,12 @@ function pullInside(min: number, max: number, half: number): number {
   return 0
 }
 
+/** How far to move the part, tidied so float error in a mesh's box (a min z of 1e-7) is no move at all. */
 function plateDelta(box: Box, printer: Printer | null): Vec3 {
-  const dz = -box.min[2]
+  const dz = tidy(-box.min[2])
   if (!printer) return [0, 0, dz]
   const [w, d] = printer.size
-  return [pullInside(box.min[0], box.max[0], w / 2), pullInside(box.min[1], box.max[1], d / 2), dz]
+  return [tidy(pullInside(box.min[0], box.max[0], w / 2)), tidy(pullInside(box.min[1], box.max[1], d / 2)), dz]
 }
 
 /** Drops top-level parts onto the floor and, with a printer, back inside its plate edges. */

@@ -73,6 +73,15 @@ describe('putOnPlate', () => {
     expect(putOnPlate(doc, { a: onPlate }, ['a'], a1)).toBe(doc)
   })
 
+  it('returns the same document when the box is off by float error only', () => {
+    const doc = docOf('a')
+    const nearly = box([-10, -10, 1e-7], [10, 10, 20])
+    expect(putOnPlate(doc, { a: nearly }, ['a'], a1)).toBe(doc)
+    expect(putOnPlate(doc, { a: box([-10, -10, -1e-7], [10, 10, 20]) }, ['a'], a1)).toBe(doc)
+    const edge = box([-90 - 1e-7, -10, 1e-7], [-70 - 1e-7, 10, 20])
+    expect(putOnPlate(doc, { a: edge }, ['a'], a1)).toBe(doc)
+  })
+
   it('writes tidy numbers', () => {
     const doc = docOf('a')
     const out = putOnPlate(doc, { a: box([-10, -10, 0.1 + 0.2], [10, 10, 20]) }, ['a'], a1)
