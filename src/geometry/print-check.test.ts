@@ -1,10 +1,11 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { createEmptyDocument, createShapeNode } from '../document/factory'
 import { createModifier } from '../document/modifiers'
-import { addNode } from '../document/ops'
+import { addNode, groupNodes } from '../document/ops'
 import type { BloKadeDocument, Modifier, Vec3 } from '../document/types'
 import { createCadToolkit } from '../plugins/cad'
 import { registry } from '../plugins/index'
+import { defaultParams } from '../plugins/params'
 import { Evaluator } from './evaluate'
 import { findPrintProblems, PrintCheckError } from './print-check'
 import { loadTestFont } from './testing/font-node'
@@ -40,6 +41,7 @@ describe('findPrintProblems', () => {
     const result = checked(docOf(box('a', 20, 20, 20), box('b', 10, 10, 10, [0, 0, 25])))
     expect(result.floating?.amount).toBe(1)
     expect(result.floating?.mesh.positions.length).toBeGreaterThan(0)
+    expect(result.overhang).toBeNull()
   })
 
   it('does not call touching parts floating', () => {
@@ -53,23 +55,38 @@ describe('findPrintProblems', () => {
   })
 
   const fillet = { ...createModifier('fillet', 'aaaaaaaa') } as Modifier
-  const defaults: Array<[string, ReturnType<typeof part>]> = [
-    ['sphere', part('s', 'sphere', { diameter: 20 })],
-    ['cone', part('c', 'cone', { bottomDiameter: 20, topDiameter: 0, height: 20 })],
-    ['ring', part('r', 'torus', { diameter: 40, thickness: 10 })],
-    ['text', part('t', 'text', { text: 'Kade', size: 10, depth: 3 })],
-    ['rounded box', box('b', 20, 20, 20)],
+  const builtins = registry.list().filter((plugin) => plugin.id !== 'imported')
+  const defaults: Array<[string, BloKadeDocument]> = [
+    ...builtins.map((plugin): [string, BloKadeDocument] => [plugin.id, docOf(part('p', plugin.id, defaultParams(plugin) as Record<string, number | string>))]),
+    ...builtins.filter((plugin) => plugin.mode === 'hole').map((plugin): [string, BloKadeDocument] => {
+      const hole = { ...part('h', plugin.id, defaultParams(plugin) as Record<string, number | string>), mode: 'hole' as const }
+      return [`${plugin.id} cut into a block`, groupNodes(docOf(box('host', 30, 30, 20), hole), ['host', 'h'], 'g').doc]
+    }),
+    ['20 mm text', docOf(part('t', 'text', { text: 'Kade', size: 20, depth: 3 }))],
+    ['M20 threaded rod', docOf(part('r', 'threaded-rod', { size: 'M20', length: 20 }))],
+    ['rounded box', docOf({ ...box('b', 20, 20, 20), modifiers: [fillet] })],
   ]
-  it.each(defaults)('has no overhang on a default %s lying on the plate', (name, node) => {
-    const withRound = name === 'rounded box' ? { ...node, modifiers: [fillet] } : node
-    const result = checked(docOf(withRound))
-    expect(result.overhang).toBeNull()
+  it.each(defaults)('finds no thin walls on a default %s lying on the plate', (_name, doc) => {
+    expect(checked(doc).thin).toBeNull()
   })
 
-  it('calls a 0.5 mm plate thin', () => {
+  const smooth = new Set(['sphere', 'cone', 'torus', 'text', 'rounded box'])
+  it.each(defaults.filter(([name]) => smooth.has(name)))('has no overhang on a default %s lying on the plate', (_name, doc) => {
+    expect(checked(doc).overhang).toBeNull()
+  })
+
+  it('calls a 30 mm, 0.5 mm plate thin but not very thin', () => {
     const result = checked(docOf(box('a', 30, 30, 0.5)))
-    expect(result.thin).not.toBeNull()
+    expect(result.thin?.veryThin).toBe(false)
     expect(result.thin?.mesh.positions.length).toBeGreaterThan(0)
+  })
+
+  it('calls a 30 mm, 0.3 mm plate very thin', () => {
+    expect(checked(docOf(box('a', 30, 30, 0.3))).thin?.veryThin).toBe(true)
+  })
+
+  it('calls a 5 mm, 0.6 mm tile thin', () => {
+    expect(checked(docOf(box('a', 5, 5, 0.6))).thin).not.toBeNull()
   })
 
   it('gives nothing when there is no solid part', () => {

@@ -8,12 +8,19 @@ export const PLATE_TOUCH = 0.05
 export const MIN_OVERHANG_AREA = 4 // mm²
 export const THIN_WALL = 0.8
 export const VERY_THIN_WALL = 0.4
+/** Thin walls smaller than this in total (mm²) are left alone: they're sharp corners, not walls. */
+export const MIN_THIN_AREA = 15
 export const THIN_TIME_LIMIT_MS = 5000
 
 /** Room for float error so a mathematically 45° slope isn't flagged. */
 const COS_TOLERANCE = 1e-9
 const INSIDE_NUDGE = 1e-4
 const MIN_HIT_DISTANCE = 1e-3
+/**
+ * The far side of a wall faces back along the ray. A surface met at a slant (as near a sharp
+ * edge, where the ray grazes the next face) is not the far side of a wall.
+ */
+const HIT_FACING_COS = 0.9
 const TIME_CHECK_EVERY = 500
 
 /** Triangles wound counter-clockwise from outside, as replicad's `mesh()` returns them. */
@@ -125,24 +132,25 @@ function rayHit(origin: Vec, dir: Vec, a: Vec, b: Vec, c: Vec): number | null {
 }
 
 /**
- * Triangles with another surface closer than THIN_WALL straight behind them. Gives up
+ * Triangles with another surface closer than THIN_WALL straight behind them, and their total area. Gives up
  * (`finished: false`) after THIN_TIME_LIMIT_MS, keeping what it found so far.
  */
 export function thinTriangles(
   soup: TriangleSoup, now: () => number = () => performance.now(),
-): { readonly picked: readonly number[]; readonly veryThin: boolean; readonly finished: boolean } {
+): { readonly picked: readonly number[]; readonly area: number; readonly veryThin: boolean; readonly finished: boolean } {
   const count = triangleCount(soup)
   const tris = Array.from({ length: count }, (_, t) => corners(soup, t))
   const faces = tris.map(([a, b, c]) => faceOf(a, b, c))
   const started = now()
   const timedOut = () => now() - started > THIN_TIME_LIMIT_MS
   const grid = buildTriangleGrid(soup.vertices, soup.triangles, { shouldStop: timedOut })
-  if (!grid) return { picked: [], veryThin: false, finished: false }
+  if (!grid) return { picked: [], area: 0, veryThin: false, finished: false }
   const picked: number[] = []
+  let area = 0
   let veryThin = false
   for (let t = 0; t < count; t++) {
     if (t % TIME_CHECK_EVERY === 0 && timedOut()) {
-      return { picked, veryThin, finished: false }
+      return { picked, area, veryThin, finished: false }
     }
     const [a, b, c] = tris[t]!
     const n = faces[t]!.normal
@@ -158,17 +166,18 @@ export function thinTriangles(
     const hi = [0, 1, 2].map((k) => Math.max(origin[k]!, end[k]!))
     let nearest = Infinity
     grid.query(lo, hi, (other) => {
-      if (other === t || dot(faces[other]!.normal, dir) <= 0) return
+      if (other === t || dot(faces[other]!.normal, dir) <= HIT_FACING_COS) return
       const [oa, ob, oc] = tris[other]!
       const hit = rayHit(origin, dir, oa, ob, oc)
       if (hit !== null && hit > MIN_HIT_DISTANCE && hit < nearest) nearest = hit
     })
     if (nearest < THIN_WALL) {
       picked.push(t)
+      area += faces[t]!.area
       if (nearest < VERY_THIN_WALL) veryThin = true
     }
   }
-  return { picked, veryThin, finished: true }
+  return { picked, area, veryThin, finished: true }
 }
 
 /** Un-indexed copy of the picked triangles with flat face normals, ready to draw as a highlight. */

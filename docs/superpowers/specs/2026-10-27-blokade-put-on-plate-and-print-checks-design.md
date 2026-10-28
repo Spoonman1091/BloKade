@@ -106,8 +106,8 @@ They live in one constants block. **(my call, all of them)**
 | Check | Reported when |
 |---|---|
 | Floating piece | a separate solid piece's lowest point is more than 0.05 mm above the lowest point of the whole export |
-| Overhang | a surface faces down at more than 45° from upright (normal's z < −cos 45°), is not touching the plate (lowest point + 0.05 mm), and those surfaces add up to at least 4 mm² for the whole design |
-| Thin wall | a spot where the solid is less than 0.8 mm thick, measured straight in from the surface; spots under 0.4 mm are "very thin" |
+| Overhang | a surface of a piece that isn't floating faces down at more than 45° from upright (normal's z < −cos 45°), is not touching the plate (lowest point + 0.05 mm), and those surfaces add up to at least 4 mm² for the whole design |
+| Thin wall | a spot where the solid is less than 0.8 mm thick, measured straight in from the surface to a far side that faces back along the ray (within about 26°, cos > 0.9); spots under 0.4 mm are "very thin"; reported only when the thin spots add up to at least 15 mm² |
 
 The 4 mm² floor stops a round box's lower edge or a sphere's bottom cap from being reported. The builder should
 check this against the default shapes (box with rounded edges, sphere, cone, ring, text) and tune the floor so none
@@ -122,9 +122,11 @@ A new worker call, e.g. `printCheck(doc): Promise<PrintCheckResult>`, alongside 
    export's lowest point (by more than 0.05 mm) is floating. Two parts that touch fuse into one solid, so a lid
    resting on a box is not floating.
 3. **Overhangs:** tessellate at export quality. Mark each triangle facing down beyond 45°, skipping triangles at the
-   plate. Sum their areas.
+   plate. Sum their areas. Floating pieces are left out: they're already reported, and their flat bottoms would
+   otherwise count as overhangs too.
 4. **Thin walls:** from each triangle's centre, cast a ray straight inward (against its normal) and find the nearest
-   other surface it hits. Distance under 0.8 mm marks the triangle. Use a spatial index (a simple grid or BVH) so it
+   other surface it hits that faces back along the ray (a surface met at a slant is a sharp edge, not the far side of
+   a wall). Distance under 0.8 mm marks the triangle; under 15 mm² of marked triangles in all is not reported. Use a spatial index (a simple grid or BVH) so it
    stays fast. Performance budget: under 2 s for a 20,000-triangle export on a laptop; if it runs past 5 s, stop the
    thin-wall part and report "Couldn't finish the thin-wall check; the design is very detailed." The other checks
    still show.

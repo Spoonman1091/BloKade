@@ -108,6 +108,22 @@ describe('thinTriangles', () => {
     expect(thinTriangles(boxSoup(0, 0, 0, 20, 20, 0.3)).veryThin).toBe(true)
   })
 
+  it('adds up the area of the thin triangles', () => {
+    expect(thinTriangles(boxSoup(0, 0, 0, 20, 20, 0.5)).area).toBeCloseTo(800)
+    expect(thinTriangles(boxSoup(0, 0, 0, 20, 20, 20)).area).toBe(0)
+  })
+
+  it('ignores a surface that meets the ray at a slant, as at a sharp edge', () => {
+    // A face looking down at z = 0, and 0.3 mm above it a surface tilted 60° (cos 0.5) from the ray.
+    const [c, s] = [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3)]
+    const centre = [10 / 3, 10 / 3, 0.3]
+    const e1 = [0, 1, 0]
+    const e2 = [c, 0, -s]
+    const at = (u: number, v: number) => [0, 1, 2].map((k) => centre[k]! + u * e1[k]! + v * e2[k]!)
+    const vertices = [0, 0, 0, 0, 10, 0, 10, 0, 0, ...at(-10, -10), ...at(0, 10), ...at(10, -10)]
+    expect(thinTriangles({ vertices, triangles: [0, 1, 2, 3, 4, 5] }).picked).toEqual([])
+  })
+
   it('keeps what it found when the clock runs out after the first 500 triangles', () => {
     const plates = Array.from({ length: 60 }, (_, i) => boxSoup(i * 30, 0, 0, 20, 20, 0.5))
     const soup = plates.reduce(concat) // 720 triangles
