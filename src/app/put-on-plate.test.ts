@@ -43,8 +43,8 @@ describe('putOnPlateIds', () => {
   it('brings the given parts back inside the printer plate', () => {
     const store = setup()
     putOnPlateIds(store, ['b'], printerById('bambu-a1-mini'))
-    const [x] = positionOf(store, 'b') ?? []
-    expect(x).toBeLessThanOrEqual(90)
+    // B's box runs x 290..310 and z 5..25: its right edge comes in to the A1 mini's 90 mm edge, and it drops to the floor.
+    expect(positionOf(store, 'b')).toEqual([80, 0, 0])
     expect(positionOf(store, 'a')?.[2]).toBe(9)
   })
 })
