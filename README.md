@@ -222,9 +222,9 @@ The **Fit tools** section (left side) makes parts that go together. Every one of
 after printing. If your printer makes tight parts, raise the fit gap and every hole grows.
 Tip: printed threads usually need a bigger fit gap. If the rod won't screw in, try 0.3 to 0.4 mm in the Fit gap.
 
-- **🧷 Peg & socket:** adds a peg and its socket (a hole) together, linked by the variables `peg_size` and
+- **🔌 Peg & socket:** adds a peg and its socket (a hole) together, linked by the variables `peg_size` and
   `peg_length`. Change those and both follow. Put the socket in a part and group them to cut it.
-- **🪝 Snap-fit clip:** a bendy arm with a hook, and the slot it snaps through (linked by `clip_width` and
+- **🔗 Snap-fit clip:** a bendy arm with a hook, and the slot it snaps through (linked by `clip_width` and
   `clip_thickness`). Set the catch's *Wall thickness* to the wall it goes through.
 - **🔩 Screw hole:** M2–M5, as a plain hole, countersunk (flat-head screws), counterbored (cap-head screws),
   with a nut trap at the bottom, or for a heat-set insert at the top. The screw goes in from the top.

@@ -25,7 +25,7 @@ export interface ShapeKit {
 const pegAndSocket: ShapeKit = {
   id: 'peg-socket',
   name: 'Peg & socket',
-  icon: '🧷',
+  icon: '🔌',
   variables: [{ name: 'peg_size', expr: '8' }, { name: 'peg_length', expr: '10' }],
   parts: [
     { shapeType: 'peg', name: 'Peg', offset: [0, 0, 0], formulas: { size: 'peg_size', length: 'peg_length' } },
@@ -36,7 +36,7 @@ const pegAndSocket: ShapeKit = {
 const snapFit: ShapeKit = {
   id: 'snap-fit',
   name: 'Snap-fit clip',
-  icon: '🪝',
+  icon: '🔗',
   variables: [{ name: 'clip_width', expr: '6' }, { name: 'clip_thickness', expr: '1.5' }],
   parts: [
     { shapeType: 'snap-clip', name: 'Snap clip', offset: [0, 0, 0], formulas: { width: 'clip_width', thickness: 'clip_thickness' } },

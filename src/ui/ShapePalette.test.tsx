@@ -16,7 +16,7 @@ describe('ShapePalette', () => {
     const shapes = within(screen.getByRole('region', { name: 'Shapes' })).getAllByRole('button')
     expect(shapes).toHaveLength(7)
     const fit = within(screen.getByRole('region', { name: 'Fit tools' })).getAllByRole('button').map((b) => b.textContent)
-    expect(fit).toEqual(['🧷Peg & socket', '🪝Snap-fit clip', '🔩Screw hole', '🪛Threaded rod', '🌀Threaded hole'])
+    expect(fit).toEqual(['🔌Peg & socket', '🔗Snap-fit clip', '🔩Screw hole', '🪛Threaded rod', '🌀Threaded hole'])
     expect(screen.queryByTestId('add-peg')).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: /Cylinder/ }))
     expect(onAdd).toHaveBeenCalledWith('cylinder')
