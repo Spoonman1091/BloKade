@@ -30,7 +30,7 @@ export function LibraryList({ editor }: { editor: EditorStore }) {
 
   return (
     <section className="panel library" aria-label="My shapes">
-      <h2 data-help="panel-library">🧩 My shapes</h2>
+      <h2 data-help="panel-library">🛠️ My shapes</h2>
       {shapes.length === 0 && <p className="hint">No shapes yet. Press <strong>+ New shape</strong>, or start a lesson below.</p>}
       <ul className="shape-list">
         {shapes.map((s) => (

@@ -126,7 +126,7 @@ export const firstShape: CodeLesson = {
     { id: 'icon', target: 'code-input', text: 'Now pick an icon. Change **🧩** to another emoji, like **🤖**.',
       hint: 'On a Mac, press Ctrl+Cmd+Space for emoji. On Windows, press the Windows key and the full stop together.',
       check: (v) => v.built && v.meta !== null && v.meta.icon !== '🧩' },
-    { id: 'add', target: 'add-to-design', text: 'Click **➕ Add to my design**. Your shape joins your design. Find it again under **🧩 My shapes** on the left.',
+    { id: 'add', target: 'add-to-design', text: 'Click **➕ Add to my design**. Your shape joins your design. Find it again under **🛠️ My shapes** on the left.',
       hint: 'The button is under the preview, on the right.' },
   ],
 }

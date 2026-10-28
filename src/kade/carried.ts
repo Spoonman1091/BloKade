@@ -28,10 +28,10 @@ export function carriedInUse(doc: BloKadeDocument): Record<string, CarriedShape>
 export function unaddableNotice(doc: BloKadeDocument, id: string, newest: CarriedShape | undefined): string | null {
   const copy = Object.hasOwn(carriedInUse(doc), id) ? doc.plugins[id] : undefined
   if (copy) {
-    const fix = newest && newest.code !== copy.code ? 'Try the Use my newest version button.' : 'Fix it in 🧩 My shapes.'
+    const fix = newest && newest.code !== copy.code ? 'Try the Use my newest version button.' : 'Fix it in 🛠️ My shapes.'
     return `This design's copy of ${copy.name} has a problem. ${fix}`
   }
-  return newest ? `${newest.name} isn't ready to add yet. Check it in 🧩 My shapes.` : null
+  return newest ? `${newest.name} isn't ready to add yet. Check it in 🛠️ My shapes.` : null
 }
 
 /** Library shapes whose code differs from the version this design's parts use. */

@@ -36,7 +36,7 @@ const pegAndSocket: ShapeKit = {
 const snapFit: ShapeKit = {
   id: 'snap-fit',
   name: 'Snap-fit clip',
-  icon: '🔗',
+  icon: '🧩',
   variables: [{ name: 'clip_width', expr: '6' }, { name: 'clip_thickness', expr: '1.5' }],
   parts: [
     { shapeType: 'snap-clip', name: 'Snap clip', offset: [0, 0, 0], formulas: { width: 'clip_width', thickness: 'clip_thickness' } },

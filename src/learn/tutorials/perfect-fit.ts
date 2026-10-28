@@ -11,7 +11,7 @@ export const perfectFit: Tutorial = {
   intro: 'Make two parts that slide together after printing.',
   steps: [
     {
-      id: 'kit', text: 'Click **🔌 Peg & socket** under **Fit tools**.', target: 'add-kit-peg-socket',
+      id: 'kit', text: 'Click **Peg & socket** under **Fit tools**.', target: 'add-kit-peg-socket',
       check: (v) => peg(v) !== undefined && socket(v) !== undefined,
       hint: 'Fit tools is below the Shapes list on the left. Scroll down if you cannot see it.',
     },

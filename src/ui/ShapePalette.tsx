@@ -1,7 +1,8 @@
-import type { ChangeEvent } from 'react'
+import type { ChangeEvent, ReactNode } from 'react'
 import type { ShapeKit } from '../plugins/kits'
 import type { PluginRegistry } from '../plugins/registry'
 import type { ShapePlugin } from '../plugins/types'
+import { kitPicture } from './KitPicture'
 
 interface ShapePaletteProps {
   registry: PluginRegistry
@@ -18,7 +19,7 @@ interface ShapePaletteProps {
 
 const sectionOf = (plugin: ShapePlugin): 'shapes' | 'fit' | 'hidden' => plugin.palette ?? 'shapes'
 
-function PaletteButton({ testId, icon, name, onClick }: { testId: string; icon: string; name: string; onClick(): void }) {
+function PaletteButton({ testId, icon, name, onClick }: { testId: string; icon: ReactNode; name: string; onClick(): void }) {
   return (
     <button type="button" className="palette-button" data-testid={testId} onClick={onClick}>
       <span className="palette-icon" aria-hidden="true">{icon}</span>
@@ -57,7 +58,7 @@ export function ShapePalette({ registry, kits, onAdd, onAddKit, mine, onImport, 
       <section className="panel" aria-label="Fit tools">
         <h2 data-help="panel-fit-tools">Fit tools</h2>
         <div className="palette-grid">
-          {kits.map((k) => <PaletteButton key={k.id} testId={`add-kit-${k.id}`} icon={k.icon} name={k.name} onClick={() => onAddKit(k.id)} />)}
+          {kits.map((k) => <PaletteButton key={k.id} testId={`add-kit-${k.id}`} icon={kitPicture(k)} name={k.name} onClick={() => onAddKit(k.id)} />)}
           {plugins.filter((p) => sectionOf(p) === 'fit').map(pluginButton)}
         </div>
       </section>
@@ -66,7 +67,7 @@ export function ShapePalette({ registry, kits, onAdd, onAddKit, mine, onImport, 
           <h2 data-help="panel-my-shapes">My shapes</h2>
           {mine.length > 0
             ? <div className="palette-grid">{mine.map(pluginButton)}</div>
-            : <p className="hint">Make your own with <strong>🧩 My shapes</strong> at the top.</p>}
+            : <p className="hint">Make your own with <strong>🛠️ My shapes</strong> at the top.</p>}
         </section>
       )}
     </>

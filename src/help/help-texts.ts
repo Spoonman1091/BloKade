@@ -32,7 +32,7 @@ export const HELP_TEXTS: Readonly<Record<string, HelpEntry>> = {
   learn: { tip: 'Opens the lessons: step-by-step guides to BloKade.', card: 'Lessons walk you through BloKade one step at a time. Each lesson uses its own practice design, so your work stays safe.' },
   'help-mode': { tip: 'Help mode: click anything to learn what it does.', card: 'In help mode, clicking a button shows what it does instead of doing it. Press Esc or ❓ again to stop.' },
   'my-shapes': { tip: 'Opens My shapes, where you write your own shapes in code.', card: 'My shapes is where you make shapes with code. Write a few lines, watch the preview, then add your shape to the design. The coding lessons start there too.' },
-  'panel-my-shapes': { tip: 'Shapes you made yourself.', card: 'Every shape you write in 🧩 My shapes appears here. Click one to add it to your design.' },
+  'panel-my-shapes': { tip: 'Shapes you made yourself.', card: 'Every shape you write in 🛠️ My shapes appears here. Click one to add it to your design.' },
   // Import
   'import-stl': { tip: 'Brings in a 3D model from an STL file.', card: 'Click **Import STL** and pick an STL file, for example from Thingiverse or TinkerCAD. You can also drop the file on the 3D view. The model becomes a part you can move, size and cut with holes.' },
   'import-units': { tip: 'Says what units the file uses.', card: "STL files don't say how big a unit is. If the size looks too small or too big, try another unit." },

@@ -39,7 +39,7 @@ function EditorHeader({ helpMode, onHelpMode, onBack }: Pick<MyShapesScreenProps
     <header className="toolbar">
       <span className="brand">BloKade</span>
       <button type="button" className="tool-button" data-testid="back-to-design" onClick={onBack}>⬅ Back to my design</button>
-      <h1 className="editor-title">🧩 My shapes</h1>
+      <h1 className="editor-title">🛠️ My shapes</h1>
       <button type="button" className="tool-button" data-testid="help-mode" data-help-toggle="" aria-pressed={helpMode}
         aria-label="Help mode" onClick={onHelpMode}>❓</button>
     </header>
@@ -93,7 +93,7 @@ function CodePane({ editor, view }: { editor: EditorStore; view: CodeView }) {
   )
 }
 
-/** 🧩 My shapes: Kade's library and lessons on the left, the code in the middle, the live preview on the right. */
+/** 🛠️ My shapes: Kade's library and lessons on the left, the code in the middle, the live preview on the right. */
 export function MyShapesScreen({ editor, lessons, catalog, base, client, helpMode, onHelpMode, onBack, onAdd }: MyShapesScreenProps) {
   const preview = usePreview(editor, client)
   const source = useMemo(

@@ -151,7 +151,7 @@ npm run e2e           # end-to-end tests in a real browser
 - **📘 Learn** (top bar) opens the lessons: nine short step-by-step guides, from "Your first shape" to "Ready to
   print". Each lesson opens its own practice design, so your real designs stay safe. Steps tick themselves off
   when you do them, and every step has **💡 Show me** if you get stuck. Finished lessons get a ✓.
-- **Coding lessons:** open **🧩 My shapes**, then **📘 Lessons**. Ten short lessons teach coding with shapes, from
+- **Coding lessons:** open **🛠️ My shapes**, then **📘 Lessons**. Ten short lessons teach coding with shapes, from
   changing a number to building a gear. Each lesson makes its own practice shape.
 - **Tooltips:** rest the mouse on any button or box for half a second to see what it does.
 - **❓ Help mode:** click ❓ in the top bar, then click anything to read what it does (nothing changes while
@@ -222,9 +222,9 @@ The **Fit tools** section (left side) makes parts that go together. Every one of
 after printing. If your printer makes tight parts, raise the fit gap and every hole grows.
 Tip: printed threads usually need a bigger fit gap. If the rod won't screw in, try 0.3 to 0.4 mm in the Fit gap.
 
-- **🔌 Peg & socket:** adds a peg and its socket (a hole) together, linked by the variables `peg_size` and
+- **Peg & socket:** adds a peg and its socket (a hole) together, linked by the variables `peg_size` and
   `peg_length`. Change those and both follow. Put the socket in a part and group them to cut it.
-- **🔗 Snap-fit clip:** a bendy arm with a hook, and the slot it snaps through (linked by `clip_width` and
+- **🧩 Snap-fit clip:** a bendy arm with a hook, and the slot it snaps through (linked by `clip_width` and
   `clip_thickness`). Set the catch's *Wall thickness* to the wall it goes through.
 - **🔩 Screw hole:** M2–M5, as a plain hole, countersunk (flat-head screws), counterbored (cap-head screws),
   with a nut trap at the bottom, or for a heat-set insert at the top. The screw goes in from the top.
@@ -237,7 +237,7 @@ Every fit tool's **Extra room** starts as the formula `fit`. Type a number there
 
 ### My shapes (shapes you write in code)
 
-**🧩 My shapes** (top bar) opens the shape editor. **⬅ Back to my design** returns, with the design unchanged.
+**🛠️ My shapes** (top bar) opens the shape editor. **⬅ Back to my design** returns, with the design unchanged.
 
 - **Left:** your shapes, with **+ New shape**, **Duplicate**, **Delete**, **💾 Save to file** and **📂 Load from file**.
   Below them are **📘 Lessons** and **❓ Commands** (every `cad` command with an example, plus a ready-made ⚙️ Gear).
@@ -290,5 +290,5 @@ Design spec: `docs/superpowers/specs/2026-10-11-blokade-design.md`.
 
 ## Shape files in the plugins/ folder
 
-Most shapes are made in **🧩 My shapes**. Shape files can also live in the `plugins/` folder, where they are built into
+Most shapes are made in **🛠️ My shapes**. Shape files can also live in the `plugins/` folder, where they are built into
 the app for everyone. See [`plugins/README.md`](plugins/README.md).
