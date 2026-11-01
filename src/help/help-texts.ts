@@ -68,6 +68,7 @@ export const HELP_TEXTS: Readonly<Record<string, HelpEntry>> = {
   // Panel headings
   'panel-shapes': { tip: 'Shapes you can add. Click one to add it.', card: 'Click a shape to add it to your design. It appears in the middle, or on your workplane.', tutorial: 'first-shape' },
   'panel-fit-tools': { tip: 'Parts that fit together: pegs, screws, threads and clips.', card: 'Fit tools make parts that go together after printing. They all leave a little extra room, set by the Fit gap.', tutorial: 'perfect-fit' },
+  'add-kit-snap-fit': { tip: 'Adds a bendy clip and the slot it clicks into.', card: 'Snap-fit clip adds a clip with a hook and its catch, linked by clip_width and clip_thickness. Push the printed clip through the slot and it clicks into place.', tutorial: 'snap-together' },
   'panel-parts': { tip: 'Every part in your design. Click one to select it.', card: 'Parts lists everything in your design. Click to select, Shift-click to select more, double-click to rename, and drag a part onto a group to put it inside.' },
   'panel-properties': { tip: 'Settings for the selected part.', card: 'Properties shows the name, size, position and modifiers of the selected part. Select two parts to line them up or check if they overlap.' },
   'panel-variables': { tip: 'Named numbers you can use in any box.', card: 'A variable is a number with a name, like wall = 3. Type its name into any size box, and change it here to change every part that uses it.', tutorial: 'smart-sizes' },

@@ -24,6 +24,15 @@ function richDoc(): BloKadeDocument {
   return types.reduce((d, type) => addModifier(d, 'b', type).doc, withParts)
 }
 
+/** A snap catch, selected, with the snap-fit kit's variable: what the Snap together lesson points at. */
+function snapStore(): BloKadeStore {
+  const slot = createShapeNode({ id: 's', shapeType: 'snap-catch', name: 'Snap catch', params: { width: 6, thickness: 1.5, wall: 3, clearance: 0.2 }, color: '#fff' })
+  const doc = addNode({ ...createEmptyDocument('Snap'), variables: [{ name: 'clip_thickness', expr: '1.5' }] }, slot)
+  const store = createBloKadeStore({ designId: 'snap', doc })
+  store.getState().select(['s'])
+  return store
+}
+
 /** Stores that between them show every control on the main screen. */
 export function sampleStores(): BloKadeStore[] {
   const one = createBloKadeStore({ designId: 'one', doc: richDoc() })
@@ -35,5 +44,5 @@ export function sampleStores(): BloKadeStore[] {
   const two = createBloKadeStore({ designId: 'two', doc: richDoc() })
   two.getState().select(['b', 'c'])
   const empty = createBloKadeStore({ designId: 'empty', doc: createEmptyDocument() })
-  return [one, cylinder, two, empty]
+  return [one, cylinder, two, empty, snapStore()]
 }

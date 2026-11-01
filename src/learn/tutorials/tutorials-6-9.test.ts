@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { modifierField } from '../../document/fields'
+import { modifierField, paramField, positionField, rotationField } from '../../document/fields'
 import { addModifier } from '../../document/modifiers'
 import { setFit } from '../../document/variable-ops'
 import { lessonHarness } from '../testing/harness'
 import { perfectFit } from './perfect-fit'
 import { readyToPrint } from './ready-to-print'
 import { roundRepeat } from './round-repeat'
+import { snapTogether } from './snap-together'
 import { workplaneTutorial } from './workplane'
 
 describe('Build on a face', () => {
@@ -61,6 +62,42 @@ describe('Perfect fit', () => {
     const s = h.store.getState()
     s.setOverlap({ doc: s.history.present, selection: s.selection, result: { status: 'none' } })
     expect(h.done('check')).toBe(true)
+  })
+})
+
+describe('Snap together', () => {
+  it('ticks off each step', () => {
+    const h = lessonHarness(snapTogether)
+    expect(h.done('kit')).toBe(false)
+    h.actions.addKit('snap-fit')
+    expect(h.done('kit')).toBe(true)
+    expect(h.done('thickness')).toBe(false)
+    h.apply((d) => ({ ...d, variables: d.variables.map((v) => v.name === 'clip_thickness' ? { ...v, expr: '2' } : v) }))
+    expect(h.done('thickness')).toBe(true)
+    const clip = h.firstShape('snap-clip')
+    const slot = h.firstShape('snap-catch')
+    expect(h.done('select-catch')).toBe(false)
+    h.store.getState().select([slot])
+    expect(h.done('select-catch')).toBe(true)
+    expect(h.done('wall')).toBe(false)
+    h.setField(slot, paramField('wall'), '4')
+    expect(h.done('wall')).toBe(true)
+    expect(h.done('select-clip')).toBe(false)
+    h.store.getState().select([clip])
+    expect(h.done('select-clip')).toBe(true)
+    expect(h.done('lay-flat')).toBe(false)
+    h.setField(clip, rotationField(0), '90')
+    expect(h.done('lay-flat')).toBe(true)
+    expect(h.done('put-down')).toBe(false)
+    h.setField(clip, positionField(2), '3')
+    expect(h.done('put-down')).toBe(true)
+  })
+
+  it('accepts laying the clip down the other way', () => {
+    const h = lessonHarness(snapTogether)
+    h.actions.addKit('snap-fit')
+    h.setField(h.firstShape('snap-clip'), rotationField(0), '-90')
+    expect(h.done('lay-flat')).toBe(true)
   })
 })
 

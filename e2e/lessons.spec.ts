@@ -126,6 +126,23 @@ test('Perfect fit', async ({ page }) => {
   await finished(page)
 })
 
+test('Snap together', async ({ page }) => {
+  await startTutorial(page, 'snap-together')
+  await page.getByTestId('add-kit-snap-fit').click()
+  await next(page)
+  await setField(page, 'var-expr-clip_thickness', '2')
+  await row(page, 'Snap catch').click()
+  await setField(page, 'param-wall', '4')
+  await row(page, 'Snap clip').click()
+  await setField(page, 'rot-x', '90')
+  await expect(step(page)).toContainText('Put on plate')
+  await page.getByTestId('put-on-plate').click()
+  await expect(page.getByTestId('pos-z')).toHaveValue('3')
+  await expect(step(page)).toContainText('click!')
+  await next(page)
+  await finished(page)
+})
+
 test('Ready to print', async ({ page }) => {
   await startTutorial(page, 'ready-to-print')
   await page.getByTestId('add-box').click()

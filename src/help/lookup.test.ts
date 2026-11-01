@@ -75,3 +75,10 @@ describe('size handle help', () => {
     expect(helpFor('tool-size')?.card).toContain('The other side stays put')
   })
 })
+
+describe('fit tool help', () => {
+  it('sends the snap-fit kit to its own lesson and other kits to Perfect fit', () => {
+    expect(helpFor('add-kit-snap-fit')?.tutorial).toBe('snap-together')
+    expect(helpFor('add-kit-peg-socket')?.tutorial).toBe('perfect-fit')
+  })
+})

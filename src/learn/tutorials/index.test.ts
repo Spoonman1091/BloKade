@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { TUTORIALS, tutorialById } from './index'
 
 describe('TUTORIALS', () => {
-  it('lists the nine tutorials in teaching order', () => {
+  it('lists the ten tutorials in teaching order', () => {
     expect(TUTORIALS.map((t) => t.id)).toEqual([
       'first-shape', 'move-turn-size', 'holes-groups', 'undo-save', 'smart-sizes',
-      'workplane', 'round-repeat', 'perfect-fit', 'ready-to-print',
+      'workplane', 'round-repeat', 'perfect-fit', 'snap-together', 'ready-to-print',
     ])
     expect(tutorialById('smart-sizes')?.title).toBe('Smart sizes')
     expect(tutorialById('nope')).toBeUndefined()
@@ -20,7 +20,7 @@ describe('TUTORIALS', () => {
       for (const s of t.steps) {
         expect(s.hint.length, `${t.id}/${s.id}`).toBeGreaterThan(0)
         expect(s.text.length, `${t.id}/${s.id}`).toBeLessThanOrEqual(160)
-        if (s.target !== undefined) expect(s.target, `${t.id}/${s.id}`).toMatch(/^[a-z0-9-]+$/)
+        if (s.target !== undefined) expect(s.target, `${t.id}/${s.id}`).toMatch(/^[a-z0-9_-]+$/)
       }
     }
   })

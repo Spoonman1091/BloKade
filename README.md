@@ -148,7 +148,7 @@ npm run e2e           # end-to-end tests in a real browser
 
 ### Learning BloKade
 
-- **📘 Learn** (top bar) opens the lessons: nine short step-by-step guides, from "Your first shape" to "Ready to
+- **📘 Learn** (top bar) opens the lessons: ten short step-by-step guides, from "Your first shape" to "Ready to
   print". Each lesson opens its own practice design, so your real designs stay safe. Steps tick themselves off
   when you do them, and every step has **💡 Show me** if you get stuck. Finished lessons get a ✓.
 - **Coding lessons:** open **🛠️ My shapes**, then **📘 Lessons**. Ten short lessons teach coding with shapes, from
