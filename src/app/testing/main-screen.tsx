@@ -33,6 +33,14 @@ function snapStore(): BloKadeStore {
   return store
 }
 
+/** A threaded rod, selected: its Thread size box is what the Screw it together lesson points at. */
+function threadStore(): BloKadeStore {
+  const rod = createShapeNode({ id: 'r', shapeType: 'threaded-rod', name: 'Threaded rod', params: { size: 'M8', length: 20 }, color: '#fff' })
+  const store = createBloKadeStore({ designId: 'thread', doc: addNode(createEmptyDocument('Thread'), rod) })
+  store.getState().select(['r'])
+  return store
+}
+
 /** Stores that between them show every control on the main screen. */
 export function sampleStores(): BloKadeStore[] {
   const one = createBloKadeStore({ designId: 'one', doc: richDoc() })
@@ -44,5 +52,5 @@ export function sampleStores(): BloKadeStore[] {
   const two = createBloKadeStore({ designId: 'two', doc: richDoc() })
   two.getState().select(['b', 'c'])
   const empty = createBloKadeStore({ designId: 'empty', doc: createEmptyDocument() })
-  return [one, cylinder, two, empty, snapStore()]
+  return [one, cylinder, two, empty, snapStore(), threadStore()]
 }

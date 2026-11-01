@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { BloKadeDocument, NodeId } from '../../document/types'
 import { modifierField, paramField, positionField, rotationField } from '../../document/fields'
 import { addModifier } from '../../document/modifiers'
 import { setFit } from '../../document/variable-ops'
@@ -6,8 +7,16 @@ import { lessonHarness } from '../testing/harness'
 import { perfectFit } from './perfect-fit'
 import { readyToPrint } from './ready-to-print'
 import { roundRepeat } from './round-repeat'
+import { screwTogether } from './screw-together'
 import { snapTogether } from './snap-together'
 import { workplaneTutorial } from './workplane'
+
+/** Picks an option in a choice box, as its drop-down does. */
+function choose(doc: BloKadeDocument, id: NodeId, name: string, value: string): BloKadeDocument {
+  const node = doc.nodes[id]
+  if (node?.kind !== 'shape') throw new Error(`No shape ${id}`)
+  return { ...doc, nodes: { ...doc.nodes, [id]: { ...node, params: { ...node.params, [name]: value } } } }
+}
 
 describe('Build on a face', () => {
   it('ticks off each step', () => {
@@ -98,6 +107,52 @@ describe('Snap together', () => {
     h.actions.addKit('snap-fit')
     h.setField(h.firstShape('snap-clip'), rotationField(0), '-90')
     expect(h.done('lay-flat')).toBe(true)
+  })
+})
+
+describe('Screw it together', () => {
+  it('ticks off each step', () => {
+    const h = lessonHarness(screwTogether)
+    h.actions.addShape('box')
+    expect(h.done('add-box')).toBe(true)
+    expect(h.done('add-hole')).toBe(false)
+    h.actions.addShape('threaded-hole')
+    expect(h.done('add-hole')).toBe(true)
+    const hole = h.firstShape('threaded-hole')
+    expect(h.done('hole-size')).toBe(false)
+    h.apply((d) => choose(d, hole, 'size', 'M12'))
+    expect(h.done('hole-size')).toBe(true)
+    expect(h.done('through')).toBe(false)
+    h.setField(hole, paramField('depth'), '20')
+    expect(h.done('through')).toBe(false)
+    h.setField(hole, paramField('depth'), '25')
+    expect(h.done('through')).toBe(true)
+    expect(h.done('select-both')).toBe(false)
+    h.store.getState().select([h.firstShape('box'), hole])
+    expect(h.done('select-both')).toBe(true)
+    h.actions.groupSelection()
+    expect(h.done('group')).toBe(true)
+    expect(h.done('add-rod')).toBe(false)
+    h.actions.addShape('threaded-rod')
+    expect(h.done('add-rod')).toBe(true)
+    const rod = h.firstShape('threaded-rod')
+    expect(h.done('rod-size')).toBe(false)
+    h.apply((d) => choose(d, rod, 'size', 'M12'))
+    expect(h.done('rod-size')).toBe(true)
+    expect(h.done('move-rod')).toBe(false)
+    h.setField(rod, positionField(0), '30')
+    expect(h.done('move-rod')).toBe(true)
+  })
+
+  it('wants the rod to match the hole, not just to be M12', () => {
+    const h = lessonHarness(screwTogether)
+    h.actions.addShape('threaded-hole')
+    h.apply((d) => choose(d, h.firstShape('threaded-hole'), 'size', 'M16'))
+    h.actions.addShape('threaded-rod')
+    h.apply((d) => choose(d, h.firstShape('threaded-rod'), 'size', 'M12'))
+    expect(h.done('rod-size')).toBe(false)
+    h.apply((d) => choose(d, h.firstShape('threaded-rod'), 'size', 'M16'))
+    expect(h.done('rod-size')).toBe(true)
   })
 })
 

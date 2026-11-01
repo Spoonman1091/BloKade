@@ -143,6 +143,24 @@ test('Snap together', async ({ page }) => {
   await finished(page)
 })
 
+test('Screw it together', async ({ page }) => {
+  await startTutorial(page, 'screw-together')
+  await page.getByTestId('add-box').click()
+  await page.getByTestId('add-threaded-hole').click()
+  await page.getByTestId('param-size').selectOption('M12')
+  await setField(page, 'param-depth', '25')
+  await row(page, 'Box').click()
+  await row(page, 'Threaded hole').click({ modifiers: ['Shift'] })
+  await page.getByTestId('group').click()
+  await page.getByTestId('add-threaded-rod').click()
+  await page.getByTestId('param-size').selectOption('M12')
+  await setField(page, 'pos-x', '30')
+  await expect(step(page)).toContainText('Fit gap')
+  await next(page)
+  await finished(page)
+  await expect(page.getByLabel(/^Problem/)).toHaveCount(0)
+})
+
 test('Ready to print', async ({ page }) => {
   await startTutorial(page, 'ready-to-print')
   await page.getByTestId('add-box').click()
