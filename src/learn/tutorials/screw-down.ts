@@ -34,7 +34,7 @@ export const screwDown: Tutorial = {
     {
       id: 'add-hole', text: 'Click **🔩 Metal screw hole** under **Fit tools**. It appears in the middle of the plate.', target: 'add-screw-hole',
       check: (v) => hole(v) !== undefined,
-      hint: 'Fit tools is below the Shapes list on the left. Scroll down if you cannot see it.',
+      hint: 'Fit tools is below Shapes and More shapes on the left. Scroll down if you cannot see it.',
     },
     {
       id: 'size', text: 'Screw sizes are printed on the box, like **M3** or **M4**. Say yours are M4: choose **M4** in **Screw size**.', target: 'param-size',

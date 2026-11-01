@@ -38,7 +38,7 @@ export const screwTogether: Tutorial = {
     {
       id: 'add-hole', text: 'Click **🌀 Threaded hole** under **Fit tools**. It appears in the middle of the box.', target: 'add-threaded-hole',
       check: (v) => hole(v) !== undefined,
-      hint: 'Fit tools is below the Shapes list on the left. Scroll down if you cannot see it.',
+      hint: 'Fit tools is below Shapes and More shapes on the left. Scroll down if you cannot see it.',
     },
     {
       id: 'hole-size', text: 'Choose **M12** in **Thread size**. Bigger threads print stronger.', target: 'param-size',

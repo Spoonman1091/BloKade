@@ -102,7 +102,7 @@ describe('findPrintProblems', () => {
   it.each(moreShapes.map((plugin) => plugin.id))('rounds the bottom edges of a default %s', (id) => {
     expect(() => rounded(id, 'bottom')).not.toThrow()
   })
-  it.each(moreShapes.map((plugin) => plugin.id).filter((id) => id !== 'pyramid'))('rounds all edges of a default %s', (id) => {
+  it.each(moreShapes.map((plugin) => plugin.id))('rounds all edges of a default %s', (id) => {
     expect(() => rounded(id, 'all')).not.toThrow()
   })
 

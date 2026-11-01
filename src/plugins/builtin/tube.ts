@@ -1,5 +1,5 @@
 import { definePlugin } from '../types'
-import { fmt } from './screw-profile'
+import { fmt } from './number-profile'
 
 /** A pipe: a cylinder with a smaller cylinder taken out of the middle. */
 export default definePlugin({

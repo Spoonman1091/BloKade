@@ -68,7 +68,7 @@ export const HELP_TEXTS: Readonly<Record<string, HelpEntry>> = {
   // Panel headings
   'panel-shapes': { tip: 'Shapes you can add. Click one to add it.', card: 'Click a shape to add it to your design. It appears in the middle, or on your workplane.', tutorial: 'first-shape' },
   'more-shapes-toggle': { tip: 'Shows or hides more shapes.', card: 'More shapes has roofs, tubes, stars, hearts and more. Click the heading to open or close it.' },
-  'add-roof': { tip: 'Adds a roof shape.', card: 'Roof is a triangle prism, like the top of a house. Good for houses, ridges and stands.' },
+  'add-roof': { tip: 'Adds a roof shape.', card: 'Roof is shaped like the top of a house, with two sloping sides. Good for houses, ridges and stands.' },
   'add-round-roof': { tip: 'Adds a half-round roof.', card: 'Round roof is a half cylinder lying down. Good for tunnels, arches and mailbox tops.' },
   'add-tube': { tip: 'Adds a tube with a hole through it.', card: 'Tube is a cylinder with a hole down the middle. Good for cups, pen holders and wheels. Change Wall thickness to make it thicker or thinner.' },
   'add-half-sphere': { tip: 'Adds half a ball.', card: 'Half sphere is a ball cut in half, flat side down. Good for buttons, domes and eyes.' },

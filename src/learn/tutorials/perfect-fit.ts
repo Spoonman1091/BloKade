@@ -13,7 +13,7 @@ export const perfectFit: Tutorial = {
     {
       id: 'kit', text: 'Click **Peg & socket** under **Fit tools**.', target: 'add-kit-peg-socket',
       check: (v) => peg(v) !== undefined && socket(v) !== undefined,
-      hint: 'Fit tools is below the Shapes list on the left. Scroll down if you cannot see it.',
+      hint: 'Fit tools is below Shapes and More shapes on the left. Scroll down if you cannot see it.',
     },
     {
       id: 'why', text: 'The socket is a hole a little bigger than the peg, so the printed peg slides in. **Fit gap** sets how much bigger.',

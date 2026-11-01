@@ -3,12 +3,19 @@ import { browserStorage, type KeyValueStorage } from '../learn/progress'
 
 export const MORE_SHAPES_KEY = 'blokade.moreShapes.v1'
 
-/** Whether More shapes is open. Never throws: unreadable storage means open, the first-visit state. */
-export function loadMoreShapesOpen(storage: KeyValueStorage | null): boolean {
+export interface MoreShapesSaved {
+  readonly open: boolean
+  /** True until Kade has opened the section once; any saved value means he already has. */
+  readonly isNew: boolean
+}
+
+/** What was saved. Never throws: nothing saved, or unreadable storage, means closed and new, the first-visit state. */
+export function loadMoreShapes(storage: KeyValueStorage | null): MoreShapesSaved {
   try {
-    return storage?.getItem(MORE_SHAPES_KEY) !== 'closed'
+    const saved = storage?.getItem(MORE_SHAPES_KEY) ?? null
+    return { open: saved === 'open', isNew: saved === null }
   } catch {
-    return true
+    return { open: false, isNew: true }
   }
 }
 
@@ -23,17 +30,18 @@ export function saveMoreShapesOpen(storage: KeyValueStorage | null, open: boolea
 
 export interface MoreShapesState {
   readonly open: boolean
+  readonly isNew: boolean
   toggle(): void
 }
 
 /** Whether the More shapes section is open. It belongs to this browser, so it lives outside the design store. */
 export function createMoreShapesStore(storage: KeyValueStorage | null): StoreApi<MoreShapesState> {
   return createStore<MoreShapesState>()((set, get) => ({
-    open: loadMoreShapesOpen(storage),
+    ...loadMoreShapes(storage),
     toggle: () => {
       const open = !get().open
       saveMoreShapesOpen(storage, open)
-      set({ open })
+      set({ open, isNew: false })
     },
   }))
 }

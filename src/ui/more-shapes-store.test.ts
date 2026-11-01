@@ -8,20 +8,38 @@ const memory = (): KeyValueStorage => {
 }
 
 describe('more shapes store', () => {
-  it('starts open with empty storage', () => {
-    expect(createMoreShapesStore(memory()).getState().open).toBe(true)
-    expect(createMoreShapesStore(null).getState().open).toBe(true)
+  it('starts closed and new with empty storage', () => {
+    for (const storage of [memory(), null]) {
+      const state = createMoreShapesStore(storage).getState()
+      expect(state.open).toBe(false)
+      expect(state.isNew).toBe(true)
+    }
   })
 
-  it('remembers being closed', () => {
+  it('stops being new once opened, and remembers it', () => {
     const storage = memory()
     const store = createMoreShapesStore(storage)
     store.getState().toggle()
-    expect(store.getState().open).toBe(false)
-    expect(storage.getItem(MORE_SHAPES_KEY)).toBe('closed')
-    expect(createMoreShapesStore(storage).getState().open).toBe(false)
+    expect(store.getState()).toMatchObject({ open: true, isNew: false })
+    expect(storage.getItem(MORE_SHAPES_KEY)).toBe('open')
+    expect(createMoreShapesStore(storage).getState()).toMatchObject({ open: true, isNew: false })
+  })
+
+  it('remembers being closed again, without the badge', () => {
+    const storage = memory()
+    const store = createMoreShapesStore(storage)
     store.getState().toggle()
-    expect(createMoreShapesStore(storage).getState().open).toBe(true)
+    store.getState().toggle()
+    expect(storage.getItem(MORE_SHAPES_KEY)).toBe('closed')
+    expect(createMoreShapesStore(storage).getState()).toMatchObject({ open: false, isNew: false })
+  })
+
+  it('treats any already-saved value as seen', () => {
+    for (const saved of ['open', 'closed']) {
+      const storage = memory()
+      storage.setItem(MORE_SHAPES_KEY, saved)
+      expect(createMoreShapesStore(storage).getState()).toMatchObject({ open: saved === 'open', isNew: false })
+    }
   })
 
   it('still works when storage throws', () => {
@@ -30,7 +48,9 @@ describe('more shapes store', () => {
       setItem: () => { throw new Error('no') },
     }
     const store = createMoreShapesStore(broken)
-    expect(store.getState().open).toBe(true)
+    expect(store.getState()).toMatchObject({ open: false, isNew: true })
+    store.getState().toggle()
+    expect(store.getState()).toMatchObject({ open: true, isNew: false })
     store.getState().toggle()
     expect(store.getState().open).toBe(false)
   })

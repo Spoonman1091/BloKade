@@ -79,14 +79,31 @@ describe('ShapePalette', () => {
       expect(ids('Shapes')).toEqual(['add-plain'])
       expect(ids('Fit tools')).toEqual(['add-fitty'])
       const region = screen.getByRole('region', { name: 'More shapes' })
-      expect(within(region).getByTestId('add-extra')).toBeInTheDocument()
       const toggle = screen.getByTestId('more-shapes-toggle')
+      expect(toggle).toHaveAttribute('aria-expanded', 'false')
+      expect(screen.queryByTestId('add-extra')).toBeNull()
+      await userEvent.click(toggle)
+      expect(within(region).getByTestId('add-extra')).toBeInTheDocument()
       expect(toggle).toHaveAttribute('aria-expanded', 'true')
       await userEvent.click(toggle)
       expect(screen.queryByTestId('add-extra')).toBeNull()
-      expect(toggle).toHaveAttribute('aria-expanded', 'false')
-      await userEvent.click(toggle)
-      expect(screen.getByTestId('add-extra')).toBeInTheDocument()
+    })
+
+    it('shows a New badge until the section is first opened, and the button is named plainly', async () => {
+      const storage = new Map<string, string>()
+      const kv = { getItem: (k: string) => storage.get(k) ?? null, setItem: (k: string, v: string) => void storage.set(k, v) }
+      const { registry: mixed } = createRegistry([plugin('extra', 'more')])
+      const { unmount } = render(<ShapePalette registry={mixed} kits={[]} onAdd={vi.fn()} onAddKit={vi.fn()} moreShapes={createMoreShapesStore(kv)} />)
+      expect(screen.getByTestId('more-shapes-new')).toHaveTextContent('New')
+      expect(screen.getByRole('button', { name: 'More shapes' })).toBe(screen.getByTestId('more-shapes-toggle'))
+      await userEvent.click(screen.getByTestId('more-shapes-toggle'))
+      expect(screen.queryByTestId('more-shapes-new')).toBeNull()
+      await userEvent.click(screen.getByTestId('more-shapes-toggle'))
+      expect(screen.queryByTestId('more-shapes-new')).toBeNull()
+      unmount()
+      render(<ShapePalette registry={mixed} kits={[]} onAdd={vi.fn()} onAddKit={vi.fn()} moreShapes={createMoreShapesStore(kv)} />)
+      expect(screen.queryByTestId('more-shapes-new')).toBeNull()
+      expect(screen.getByTestId('more-shapes-toggle')).toHaveAttribute('aria-expanded', 'false')
     })
 
     it('has no More shapes section when nothing belongs in it', () => {
@@ -97,7 +114,9 @@ describe('ShapePalette', () => {
     })
 
     it('draws a picture for each real More shapes button, in the global order', () => {
-      render(<ShapePalette registry={registry} kits={KITS} onAdd={vi.fn()} onAddKit={vi.fn()} moreShapes={createMoreShapesStore(null)} />)
+      const moreShapes = createMoreShapesStore(null)
+      moreShapes.getState().toggle()
+      render(<ShapePalette registry={registry} kits={KITS} onAdd={vi.fn()} onAddKit={vi.fn()} moreShapes={moreShapes} />)
       const buttons = within(screen.getByRole('region', { name: 'More shapes' })).getAllByRole('button')
         .filter((b) => b.dataset.testid !== 'more-shapes-toggle')
       expect(buttons.map((b) => b.dataset.testid)).toEqual(

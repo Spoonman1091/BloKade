@@ -50,3 +50,25 @@ describe('paramsFromScale', () => {
       .toMatchObject({ diameter: 40, inner: 20 })
   })
 })
+
+describe('paramsFromScale for the More shapes', () => {
+  const AXES = ['x', 'y', 'z'] as const
+  const cases = registry.list().filter((p) => p.palette === 'more').flatMap((p) =>
+    AXES.flatMap((axis) => (p.size?.[axis] ? [[p.id, axis, p.size[axis]] as const] : [])))
+
+  it('covers all ten shapes', () => {
+    expect(new Set(cases.map(([id]) => id)).size).toBe(10)
+  })
+
+  it.each(cases)('doubling %s along %s doubles %s', (id, axis, target) => {
+    const p = plugin(id)
+    const defaults = Object.fromEntries(Object.entries(p.params).map(([k, def]) => [k, def.default]))
+    const scale: [number, number, number] = [1, 1, 1]
+    scale[AXES.indexOf(axis)] = 2
+    const next = paramsFromScale(p, defaults, scale)
+    expect(next[target]).toBe(Number(defaults[target]) * 2)
+    for (const [key, from] of Object.entries(p.alsoScales ?? {})) {
+      if (from === axis) expect(next[key]).toBe(Number(defaults[key]) * 2)
+    }
+  })
+})

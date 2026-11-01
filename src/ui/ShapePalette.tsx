@@ -49,6 +49,7 @@ function ImportButton({ onImport, busy }: { onImport(file: File): void; busy: bo
 
 export function ShapePalette({ registry, kits, onAdd, onAddKit, mine, onImport, importBusy = false, moreShapes = moreShapesStore }: ShapePaletteProps) {
   const moreOpen = useStore(moreShapes, (s) => s.open)
+  const moreIsNew = useStore(moreShapes, (s) => s.isNew)
   const mineIds = new Set((mine ?? []).map((p) => p.id))
   const plugins = registry.list().filter((p) => !mineIds.has(p.id))
   const more = plugins.filter((p) => sectionOf(p) === 'more')
@@ -65,8 +66,9 @@ export function ShapePalette({ registry, kits, onAdd, onAddKit, mine, onImport, 
         <section className="panel" aria-label="More shapes">
           <h2>
             <button type="button" className="panel-toggle" data-testid="more-shapes-toggle" aria-expanded={moreOpen} onClick={() => moreShapes.getState().toggle()}>
-              {moreOpen ? '▾' : '▸'} More shapes
+              <span aria-hidden="true">{moreOpen ? '▾' : '▸'}</span> More shapes
             </button>
+            {moreIsNew && <span className="new-badge" data-testid="more-shapes-new">New</span>}
           </h2>
           {moreOpen && <div className="palette-grid">{more.map(pluginButton)}</div>}
         </section>

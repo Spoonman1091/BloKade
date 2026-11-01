@@ -24,7 +24,7 @@ export const snapTogether: Tutorial = {
       id: 'kit', text: 'Click **🧩 Snap-fit clip** under **Fit tools**. You get a **Snap clip** and a **Snap catch**.',
       target: 'add-kit-snap-fit',
       check: (v) => clip(v) !== undefined && slot(v) !== undefined,
-      hint: 'Fit tools is below the Shapes list on the left. Scroll down if you cannot see it.',
+      hint: 'Fit tools is below Shapes and More shapes on the left. Scroll down if you cannot see it.',
     },
     {
       id: 'how', text: 'The clip is a bendy arm with a hook. The catch is a slot. Push the arm through: it bends, then the hook clicks behind the wall.',
