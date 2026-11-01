@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { TUTORIALS, tutorialById } from './index'
 
 describe('TUTORIALS', () => {
-  it('lists the eleven tutorials in teaching order', () => {
+  it('lists the twelve tutorials in teaching order', () => {
     expect(TUTORIALS.map((t) => t.id)).toEqual([
       'first-shape', 'move-turn-size', 'holes-groups', 'undo-save', 'smart-sizes',
-      'workplane', 'round-repeat', 'perfect-fit', 'snap-together', 'screw-together', 'ready-to-print',
+      'workplane', 'round-repeat', 'perfect-fit', 'snap-together', 'screw-together', 'screw-down', 'ready-to-print',
     ])
     expect(tutorialById('smart-sizes')?.title).toBe('Smart sizes')
     expect(tutorialById('nope')).toBeUndefined()

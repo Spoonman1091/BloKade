@@ -82,5 +82,6 @@ describe('fit tool help', () => {
     expect(helpFor('add-kit-peg-socket')?.tutorial).toBe('perfect-fit')
     expect(helpFor('add-threaded-rod')?.tutorial).toBe('screw-together')
     expect(helpFor('add-threaded-hole')?.tutorial).toBe('screw-together')
+    expect(helpFor('add-screw-hole')?.tutorial).toBe('screw-down')
   })
 })

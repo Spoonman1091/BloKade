@@ -7,6 +7,7 @@ import { lessonHarness } from '../testing/harness'
 import { perfectFit } from './perfect-fit'
 import { readyToPrint } from './ready-to-print'
 import { roundRepeat } from './round-repeat'
+import { screwDown } from './screw-down'
 import { screwTogether } from './screw-together'
 import { snapTogether } from './snap-together'
 import { workplaneTutorial } from './workplane'
@@ -153,6 +154,46 @@ describe('Screw it together', () => {
     expect(h.done('rod-size')).toBe(false)
     h.apply((d) => choose(d, h.firstShape('threaded-rod'), 'size', 'M16'))
     expect(h.done('rod-size')).toBe(true)
+  })
+})
+
+describe('Screw it down', () => {
+  it('ticks off each step', () => {
+    const h = lessonHarness(screwDown)
+    h.actions.addShape('box')
+    expect(h.done('add-box')).toBe(true)
+    const box = h.firstShape('box')
+    expect(h.done('thin')).toBe(false)
+    h.setField(box, paramField('height'), '5')
+    expect(h.done('thin')).toBe(true)
+    h.actions.addShape('screw-hole')
+    expect(h.done('add-hole')).toBe(true)
+    const hole = h.firstShape('screw-hole')
+    expect(h.done('size')).toBe(false)
+    h.apply((d) => choose(d, hole, 'size', 'M4'))
+    expect(h.done('size')).toBe(true)
+    expect(h.done('depth')).toBe(false)
+    h.setField(hole, paramField('depth'), '5')
+    expect(h.done('depth')).toBe(true)
+    expect(h.done('style')).toBe(false)
+    h.apply((d) => choose(d, hole, 'style', 'countersunk'))
+    expect(h.done('style')).toBe(true)
+    expect(h.done('select-both')).toBe(false)
+    h.store.getState().select([box, hole])
+    expect(h.done('select-both')).toBe(true)
+    h.actions.groupSelection()
+    expect(h.done('group')).toBe(true)
+  })
+
+  it('wants the hole exactly as deep as the plate, so the head sits flush', () => {
+    const h = lessonHarness(screwDown)
+    h.actions.addShape('box')
+    h.setField(h.firstShape('box'), paramField('height'), '6')
+    h.actions.addShape('screw-hole')
+    h.setField(h.firstShape('screw-hole'), paramField('depth'), '5')
+    expect(h.done('depth')).toBe(false)
+    h.setField(h.firstShape('screw-hole'), paramField('depth'), '6')
+    expect(h.done('depth')).toBe(true)
   })
 })
 

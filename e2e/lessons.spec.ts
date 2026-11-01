@@ -161,6 +161,25 @@ test('Screw it together', async ({ page }) => {
   await expect(page.getByLabel(/^Problem/)).toHaveCount(0)
 })
 
+test('Screw it down', async ({ page }) => {
+  await startTutorial(page, 'screw-down')
+  await page.getByTestId('add-box').click()
+  await setField(page, 'param-height', '5')
+  await page.getByTestId('add-screw-hole').click()
+  await page.getByTestId('param-size').selectOption('M4')
+  await setField(page, 'param-depth', '5')
+  await page.getByTestId('param-style').selectOption('countersunk')
+  await row(page, 'Box').click()
+  await row(page, 'Metal screw hole').click({ modifiers: ['Shift'] })
+  await page.getByTestId('group').click()
+  await expect(step(page)).toContainText('flat-head screw')
+  await next(page)
+  await finished(page)
+  await expect(page.getByLabel(/^Problem/)).toHaveCount(0)
+  await page.getByTestId('check-print').click()
+  await expect(page.getByTestId('print-check-result')).toContainText('Looks ready to print', { timeout: 60_000 })
+})
+
 test('Ready to print', async ({ page }) => {
   await startTutorial(page, 'ready-to-print')
   await page.getByTestId('add-box').click()

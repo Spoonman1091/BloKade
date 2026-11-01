@@ -41,6 +41,14 @@ function threadStore(): BloKadeStore {
   return store
 }
 
+/** A metal screw hole, selected: its Style box is what the Screw it down lesson points at. */
+function screwStore(): BloKadeStore {
+  const hole = createShapeNode({ id: 'h', shapeType: 'screw-hole', name: 'Metal screw hole', params: { size: 'M3', style: 'plain', depth: 10, clearance: 0.2 }, color: '#fff' })
+  const store = createBloKadeStore({ designId: 'screw', doc: addNode(createEmptyDocument('Screw'), hole) })
+  store.getState().select(['h'])
+  return store
+}
+
 /** Stores that between them show every control on the main screen. */
 export function sampleStores(): BloKadeStore[] {
   const one = createBloKadeStore({ designId: 'one', doc: richDoc() })
@@ -52,5 +60,5 @@ export function sampleStores(): BloKadeStore[] {
   const two = createBloKadeStore({ designId: 'two', doc: richDoc() })
   two.getState().select(['b', 'c'])
   const empty = createBloKadeStore({ designId: 'empty', doc: createEmptyDocument() })
-  return [one, cylinder, two, empty, snapStore(), threadStore()]
+  return [one, cylinder, two, empty, snapStore(), threadStore(), screwStore()]
 }
