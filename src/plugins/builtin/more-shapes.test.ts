@@ -59,3 +59,41 @@ describe('roofs and pyramid', () => {
     want.forEach((value, i) => expect(got[i]).toBeCloseTo(value, 3))
   })
 })
+
+describe('tube, half sphere and paraboloid', () => {
+  const within = (actual: number, expected: number) =>
+    expect(Math.abs(actual - expected) / expected).toBeLessThan(0.005)
+
+  it('builds the tube as a cylinder minus its hole', () => {
+    expect(measureVolume(buildDefault('tube'))).toBeCloseTo(Math.PI * (100 - 64) * 20, 1)
+  })
+
+  it('builds the half sphere as half a ball', () => {
+    within(measureVolume(buildDefault('half-sphere')), (2 / 3) * Math.PI * 100 * 10)
+  })
+
+  it('builds the paraboloid as half of its cylinder', () => {
+    within(measureVolume(buildDefault('paraboloid')), (Math.PI * 100 * 20) / 2)
+  })
+
+  it.each([['tube', 20], ['half-sphere', 10], ['paraboloid', 20]])('%s sits centred on the plate', (id, height) => {
+    const [[x0, y0, z0], [x1, y1, z1]] = buildDefault(id).boundingBox.bounds
+    const got = [x0, y0, z0, x1, y1, z1]
+    const want = [-10, -10, 0, 10, 10, height]
+    want.forEach((value, i) => expect(got[i]).toBeCloseTo(value, 3))
+  })
+
+  const buildTube = (wall: number) => {
+    const plugin = registry.get('tube')
+    if (!plugin) throw new Error('missing tube')
+    return plugin.build({ ...defaultParams(plugin), wall }, createCadToolkit())
+  }
+
+  it('refuses a wall that fills the tube', () => {
+    expect(() => buildTube(10)).toThrow('The wall is too thick for this tube. Make it less than 10 mm.')
+  })
+
+  it('builds the thinnest wall', () => {
+    expect(measureVolume(buildTube(0.4))).toBeGreaterThan(0)
+  })
+})

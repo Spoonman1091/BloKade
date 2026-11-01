@@ -3,7 +3,7 @@ import type { ScrewSpec } from '../fit-sizes'
 
 export type ScrewStyle = 'plain' | 'countersunk' | 'counterbored' | 'nut' | 'insert'
 
-const fmt = (n: number): string => String(Math.round(n * 100) / 100)
+export const fmt = (n: number): string => String(Math.round(n * 100) / 100)
 
 function needDepth(depth: number, feature: number, what: string): void {
   if (depth <= feature + 1) throw new Error(`Make the hole deeper than ${fmt(feature + 1)} mm so ${what} fits.`)
