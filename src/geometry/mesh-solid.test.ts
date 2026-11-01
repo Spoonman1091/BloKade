@@ -25,6 +25,12 @@ describe('meshSolid', () => {
     expect(measureVolume(solid.cut(hole))).toBeCloseTo(8000 - Math.PI * 25 * 20, 0)
   })
 
+  it('builds a mesh with a corner exactly at the origin', () => {
+    const corners = [0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0, 10]
+    const solid = meshSolid(corners, [0, 2, 1, 0, 1, 3, 1, 2, 3, 0, 3, 2])
+    expect(measureVolume(solid)).toBeCloseTo(1000 / 6, 3)
+  })
+
   it('refuses an empty mesh', () => {
     expect(() => meshSolid([], [])).toThrow('This model has no shape in it.')
   })

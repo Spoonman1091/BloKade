@@ -13,14 +13,19 @@ let fileCounter = 0
 type OC = ReturnType<typeof getOC>
 type Disposable = { delete(): void }
 
-/** A binary STL holding the triangles; OpenCascade computes its own normals, so those are left zero. */
+/**
+ * A binary STL holding the triangles. OpenCascade computes its own normals; the stored one is a placeholder,
+ * because all-zero normals make its reader refuse a mesh that has a corner exactly at the origin.
+ */
 function binaryStl(vertices: ArrayLike<number>, triangles: ArrayLike<number>): Uint8Array {
   const count = Math.floor(triangles.length / 3)
   const bytes = new Uint8Array(STL_HEADER_BYTES + 4 + count * STL_TRIANGLE_BYTES)
   const view = new DataView(bytes.buffer)
   view.setUint32(STL_HEADER_BYTES, count, true)
   for (let t = 0; t < count; t++) {
-    const base = STL_HEADER_BYTES + 4 + t * STL_TRIANGLE_BYTES + 12
+    const start = STL_HEADER_BYTES + 4 + t * STL_TRIANGLE_BYTES
+    view.setFloat32(start + 8, 1, true)
+    const base = start + 12
     for (let corner = 0; corner < 3; corner++) {
       const vertex = (triangles[t * 3 + corner] ?? 0) * 3
       for (let axis = 0; axis < 3; axis++) view.setFloat32(base + (corner * 3 + axis) * 4, vertices[vertex + axis] ?? 0, true)
