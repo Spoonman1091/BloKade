@@ -226,10 +226,11 @@ Tip: printed threads usually need a bigger fit gap. If the rod won't screw in, t
   `peg_length`. Change those and both follow. Put the socket in a part and group them to cut it.
 - **🧩 Snap-fit clip:** a bendy arm with a hook, and the slot it snaps through (linked by `clip_width` and
   `clip_thickness`). Set the catch's *Wall thickness* to the wall it goes through.
-- **🔩 Screw hole:** M2–M5, as a plain hole, countersunk (flat-head screws), counterbored (cap-head screws),
-  with a nut trap at the bottom, or for a heat-set insert at the top. The screw goes in from the top.
-- **🪛 Threaded rod / 🌀 Threaded hole:** printable M6–M20 threads, up to 40 turns long. M8 and bigger print
-  best.
+- **🔩 Metal screw hole:** for real metal screws, M2–M5, as a plain hole, countersunk (flat-head screws),
+  counterbored (cap-head screws), with a nut trap at the bottom, or for a heat-set insert at the top. The screw goes
+  in from the top.
+- **🪛 Threaded rod / 🌀 Threaded hole:** the thread is printed, so two printed parts screw together. M6–M20, up
+  to 40 turns long. M8 and bigger print best.
 - **🔍 Check overlap:** select two parts (Shift-click) and press *Check overlap* under *Fit check* in Properties.
   Any overlap shows in red, with its size.
 

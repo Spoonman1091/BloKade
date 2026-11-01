@@ -56,7 +56,7 @@ test('a countersunk screw hole cuts into a box and exports', async ({ page }) =>
   await page.getByTestId('add-box').click()
   await page.getByTestId('add-screw-hole').click()
   await page.getByRole('treeitem', { name: 'Box' }).click()
-  await page.getByRole('treeitem', { name: 'Screw hole' }).click({ modifiers: ['Shift'] })
+  await page.getByRole('treeitem', { name: 'Metal screw hole' }).click({ modifiers: ['Shift'] })
   await page.getByTestId('group').click()
   let plain: Buffer = Buffer.alloc(0)
   await expect(async () => {
@@ -64,7 +64,7 @@ test('a countersunk screw hole cuts into a box and exports', async ({ page }) =>
     expect(plain.readUInt32LE(80)).toBeGreaterThan(100)
   }).toPass({ timeout: 30_000 })
 
-  await page.getByRole('treeitem', { name: 'Screw hole' }).click()
+  await page.getByRole('treeitem', { name: 'Metal screw hole' }).click()
   await page.getByTestId('param-style').selectOption('countersunk')
   const countersunk = await exportChangedFrom(page, plain)
   expect(countersunk.readUInt32LE(80)).not.toBe(plain.readUInt32LE(80))

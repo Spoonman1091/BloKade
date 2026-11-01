@@ -5,7 +5,7 @@ import { hexOutline, screwHoleProfile } from './screw-profile'
 /** A ready-made hole for M2–M5 screws, with a countersink, counterbore, nut trap or heat-set insert pocket. */
 export default definePlugin({
   id: 'screw-hole',
-  name: 'Screw hole',
+  name: 'Metal screw hole',
   icon: '🔩',
   version: 1,
   mode: 'hole',
