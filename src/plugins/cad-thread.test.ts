@@ -1,5 +1,6 @@
 import { measureVolume, type Shape3D } from 'replicad'
 import { beforeAll, describe, expect, it } from 'vitest'
+import { REBUILD_TIMEOUT_MS } from '../geometry/client'
 import { initTestOC } from '../geometry/testing/oc-node'
 import { createCadToolkit } from './cad'
 import { makeThread, MAX_THREAD_TURNS, threadRadius } from './cad-thread'
@@ -63,10 +64,11 @@ describe('makeThread', () => {
     expect(Date.now() - started).toBeLessThan(100)
   })
 
-  it('builds the longest allowed fine thread in a few seconds (Review Focus 4)', () => {
+  // Half the rebuild watchdog, leaving the other half for fusing and meshing. Shared CI machines take 4–8 s.
+  it('builds the longest allowed fine thread well inside the rebuild watchdog (Review Focus 4)', () => {
     const started = Date.now()
     const rod = makeThread(6, 1, 40)
-    expect(Date.now() - started).toBeLessThan(8000)
+    expect(Date.now() - started).toBeLessThan(REBUILD_TIMEOUT_MS / 2)
     rod.delete()
   })
 
