@@ -19,7 +19,7 @@ const expectedVolumes: Record<string, number> = {
 describe('built-in shapes', () => {
   it('registers every built-in in palette order with no problems', () => {
     expect(pluginProblems).toEqual([])
-    expect(registry.list().map((p) => p.id)).toEqual(['box', 'cylinder', 'sphere', 'cone', 'wedge', 'torus', 'text', 'roof', 'round-roof', 'tube', 'half-sphere', 'pyramid', 'paraboloid', 'peg', 'socket', 'screw-hole', 'threaded-rod', 'threaded-hole', 'snap-clip', 'snap-catch', 'imported'])
+    expect(registry.list().map((p) => p.id)).toEqual(['box', 'cylinder', 'sphere', 'cone', 'wedge', 'torus', 'text', 'roof', 'round-roof', 'tube', 'half-sphere', 'pyramid', 'polygon', 'paraboloid', 'star', 'heart', 'peg', 'socket', 'screw-hole', 'threaded-rod', 'threaded-hole', 'snap-clip', 'snap-catch', 'imported'])
   })
 
   it.each(Object.entries(expectedVolumes))('%s builds with its defaults', (id, volume) => {

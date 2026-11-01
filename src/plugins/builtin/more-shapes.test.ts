@@ -97,3 +97,56 @@ describe('tube, half sphere and paraboloid', () => {
     expect(measureVolume(buildTube(0.4))).toBeGreaterThan(0)
   })
 })
+
+describe('polygon, star and heart', () => {
+  const buildWith = (id: string, overrides: Record<string, number>) => {
+    const plugin = registry.get(id)
+    if (!plugin) throw new Error(`missing ${id}`)
+    return plugin.build({ ...defaultParams(plugin), ...overrides }, createCadToolkit())
+  }
+
+  it('builds the hexagon with the right volume and a flat side at the front', () => {
+    const shape = buildDefault('polygon')
+    expect(measureVolume(shape)).toBeCloseTo((3 * Math.sqrt(3) / 2) * 100 * 10, 1)
+    const [[x0, y0], [x1, y1]] = shape.boundingBox.bounds
+    expect(x0).toBeCloseTo(-10, 3)
+    expect(x1).toBeCloseTo(10, 3)
+    expect(y0).toBeCloseTo(-10 * Math.sqrt(3) / 2, 3)
+    expect(y1).toBeCloseTo(10 * Math.sqrt(3) / 2, 3)
+  })
+
+  it.each([3, 12])('builds a polygon with %i sides', (sides) => {
+    expect(measureVolume(buildWith('polygon', { sides }))).toBeGreaterThan(0)
+  })
+
+  it('puts a pentagon corner at the back', () => {
+    const [[, y0], [, y1]] = buildWith('polygon', { sides: 5 }).boundingBox.bounds
+    expect(y1).toBeCloseTo(10, 3)
+    expect(y0).toBeCloseTo(-10 * Math.cos(Math.PI / 5), 3)
+  })
+
+  it('builds the star with the right volume and a point at the back', () => {
+    const shape = buildDefault('star')
+    expect(measureVolume(shape)).toBeCloseTo(5 * 10 * 5 * Math.sin(Math.PI / 5) * 5, 1)
+    expect(shape.boundingBox.bounds[1][1]).toBeCloseTo(10, 3)
+  })
+
+  it.each([3, 12])('builds a star with %i points', (points) => {
+    expect(measureVolume(buildWith('star', { points }))).toBeGreaterThan(0)
+  })
+
+  it('refuses a star whose inside is as big as its outside', () => {
+    expect(() => buildWith('star', { inner: 20 })).toThrow('The inner diameter must be smaller than the diameter.')
+  })
+
+  it('builds the heart inside its box', () => {
+    const [[x0, y0, z0], [x1, y1, z1]] = buildDefault('heart').boundingBox.bounds
+    const got = [x0, y0, z0, x1, y1, z1]
+    const want = [-10, -9, 0, 10, 9, 5]
+    want.forEach((value, i) => expect(got[i]).toBeCloseTo(value, 2))
+  })
+
+  it('builds a heart with some volume', () => {
+    expect(measureVolume(buildDefault('heart'))).toBeGreaterThan(0)
+  })
+})

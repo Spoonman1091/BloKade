@@ -44,4 +44,9 @@ describe('paramsFromScale', () => {
     expect(next.width).toBe(width)
     expect(next.height).toBe(40)
   })
+
+  it("grows a star's inner diameter with its diameter", () => {
+    expect(paramsFromScale(plugin('star'), { points: 5, diameter: 20, inner: 10, height: 5 }, [2, 2, 1]))
+      .toMatchObject({ diameter: 40, inner: 20 })
+  })
 })
