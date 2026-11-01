@@ -10,28 +10,42 @@ import {
   type Drawing,
   type Shape3D,
 } from 'replicad'
-import type { CadToolkit, Point2 } from './cad-types'
+import type { CadToolkit, CurveStep, OutlineStep, Point2 } from './cad-types'
 import { makeThread } from './cad-thread'
 import { fontFailed, TEXT_FONT } from './font'
 
 const EPS = 1e-9
 const samePoint = (a: Point2, b: Point2): boolean => Math.abs(a[0] - b[0]) < EPS && Math.abs(a[1] - b[1]) < EPS
 
-/** Drops consecutive repeats and a closing point equal to the first. */
-export function cleanProfile(profile: readonly Point2[]): Point2[] {
-  const noRepeats = profile.filter((p, i) => {
+const isCurve = (step: OutlineStep): step is CurveStep => 'curve' in step
+const endOf = (step: OutlineStep): Point2 => (isCurve(step) ? step.curve[2] : step)
+
+/** Drops repeated points and a closing point equal to the first. A curve step is never dropped. */
+export function cleanProfile(profile: readonly OutlineStep[]): OutlineStep[] {
+  const noRepeats = profile.filter((step, i) => {
     const prev = profile[i - 1]
-    return i === 0 || !prev || !samePoint(p, prev)
+    return i === 0 || !prev || isCurve(step) || !samePoint(step, endOf(prev))
   })
   const first = noRepeats[0]
   const last = noRepeats[noRepeats.length - 1]
-  return noRepeats.length > 1 && first && last && samePoint(first, last) ? noRepeats.slice(0, -1) : noRepeats
+  return noRepeats.length > 1 && first && last && !isCurve(last) && samePoint(endOf(first), last)
+    ? noRepeats.slice(0, -1)
+    : noRepeats
 }
 
-function profileDrawing(profile: readonly Point2[]) {
+function profileDrawing(profile: readonly OutlineStep[]) {
   const [first, ...rest] = cleanProfile(profile)
-  if (!first || rest.length < 2) throw new Error('A profile needs at least 3 different points.')
-  return rest.reduce((pen, [x, y]) => pen.lineTo([x, y]), draw([first[0], first[1]])).close()
+  if (!first || isCurve(first)) throw new Error('An outline must start with a point.')
+  if (rest.length < 2) throw new Error('A profile needs at least 3 different points.')
+  const pen = rest.reduce(
+    (p, step) =>
+      isCurve(step)
+        ? p.cubicBezierCurveTo([...step.curve[2]], [...step.curve[0]], [...step.curve[1]])
+        : p.lineTo([step[0], step[1]]),
+    draw([first[0], first[1]]),
+  )
+  // close() adds a closing line only when the outline doesn't already end on its start.
+  return pen.close()
 }
 
 function asSolid(shape: Shape3D | AnyShape): Shape3D {
@@ -73,7 +87,7 @@ export function createCadToolkit(): CadToolkit {
       return asSolid(drawCircle(tube).translate([ringRadius, tube]).sketchOnPlane('XZ').revolve())
     },
     revolve: (profile) => {
-      if (profile.some(([x]) => x < 0)) {
+      if (profile.some((step) => (isCurve(step) ? step.curve : [step]).some(([x]) => x < 0))) {
         throw new Error('A spin outline must stay on the right of the center line (x ≥ 0).')
       }
       return asSolid(profileDrawing(profile).sketchOnPlane('XZ').revolve())
