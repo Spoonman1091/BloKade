@@ -67,6 +67,7 @@ export const HELP_TEXTS: Readonly<Record<string, HelpEntry>> = {
   'param-yesno': { tip: 'Tick or untick to switch this setting on or off.', card: 'A tick box is a yes-or-no setting. The shape changes as soon as you tick it.' },
   // Panel headings
   'panel-shapes': { tip: 'Shapes you can add. Click one to add it.', card: 'Click a shape to add it to your design. It appears in the middle, or on your workplane.', tutorial: 'first-shape' },
+  'more-shapes-toggle': { tip: 'Shows or hides more shapes.', card: 'More shapes has roofs, tubes, stars, hearts and more. Click the heading to open or close it.' },
   'panel-fit-tools': { tip: 'Parts that fit together: pegs, screws, threads and clips.', card: 'Fit tools make parts that go together after printing. They all leave a little extra room, set by the Fit gap.', tutorial: 'perfect-fit' },
   'add-kit-snap-fit': { tip: 'Adds a bendy clip and the slot it clicks into.', card: 'Snap-fit clip adds a clip with a hook and its catch, linked by clip_width and clip_thickness. Push the printed clip through the slot and it clicks into place.', tutorial: 'snap-together' },
   'add-threaded-rod': { tip: 'Adds a bolt with a printed thread.', card: 'Threaded rod is a printed bolt, M6 to M20. Screw it into a Threaded hole of the same size. M8 and bigger print best.', tutorial: 'screw-together' },

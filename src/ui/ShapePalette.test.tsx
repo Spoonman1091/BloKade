@@ -6,6 +6,7 @@ import { registry } from '../plugins/index'
 import { KITS } from '../plugins/kits'
 import { createRegistry } from '../plugins/registry'
 import { definePlugin } from '../plugins/types'
+import { createMoreShapesStore } from './more-shapes-store'
 import { ShapePalette } from './ShapePalette'
 
 describe('ShapePalette', () => {
@@ -64,5 +65,35 @@ describe('ShapePalette', () => {
     const file = new File(['x'], 'a.stl')
     await userEvent.upload(screen.getByTestId('import-stl'), file)
     expect(onImport).toHaveBeenCalledWith(file)
+  })
+
+  describe('More shapes', () => {
+    const plugin = (id: string, palette?: 'more' | 'fit') => definePlugin({
+      id, name: id, icon: '🧪', version: 1, palette, params: {}, build: () => { throw new Error('unused') },
+    })
+    const ids = (name: string) => within(screen.getByRole('region', { name })).getAllByRole('button').map((b) => b.dataset.testid)
+
+    it('lists more shapes in their own section that opens and closes', async () => {
+      const { registry: mixed } = createRegistry([plugin('plain'), plugin('extra', 'more'), plugin('fitty', 'fit')])
+      render(<ShapePalette registry={mixed} kits={[]} onAdd={vi.fn()} onAddKit={vi.fn()} moreShapes={createMoreShapesStore(null)} />)
+      expect(ids('Shapes')).toEqual(['add-plain'])
+      expect(ids('Fit tools')).toEqual(['add-fitty'])
+      const region = screen.getByRole('region', { name: 'More shapes' })
+      expect(within(region).getByTestId('add-extra')).toBeInTheDocument()
+      const toggle = screen.getByTestId('more-shapes-toggle')
+      expect(toggle).toHaveAttribute('aria-expanded', 'true')
+      await userEvent.click(toggle)
+      expect(screen.queryByTestId('add-extra')).toBeNull()
+      expect(toggle).toHaveAttribute('aria-expanded', 'false')
+      await userEvent.click(toggle)
+      expect(screen.getByTestId('add-extra')).toBeInTheDocument()
+    })
+
+    it('has no More shapes section when nothing belongs in it', () => {
+      const { registry: plain } = createRegistry([plugin('plain')])
+      render(<ShapePalette registry={plain} kits={[]} onAdd={vi.fn()} onAddKit={vi.fn()} moreShapes={createMoreShapesStore(null)} />)
+      expect(screen.queryByRole('region', { name: 'More shapes' })).toBeNull()
+      expect(screen.queryByTestId('more-shapes-toggle')).toBeNull()
+    })
   })
 })

@@ -42,7 +42,7 @@ const pluginSchema = z
     version: z.number().int().positive(),
     params: z.record(z.string(), paramSpec),
     mode: z.literal('hole').optional(),
-    palette: z.enum(['shapes', 'fit', 'hidden']).optional(),
+    palette: z.enum(['shapes', 'more', 'fit', 'hidden']).optional(),
     revision: z.string().optional(),
     toolkit: z.literal('kade').optional(),
     source: z.string().optional(),

@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import type { ShapeKit } from '../plugins/kits'
 
 /** A peg hanging over the block with its socket, cut open so the hole shows. No emoji looks like one. */
 function PegAndSocket() {
@@ -13,8 +12,8 @@ function PegAndSocket() {
 
 const PICTURES: Readonly<Record<string, () => ReactNode>> = { 'peg-socket': PegAndSocket }
 
-/** The kit's drawn picture when it has one, otherwise its emoji. */
-export function kitPicture(kit: ShapeKit): ReactNode {
-  const Picture = PICTURES[kit.id]
-  return Picture ? <Picture /> : kit.icon
+/** The drawn picture for a known id, otherwise its emoji. */
+export function palettePicture(id: string, emoji: string): ReactNode {
+  const Picture = PICTURES[id]
+  return Picture ? <Picture /> : emoji
 }

@@ -2,7 +2,9 @@ import type { ChangeEvent, ReactNode } from 'react'
 import type { ShapeKit } from '../plugins/kits'
 import type { PluginRegistry } from '../plugins/registry'
 import type { ShapePlugin } from '../plugins/types'
-import { kitPicture } from './KitPicture'
+import { useStore, type StoreApi } from 'zustand'
+import { moreShapesStore, type MoreShapesState } from './more-shapes-store'
+import { palettePicture } from './PalettePicture'
 
 interface ShapePaletteProps {
   registry: PluginRegistry
@@ -15,9 +17,11 @@ interface ShapePaletteProps {
   onImport?(file: File): void
   /** True while a chosen file is being read. */
   importBusy?: boolean
+  /** Whether More shapes is open. Tests pass their own; the app uses the one saved in this browser. */
+  moreShapes?: StoreApi<MoreShapesState>
 }
 
-const sectionOf = (plugin: ShapePlugin): 'shapes' | 'fit' | 'hidden' => plugin.palette ?? 'shapes'
+const sectionOf = (plugin: ShapePlugin): 'shapes' | 'more' | 'fit' | 'hidden' => plugin.palette ?? 'shapes'
 
 function PaletteButton({ testId, icon, name, onClick }: { testId: string; icon: ReactNode; name: string; onClick(): void }) {
   return (
@@ -43,10 +47,12 @@ function ImportButton({ onImport, busy }: { onImport(file: File): void; busy: bo
   )
 }
 
-export function ShapePalette({ registry, kits, onAdd, onAddKit, mine, onImport, importBusy = false }: ShapePaletteProps) {
+export function ShapePalette({ registry, kits, onAdd, onAddKit, mine, onImport, importBusy = false, moreShapes = moreShapesStore }: ShapePaletteProps) {
+  const moreOpen = useStore(moreShapes, (s) => s.open)
   const mineIds = new Set((mine ?? []).map((p) => p.id))
   const plugins = registry.list().filter((p) => !mineIds.has(p.id))
-  const pluginButton = (p: ShapePlugin) => <PaletteButton key={p.id} testId={`add-${p.id}`} icon={p.icon} name={p.name} onClick={() => onAdd(p.id)} />
+  const more = plugins.filter((p) => sectionOf(p) === 'more')
+  const pluginButton = (p: ShapePlugin) => <PaletteButton key={p.id} testId={`add-${p.id}`} icon={palettePicture(p.id, p.icon)} name={p.name} onClick={() => onAdd(p.id)} />
   return (
     <>
       <section className="panel" aria-label="Shapes">
@@ -55,10 +61,20 @@ export function ShapePalette({ registry, kits, onAdd, onAddKit, mine, onImport, 
           {onImport && <ImportButton onImport={onImport} busy={importBusy} />}
         </div>
       </section>
+      {more.length > 0 && (
+        <section className="panel" aria-label="More shapes">
+          <h2>
+            <button type="button" className="panel-toggle" data-testid="more-shapes-toggle" aria-expanded={moreOpen} onClick={() => moreShapes.getState().toggle()}>
+              {moreOpen ? '▾' : '▸'} More shapes
+            </button>
+          </h2>
+          {moreOpen && <div className="palette-grid">{more.map(pluginButton)}</div>}
+        </section>
+      )}
       <section className="panel" aria-label="Fit tools">
         <h2 data-help="panel-fit-tools">Fit tools</h2>
         <div className="palette-grid">
-          {kits.map((k) => <PaletteButton key={k.id} testId={`add-kit-${k.id}`} icon={kitPicture(k)} name={k.name} onClick={() => onAddKit(k.id)} />)}
+          {kits.map((k) => <PaletteButton key={k.id} testId={`add-kit-${k.id}`} icon={palettePicture(k.id, k.icon)} name={k.name} onClick={() => onAddKit(k.id)} />)}
           {plugins.filter((p) => sectionOf(p) === 'fit').map(pluginButton)}
         </div>
       </section>

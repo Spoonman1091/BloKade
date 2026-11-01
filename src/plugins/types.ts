@@ -86,8 +86,8 @@ export interface ShapePlugin<P extends ParamSpecs = ParamSpecs> {
   readonly alsoScales?: { readonly [key: string]: 'x' | 'y' | 'z' }
   /** New parts of this kind start as holes (sockets, screw holes). Missing means solid. */
   readonly mode?: 'hole'
-  /** Which palette section lists it. 'hidden' parts are only added by a kit. Missing means 'shapes'. */
-  readonly palette?: 'shapes' | 'fit' | 'hidden'
+  /** Which palette section lists it. 'more' is the collapsible More shapes, for built-ins only. 'hidden' parts are only added by a kit. Missing means 'shapes'. */
+  readonly palette?: 'shapes' | 'more' | 'fit' | 'hidden'
   /** Kade's shapes: a hash of the code. The build cache uses it in place of `version`. */
   readonly revision?: string
   /** 'kade': build() takes the friendly toolkit and is run through runKadeBuild (Kade's library and the plugins/ folder). */
