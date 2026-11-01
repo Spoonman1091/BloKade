@@ -95,5 +95,15 @@ describe('ShapePalette', () => {
       expect(screen.queryByRole('region', { name: 'More shapes' })).toBeNull()
       expect(screen.queryByTestId('more-shapes-toggle')).toBeNull()
     })
+
+    it('draws a picture for each real More shapes button, in the global order', () => {
+      render(<ShapePalette registry={registry} kits={KITS} onAdd={vi.fn()} onAddKit={vi.fn()} moreShapes={createMoreShapesStore(null)} />)
+      const buttons = within(screen.getByRole('region', { name: 'More shapes' })).getAllByRole('button')
+        .filter((b) => b.dataset.testid !== 'more-shapes-toggle')
+      expect(buttons.map((b) => b.dataset.testid)).toEqual(
+        ['roof', 'round-roof', 'tube', 'half-sphere', 'pyramid', 'polygon', 'paraboloid', 'star', 'heart', 'icosahedron'].map((id) => `add-${id}`),
+      )
+      for (const b of buttons) expect(b.querySelector('svg.palette-picture')).not.toBeNull()
+    })
   })
 })

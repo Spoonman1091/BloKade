@@ -84,4 +84,11 @@ describe('fit tool help', () => {
     expect(helpFor('add-threaded-hole')?.tutorial).toBe('screw-together')
     expect(helpFor('add-screw-hole')?.tutorial).toBe('screw-down')
   })
+
+  it('has help for each More shapes button', () => {
+    for (const id of ['roof', 'round-roof', 'tube', 'half-sphere', 'pyramid', 'polygon', 'paraboloid', 'star', 'heart', 'icosahedron']) {
+      expect(Object.hasOwn(HELP_TEXTS, `add-${id}`)).toBe(true)
+    }
+    expect(helpFor('add-tube')?.card).toContain('cups')
+  })
 })

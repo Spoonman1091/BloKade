@@ -185,6 +185,7 @@ Lesson progress is kept in this browser. In a private window the lessons still w
 - **Fit gap:** the `fit` number (0.2 mm to start) is extra room for parts that slot together. Use it in formulas,
   for example a hole of `peg + 2 * fit`.
 - **Text:** the 🔤 Text shape makes raised letters. Change the words in Properties.
+- **More shapes:** roofs, round roofs, tubes, half spheres, pyramids, polygons, paraboloids, stars, hearts and icosahedrons. Click **More shapes** to open or close the list.
 - **Line up:** select two or more parts (Shift-click) and use the Line up buttons.
 - **Snapping:** while dragging, a part snaps flush against parts within 2 mm. Hold **Shift** to move freely.
 - **Printer:** pick your printer in the toolbar (it starts on the Bambu Lab A1 mini) and the 3D view shows its

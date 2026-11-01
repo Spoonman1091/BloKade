@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { SHAPE_PICTURES } from './shape-pictures'
 
 /** A peg hanging over the block with its socket, cut open so the hole shows. No emoji looks like one. */
 function PegAndSocket() {
@@ -10,7 +11,7 @@ function PegAndSocket() {
   )
 }
 
-const PICTURES: Readonly<Record<string, () => ReactNode>> = { 'peg-socket': PegAndSocket }
+const PICTURES: Readonly<Record<string, () => ReactNode>> = { 'peg-socket': PegAndSocket, ...SHAPE_PICTURES }
 
 /** The drawn picture for a known id, otherwise its emoji. */
 export function palettePicture(id: string, emoji: string): ReactNode {
