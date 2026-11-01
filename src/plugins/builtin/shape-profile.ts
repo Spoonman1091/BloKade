@@ -36,24 +36,39 @@ export function starOutline(points: number, diameter: number, inner: number): Po
 
 /**
  * Heart with its point at the front (−Y) and a dip at the back; the left half mirrors the right.
- * Written in units of half the width and half the length. The curves leaving the point and the dip start at 45 degrees
- * in real millimetres, so both are square corners that Round edges can follow (the point and dip tilt by a few degrees
- * with an odd shape, and are kept sensible when the heart is very wide).
+ * The point and the dip are made of straight sides, and each curve leaves a straight side along the same direction,
+ * so no curve ever meets a corner. OpenCascade rounds these edges reliably, which it did not when curves met at the corners.
  */
 export function heartOutline(width: number, length: number): OutlineStep[] {
   const sx = width / 2
   const sy = length / 2
   const p = (x: number, y: number): Point2 => [x * sx, y * sy]
-  const tilt = sx / sy
-  const pointY = -1 + Math.min(0.35 * tilt, 0.7)
-  const dipY = 0.7 + Math.min(0.1 * tilt, 0.25)
+  const mirror = (q: Point2): Point2 => [-q[0], q[1]]
+  const along = (from: Point2, to: Point2, reach: number): Point2 => {
+    const d = Math.hypot(to[0] - from[0], to[1] - from[1])
+    return [to[0] + ((to[0] - from[0]) / d) * reach, to[1] + ((to[1] - from[1]) / d) * reach]
+  }
+  const tip = p(0, -1)
+  const flank = p(0.75, -0.25) // where the straight side from the point turns into the curve
+  const dip = p(0, 0.7)
+  const reach = Math.min(0.14 * sx, 0.15 * sy)
+  const lip = [reach, 0.7 * sy + reach] as const // where the curve turns into the straight side down to the dip
+  const lobe: CurveStep = { curve: [along(tip, flank, 0.18 * length), p(1, 0.05), p(1, 0.35)] }
+  const top: CurveStep = { curve: [p(1, 0.75), p(0.78, 1), p(0.5, 1)] }
+  const shoulder: CurveStep = { curve: [p(0.24, 1), along(dip, lip, 0.06 * length), lip] }
+  const flip = (step: CurveStep, from: Point2): CurveStep => ({
+    curve: [mirror(step.curve[1]), mirror(step.curve[0]), mirror(from)],
+  })
   return [
-    p(0, -1),
-    { curve: [p(0.35, pointY), p(1, -0.1), p(1, 0.35)] },
-    { curve: [p(1, 0.75), p(0.78, 1), p(0.5, 1)] },
-    { curve: [p(0.22, 1), p(0.1, dipY), p(0, 0.7)] },
-    { curve: [p(-0.1, dipY), p(-0.22, 1), p(-0.5, 1)] },
-    { curve: [p(-0.78, 1), p(-1, 0.75), p(-1, 0.35)] },
-    { curve: [p(-1, -0.1), p(-0.35, pointY), p(0, -1)] },
+    tip,
+    flank,
+    lobe,
+    top,
+    shoulder,
+    dip,
+    mirror(lip),
+    flip(shoulder, p(0.5, 1)),
+    flip(top, p(1, 0.35)),
+    flip(lobe, flank),
   ]
 }

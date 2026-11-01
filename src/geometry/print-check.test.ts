@@ -106,6 +106,14 @@ describe('findPrintProblems', () => {
     expect(() => rounded(id, 'all')).not.toThrow()
   })
 
+  const heartCases = ([[20, 18], [20, 20], [15, 25], [40, 18]] as const).flatMap(([width, length]) =>
+    [0.2, 0.5, 1].flatMap((radius) => (['bottom', 'all'] as const).map((which) => [width, length, radius, which] as const)))
+  it.each(heartCases)('rounds a %f x %f heart at %f mm on its %s edges', (width, length, radius, which) => {
+    const modifier = { ...createModifier('fillet', 'aaaaaaaa'), radius, edges: { by: 'description', which } } as Modifier
+    const doc = docOf(part('p', 'heart', { width, length, height: 5 }, [0, 0, 0], { modifiers: [modifier] }))
+    expect(() => new Evaluator(registry, createCadToolkit()).local(doc, 'p')).not.toThrow()
+  })
+
   it('calls a 30 mm, 0.5 mm plate thin but not very thin', () => {
     const result = checked(docOf(box('a', 30, 30, 0.5)))
     expect(result.thin?.veryThin).toBe(false)
