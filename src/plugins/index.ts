@@ -7,6 +7,7 @@ const kades = import.meta.glob<unknown>(['../../plugins/**/*.{js,ts}', '!../../p
 
 const BUILTIN_ORDER = [
   'box', 'cylinder', 'sphere', 'cone', 'wedge', 'torus', 'text',
+  'roof', 'round-roof', 'tube', 'half-sphere', 'pyramid', 'polygon', 'paraboloid', 'star', 'heart', 'icosahedron',
   'peg', 'socket', 'screw-hole', 'threaded-rod', 'threaded-hole', 'snap-clip', 'snap-catch', 'imported',
 ]
 const orderOf = (path: string): number => {

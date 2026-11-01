@@ -75,6 +75,37 @@ describe('findPrintProblems', () => {
     expect(checked(doc).overhang).toBeNull()
   })
 
+  const moreShapes = registry.list().filter((plugin) => plugin.palette === 'more')
+  const defaultMore = (id: string) => {
+    const plugin = registry.get(id)
+    if (!plugin) throw new Error(`missing ${id}`)
+    return defaultParams(plugin) as Record<string, number | string>
+  }
+
+  it.each(moreShapes.map((plugin) => plugin.id))('has no print problems on a default %s', (id) => {
+    expect(checked(docOf(part('p', id, defaultMore(id))))).toEqual({
+      status: 'checked', floating: null, thin: null, overhang: null, thinFinished: true,
+    })
+  })
+
+  it.each(moreShapes.map((plugin) => plugin.id))('cuts a default %s as a hole into a block', (id) => {
+    const hole = { ...part('h', id, defaultMore(id)), mode: 'hole' as const }
+    const doc = groupNodes(docOf(box('host', 40, 40, 30), hole), ['host', 'h'], 'g').doc
+    expect(checked(doc).status).toBe('checked')
+  })
+
+  const rounded = (id: string, which: 'bottom' | 'all') => {
+    const modifier = { ...createModifier('fillet', 'aaaaaaaa'), radius: 0.5, edges: { by: 'description', which } } as Modifier
+    const doc = docOf(part('p', id, defaultMore(id), [0, 0, 0], { modifiers: [modifier] }))
+    return new Evaluator(registry, createCadToolkit()).local(doc, 'p')
+  }
+  it.each(moreShapes.map((plugin) => plugin.id))('rounds the bottom edges of a default %s', (id) => {
+    expect(() => rounded(id, 'bottom')).not.toThrow()
+  })
+  it.each(moreShapes.map((plugin) => plugin.id).filter((id) => id !== 'pyramid'))('rounds all edges of a default %s', (id) => {
+    expect(() => rounded(id, 'all')).not.toThrow()
+  })
+
   it('calls a 30 mm, 0.5 mm plate thin but not very thin', () => {
     const result = checked(docOf(box('a', 30, 30, 0.5)))
     expect(result.thin?.veryThin).toBe(false)
