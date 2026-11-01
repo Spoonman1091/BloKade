@@ -4,7 +4,7 @@ import { initTestOC } from '../../geometry/testing/oc-node'
 import { createCadToolkit } from '../cad'
 import { registry } from '../index'
 import { defaultParams } from '../params'
-import { quarterEllipse } from './shape-profile'
+import { icosahedronOnFace, quarterEllipse } from './shape-profile'
 
 beforeAll(initTestOC)
 
@@ -148,5 +148,26 @@ describe('polygon, star and heart', () => {
 
   it('builds a heart with some volume', () => {
     expect(measureVolume(buildDefault('heart'))).toBeGreaterThan(0)
+  })
+})
+
+describe('icosahedron', () => {
+  const edge = 10 / Math.sin((2 * Math.PI) / 5)
+
+  it('has the volume of a regular icosahedron', () => {
+    expect(measureVolume(buildDefault('icosahedron'))).toBeCloseTo((5 / 12) * (3 + Math.sqrt(5)) * edge ** 3, 1)
+  })
+
+  it('lies on a face: two face heights tall', () => {
+    const [[, , z0], [, , z1]] = buildDefault('icosahedron').boundingBox.bounds
+    expect(z0).toBeCloseTo(0, 3)
+    expect(z1).toBeCloseTo(2 * (Math.sqrt(3) / 12) * (3 + Math.sqrt(5)) * edge, 2)
+  })
+
+  it('has a flat bottom centred on the Z axis', () => {
+    const flat = icosahedronOnFace(20).points.filter(([, , z]) => Math.abs(z) < 1e-9)
+    expect(flat).toHaveLength(3)
+    expect(flat.reduce((sum, [x]) => sum + x, 0) / 3).toBeCloseTo(0, 6)
+    expect(flat.reduce((sum, [, y]) => sum + y, 0) / 3).toBeCloseTo(0, 6)
   })
 })
