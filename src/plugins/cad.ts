@@ -11,6 +11,7 @@ import {
   type Shape3D,
 } from 'replicad'
 import type { CadToolkit, CurveStep, OutlineStep, Point2 } from './cad-types'
+import { meshSolid } from '../geometry/mesh-solid'
 import { makeThread } from './cad-thread'
 import { fontFailed, TEXT_FONT } from './font'
 
@@ -75,6 +76,18 @@ function raise(drawing: Drawing, depth: number): Shape3D {
   }
 }
 
+/** True when every edge (either direction) is shared by exactly two triangles. */
+function closesUp(triangles: readonly (readonly [number, number, number])[]): boolean {
+  const uses = new Map<string, number>()
+  for (const [a, b, c] of triangles) {
+    for (const [from, to] of [[a, b], [b, c], [c, a]] as const) {
+      const key = from < to ? `${from}-${to}` : `${to}-${from}`
+      uses.set(key, (uses.get(key) ?? 0) + 1)
+    }
+  }
+  return uses.size > 0 && [...uses.values()].every((n) => n === 2)
+}
+
 export function createCadToolkit(): CadToolkit {
   return {
     box: (x, y, z) => makeBaseBox(x, y, z),
@@ -96,6 +109,10 @@ export function createCadToolkit(): CadToolkit {
       asSolid(profileDrawing(profile).sketchOnPlane('XZ', [0, width / 2, 0]).extrude(width)),
     prism: (outline, height) => asSolid(profileDrawing(outline).sketchOnPlane('XY').extrude(height) as Shape3D),
     thread: (diameter, pitch, length) => makeThread(diameter, pitch, length),
+    polyhedron: (points, triangles) => {
+      if (!closesUp(triangles)) throw new Error("Those triangles don't close up into a solid.")
+      return meshSolid(points.flat(), triangles.flat())
+    },
     text: (text, size, depth, fontFamily = TEXT_FONT) => {
       const clean = text.trim()
       if (!clean) throw new Error('Type some letters first.')

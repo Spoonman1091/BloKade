@@ -1,6 +1,7 @@
 import type { Shape3D } from 'replicad'
 
 export type Point2 = readonly [number, number]
+export type Point3 = readonly [number, number, number]
 
 /** A cubic Bézier from the previous point: two control points, then the end point. */
 export interface CurveStep {
@@ -29,4 +30,6 @@ export interface CadToolkit {
   prism(outline: readonly OutlineStep[], height: number): Shape3D
   /** Metric-style threaded rod, centered on X/Y, sitting on z = 0. Up to 40 turns long. */
   thread(diameter: number, pitch: number, length: number): Shape3D
+  /** A solid from flat triangles (corner indices, wound the same way round). */
+  polyhedron(points: readonly Point3[], triangles: readonly (readonly [number, number, number])[]): Shape3D
 }
