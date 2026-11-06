@@ -1,27 +1,35 @@
 import type { Manifold, ManifoldToplevel } from 'manifold-3d'
 import { fitsBloKade, UNIT_FACTORS, type ImportUnit } from '../app/import-stl'
 import { weldMesh } from '../geometry/weld'
-import { MAX_STL_BYTES, NO_TRIANGLES, NOT_STL, TOO_BIG_FILE, TOO_LARGE_SIZE } from '../import/limits'
+import { MAX_STL_BYTES, NO_TRIANGLES, TOO_BIG_FILE, TOO_LARGE_SIZE } from '../import/limits'
 import { parseStl, StlError } from '../import/stl'
-import { GAPS_MESSAGE } from './constants'
+import { GAPS_MESSAGE, UNEXPECTED_MESSAGE } from './constants'
 import type { ModelInfo, SplitResult } from './types'
 
 export interface OpenModel { readonly solid: Manifold; readonly info: ModelInfo }
 
 const fail = (message: string): SplitResult<OpenModel> => ({ ok: false, message })
 
-/** Builds a Manifold from welded, scaled triangles; null when the surface has gaps. */
+/** True for Manifold's own "the surface is not closed" failure, thrown or as a status. */
+const isNotManifold = (error: unknown): boolean =>
+  typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 'NotManifold'
+
+/** Builds a Manifold from welded, scaled triangles; null when the surface has gaps. Throws on anything else. */
 function solidFrom(wasm: ManifoldToplevel, vertices: Float32Array, triangles: Uint32Array): Manifold | null {
   const mesh = new wasm.Mesh({ numProp: 3, vertProperties: vertices, triVerts: triangles })
+  mesh.merge()
+  let solid: Manifold
   try {
-    mesh.merge()
-    const solid = wasm.Manifold.ofMesh(mesh)
-    if (solid.status() === 'NoError' && !solid.isEmpty()) return solid
-    solid.delete()
-    return null
-  } catch {
-    return null
+    solid = wasm.Manifold.ofMesh(mesh)
+  } catch (error) {
+    if (isNotManifold(error)) return null
+    throw error
   }
+  const status = solid.status()
+  if (status === 'NoError' && !solid.isEmpty()) return solid
+  solid.delete()
+  if (status === 'NoError' || status === 'NotManifold') return null
+  throw new Error(`Manifold could not build the model: ${status}`)
 }
 
 /** Reads an STL at full detail, scales it to mm, and rests it on z = 0 centred on x and y. Never throws. */
@@ -48,6 +56,6 @@ export function openModel(wasm: ManifoldToplevel, bytes: ArrayBuffer, unit: Impo
   } catch (error) {
     if (error instanceof StlError) return fail(error.message)
     console.error('Could not open model for splitting:', error)
-    return fail(NOT_STL)
+    return fail(UNEXPECTED_MESSAGE)
   }
 }
