@@ -3,12 +3,24 @@ import { describe, expect, it } from 'vitest'
 import { baseName, binaryStl, zipPieces } from './save'
 import type { PieceMesh } from './types'
 
-/** A 10 x 10 x 4 box whose min corner is at (ox, oy, oz). */
-function box(number: number, ox: number, oy: number, oz: number): PieceMesh {
+/** A w x d x 4 box whose min corner is at (ox, oy, oz). */
+function box(number: number, ox: number, oy: number, oz: number, w = 10, d = 10, turned = false): PieceMesh {
   const v: number[] = []
-  for (const z of [0, 4]) for (const y of [0, 10]) for (const x of [0, 10]) v.push(ox + x, oy + y, oz + z)
+  for (const z of [0, 4]) for (const y of [0, d]) for (const x of [0, w]) v.push(ox + x, oy + y, oz + z)
   const t = [0, 2, 1, 1, 2, 3, 4, 5, 6, 5, 7, 6, 0, 1, 5, 0, 5, 4, 2, 6, 7, 2, 7, 3, 0, 4, 6, 0, 6, 2, 1, 3, 7, 1, 7, 5]
-  return { number, vertices: Float32Array.from(v), triangles: Uint32Array.from(t), size: [10, 10, 4], fits: true }
+  return { number, cell: number - 1, vertices: Float32Array.from(v), triangles: Uint32Array.from(t), size: [w, d, 4], fits: true, turned }
+}
+
+/** Signed volume of an STL's triangles: positive when they face out. */
+function stlVolume(bytes: Uint8Array): number {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+  let volume = 0
+  for (let t = 0; t < view.getUint32(80, true); t++) {
+    const p = (c: number, a: number) => view.getFloat32(84 + t * 50 + 12 + (c * 3 + a) * 4, true)
+    volume += (p(0, 0) * (p(1, 1) * p(2, 2) - p(1, 2) * p(2, 1)) - p(0, 1) * (p(1, 0) * p(2, 2) - p(1, 2) * p(2, 0))
+      + p(0, 2) * (p(1, 0) * p(2, 1) - p(1, 1) * p(2, 0))) / 6
+  }
+  return volume
 }
 
 function stlBounds(bytes: Uint8Array): { min: number[]; max: number[] } {
@@ -52,6 +64,19 @@ describe('zipPieces', () => {
       expect(min[1]).toBeCloseTo(-5)
       expect(max[1]).toBeCloseTo(5)
     }
+  })
+})
+
+describe('zipPieces with a piece that only fits turned', () => {
+  it('saves it turned 90 degrees, still facing out (MK4S, 200 x 240)', () => {
+    const files = unzipSync(zipPieces('plate', [box(1, 0, 0, 0, 200, 240, true)]))
+    const bytes = files['plate-1.stl']!
+    const { min, max } = stlBounds(bytes)
+    expect((max[0] ?? 0) - (min[0] ?? 0)).toBeCloseTo(240)
+    expect((max[1] ?? 0) - (min[1] ?? 0)).toBeCloseTo(200)
+    expect(min[0]).toBeCloseTo(-120)
+    expect(min[2]).toBeCloseTo(0)
+    expect(stlVolume(bytes)).toBeCloseTo(200 * 240 * 4, 0)
   })
 })
 

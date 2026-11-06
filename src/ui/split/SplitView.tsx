@@ -39,8 +39,8 @@ function Solid({ vertices, triangles, color, offset }: { vertices: Float32Array;
 }
 
 function spreadOf(piece: PieceMesh, grid: GridPlan): readonly [number, number, number] {
-  const col = (piece.number - 1) % grid.cols
-  const row = Math.floor((piece.number - 1) / grid.cols)
+  const col = piece.cell % grid.cols
+  const row = Math.floor(piece.cell / grid.cols)
   return [(col - (grid.cols - 1) / 2) * SPREAD, (row - (grid.rows - 1) / 2) * SPREAD, 0]
 }
 

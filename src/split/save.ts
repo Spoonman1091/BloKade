@@ -30,17 +30,29 @@ export function binaryStl(vertices: Float32Array, triangles: Uint32Array): Uint8
   return out
 }
 
-/** The piece moved so it rests on z = 0 and is centred on x and y. */
+/** The piece turned 90° about z, (x, y) → (−y, x), when it only fits that way. A turn keeps the winding. */
+function turnedIfNeeded(piece: PieceMesh): Float32Array {
+  if (!piece.turned) return piece.vertices
+  return Float32Array.from(piece.vertices, (v, i) => {
+    const axis = i % 3
+    if (axis === 0) return -(piece.vertices[i + 1] ?? 0)
+    if (axis === 1) return piece.vertices[i - 1] ?? 0
+    return v
+  })
+}
+
+/** The piece (turned if it must be) moved so it rests on z = 0 and is centred on x and y. */
 function laidFlat(piece: PieceMesh): Float32Array {
+  const vertices = turnedIfNeeded(piece)
   const min = [Infinity, Infinity, Infinity]
   const max = [-Infinity, -Infinity, -Infinity]
-  for (let i = 0; i < piece.vertices.length; i++) {
-    const v = piece.vertices[i] ?? 0
+  for (let i = 0; i < vertices.length; i++) {
+    const v = vertices[i] ?? 0
     min[i % 3] = Math.min(min[i % 3] ?? v, v)
     max[i % 3] = Math.max(max[i % 3] ?? v, v)
   }
   const shift = [-((min[0] ?? 0) + (max[0] ?? 0)) / 2, -((min[1] ?? 0) + (max[1] ?? 0)) / 2, -(min[2] ?? 0)]
-  return Float32Array.from(piece.vertices, (v, i) => v + (shift[i % 3] ?? 0))
+  return Float32Array.from(vertices, (v, i) => v + (shift[i % 3] ?? 0))
 }
 
 /** One STL per piece (`name-1.stl`, ...), each flat on z = 0 and centred, zipped. */

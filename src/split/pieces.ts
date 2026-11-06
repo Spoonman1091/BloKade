@@ -2,9 +2,10 @@ import type { CrossSection, Manifold, ManifoldToplevel } from 'manifold-3d'
 import { BASE_STEP, DIGIT_HEIGHT, ENGRAVE_DEPTH, TAB_LENGTH, THIN_TONGUE_MESSAGE, TONGUE_MIN_BASE, TONGUE_OUT } from './constants'
 import { raisedOutline } from './cut-plan'
 import { digitOutline } from './digits'
-import { fitsPlate } from './grid'
+import { glueOf } from './glue'
+import { fitsPlate, turnedToFit } from './grid'
 import { prism, segmentEdits, type Edit, type JointContext } from './joint-solids'
-import { layoutGrid, segmentsOf, type Bounds, type Cell } from './layout'
+import { layoutGrid, segmentsOf, type Bounds, type Cell, type Layout } from './layout'
 import type { OpenModel } from './model'
 import { SplitProblem } from './problem'
 import type { Cut, GridPlan, PieceMesh, PiecesResult, Plate, SplitSettings } from './types'
@@ -16,6 +17,7 @@ const ENGRAVE_CLEAR = 1
 /** A cell's cut with less material than this holds nothing to print, mm³. */
 const EMPTY_VOLUME = 1e-3
 
+/** The joint material, and which segments (indices into segmentsOf's list) got a joint. */
 interface Joints { readonly edits: readonly Edit[]; readonly joined: ReadonlySet<number> }
 
 /** Swaps `current` for `next`, freeing `current` when it was replaced. */
@@ -24,7 +26,7 @@ function replace(current: Manifold, next: Manifold): Manifold {
   return next
 }
 
-function jointsFor(wasm: ManifoldToplevel, model: OpenModel, cuts: readonly Cut[], bounds: Bounds, settings: SplitSettings): Joints {
+function jointsFor(wasm: ManifoldToplevel, model: OpenModel, cuts: readonly Cut[], layout: Layout, settings: SplitSettings): Joints {
   const { joint, baseThickness } = settings
   if (joint === 'none' || baseThickness === null || cuts.length === 0) return { edits: [], joined: new Set() }
   const reach = (joint === 'tabs' ? TAB_LENGTH : TONGUE_OUT) + JOINT_CLEAR
@@ -34,11 +36,11 @@ function jointsFor(wasm: ManifoldToplevel, model: OpenModel, cuts: readonly Cut[
   const joined = new Set<number>()
   try {
     const ctx: JointContext = { wasm, solid: model.solid, base, raised, baseThickness, fitGap: settings.fitGap, reach }
-    for (const segment of segmentsOf(layoutGrid(cuts, bounds), cuts, reach)) {
+    segmentsOf(layout, cuts, reach).forEach((segment, i) => {
       const made = segmentEdits(ctx, segment, joint)
       edits.push(...made)
-      if (made.length > 0) joined.add(segment.cutIndex)
-    }
+      if (made.length > 0) joined.add(i)
+    })
     return { edits, joined }
   } catch (error) {
     edits.forEach((e) => e.solid.delete())
@@ -119,16 +121,18 @@ function positions(vertProperties: Float32Array, numProp: number): Float32Array 
   return Float32Array.from({ length: count * 3 }, (_, i) => vertProperties[Math.floor(i / 3) * numProp + (i % 3)] ?? 0)
 }
 
-function toPieceMesh(piece: Manifold, number: number, plate: Plate): PieceMesh {
+function toPieceMesh(piece: Manifold, number: number, cell: number, plate: Plate): PieceMesh {
   const mesh = piece.getMesh()
   const { min, max } = piece.boundingBox()
   const size = [max[0] - min[0], max[1] - min[1], max[2] - min[2]] as const
   return {
     number,
+    cell,
     vertices: positions(mesh.vertProperties, mesh.numProp),
     triangles: Uint32Array.from(mesh.triVerts),
     size,
     fits: fitsPlate(size[0], size[1], plate),
+    turned: turnedToFit(size[0], size[1], plate),
   }
 }
 
@@ -163,31 +167,28 @@ export function makePieces(
     throw new SplitProblem(THIN_TONGUE_MESSAGE)
   }
   const bounds = model.solid.boundingBox()
-  const { cells } = layoutGrid(plan.cuts, bounds)
-  const { edits, joined } = jointsFor(wasm, model, plan.cuts, bounds, settings)
+  const layout = layoutGrid(plan.cuts, bounds)
+  const { edits, joined } = jointsFor(wasm, model, plan.cuts, layout, settings)
   try {
-    const filled = filledCells(wasm, model, cells, bounds)
+    const filled = filledCells(wasm, model, layout.cells, bounds)
     let used = 0
     try {
       const pieces = filled.map(({ cell, plain }) => {
         const number = ++used
         const piece = buildPiece(wasm, plain, cell, edits, settings.numbers ? number : null)
         try {
-          return toPieceMesh(piece, number, plate)
+          return toPieceMesh(piece, number, cell.index, plate)
         } finally {
           piece.delete()
           onProgress?.(number, filled.length)
         }
       })
-      return { pieces, glueCuts: glueCutsOf(plan.cuts, joined) }
+      const glue = glueOf(segmentsOf(layout, plan.cuts, 0), joined, new Set(filled.map(({ cell }) => cell.index)))
+      return { pieces, ...glue }
     } finally {
       filled.slice(used).forEach(({ plain }) => plain.delete())
     }
   } finally {
     edits.forEach((e) => e.solid.delete())
   }
-}
-
-function glueCutsOf(cuts: readonly Cut[], joined: ReadonlySet<number>): number[] {
-  return cuts.map((_, i) => i).filter((i) => !joined.has(i))
 }

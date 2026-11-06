@@ -8,9 +8,17 @@ export interface GridPlan { readonly cols: number; readonly rows: number; readon
 export type JointStyle = 'tabs' | 'tongue' | 'none'
 export interface SplitSettings { readonly joint: JointStyle; readonly fitGap: number; readonly numbers: boolean; readonly baseThickness: number | null }
 export interface PieceMesh {
-  readonly number: number                 // 1-based, row-major from the front-left (−x, −y)
+  readonly number: number                 // 1-based, row-major from the front-left (−x, −y), over the cells that hold material
+  readonly cell: number                   // the grid cell it came from: row-major index over all cells, empty ones too
   readonly vertices: Float32Array; readonly triangles: Uint32Array // in assembly position (model coords)
   readonly size: Vec3; readonly fits: boolean
+  readonly turned: boolean                // true when it fits the plate only turned 90°: it is saved turned
 }
-export interface PiecesResult { readonly pieces: readonly PieceMesh[]; readonly glueCuts: readonly number[] /* indices into cuts */ }
+/** A stretch of a cut (model coords along the cut) with no joint, so it needs glue. */
+export interface GlueSegment { readonly cut: number; readonly from: number; readonly to: number }
+export interface PiecesResult {
+  readonly pieces: readonly PieceMesh[]
+  readonly glueCuts: readonly number[] /* indices into cuts with at least one unjoined stretch */
+  readonly glueSegments: readonly GlueSegment[]
+}
 export type SplitResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly message: string }

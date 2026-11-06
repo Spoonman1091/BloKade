@@ -8,6 +8,12 @@ export function fitsPlate(x: number, y: number, plate: Plate): boolean {
   return (x <= w && y <= d) || (y <= w && x <= d)
 }
 
+/** True when a piece of x by y mm fits the plate only when turned 90 degrees. */
+export function turnedToFit(x: number, y: number, plate: Plate): boolean {
+  const fitsUpright = x <= plate.width - 2 * MARGIN && y <= plate.depth - 2 * MARGIN
+  return !fitsUpright && fitsPlate(x, y, plate)
+}
+
 /** The longest a piece can be on one axis when its other side is `other` long. */
 function maxExtent(other: number, plate: Plate): number {
   const w = plate.width - 2 * MARGIN

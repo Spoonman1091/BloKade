@@ -14,10 +14,10 @@ export const OPENED: OpenedModel = {
 }
 const ok = <T,>(value: T): SplitResult<T> => ({ ok: true, value })
 
-export const piece = (number: number, fits = true): PieceMesh => ({
-  number, vertices: new Float32Array(9), triangles: new Uint32Array(3), size: [100, 100, 12], fits,
+export const piece = (number: number, fits = true, cell = number - 1): PieceMesh => ({
+  number, cell, vertices: new Float32Array(9), triangles: new Uint32Array(3), size: [100, 100, 12], fits, turned: false,
 })
-export const FOUR: PiecesResult = { pieces: [1, 2, 3, 4].map((n) => piece(n)), glueCuts: [] }
+export const FOUR: PiecesResult = { pieces: [1, 2, 3, 4].map((n) => piece(n)), glueCuts: [], glueSegments: [] }
 
 export interface FakeOptions {
   base?: number | null

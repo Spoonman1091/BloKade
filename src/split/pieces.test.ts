@@ -28,8 +28,8 @@ function open(width: number, depth: number, base: number, raised?: readonly Rais
   return result.value
 }
 
-function planFor(model: OpenModel, reserve: number): GridPlan {
-  const plan = planGrid(model.info.size[0], model.info.size[1], A1_MINI, reserve)
+function planFor(model: OpenModel, reserve: number, plate: Plate = A1_MINI): GridPlan {
+  const plan = planGrid(model.info.size[0], model.info.size[1], plate, reserve)
   if (!plan) throw new Error('no plan')
   return plan
 }
@@ -126,10 +126,12 @@ describe('makePieces on a chest plate with a raised block (A1 mini, tabs)', () =
   })
 })
 
-/** A 254 x 305 plate with its back-right quarter removed: an L. */
-function openL(): OpenModel {
+/** A 254 x 305 plate with one quarter removed: an L. `front` removes the front-right quarter, else the back-right. */
+function openL(front = false): OpenModel {
   const plate = open(254, 305, BASE)
-  const corner = wasm.Manifold.cube([200, 200, 20]).translate([0, 0, -5])
+  const cube = wasm.Manifold.cube([200, 200, 20])
+  const corner = cube.translate([0, front ? -200 : 0, -5])
+  cube.delete()
   const solid = plate.solid.subtract(corner)
   corner.delete()
   const model = { solid, info: plate.info }
@@ -147,6 +149,29 @@ describe('makePieces on odd shapes', () => {
       p.size.forEach((s) => expect(Number.isFinite(s)).toBe(true))
     })
     expect(() => volumes(pieces)).not.toThrow()
+  })
+
+  it('tells each piece which grid cell it came from', () => {
+    expect(makePieces(wasm, openL(), planFor(openL(), TAB_LENGTH), TABS, A1_MINI).pieces.map((p) => p.cell)).toEqual([0, 1, 2])
+    const front = openL(true)
+    const { pieces } = makePieces(wasm, front, planFor(front, TAB_LENGTH), TABS, A1_MINI)
+    expect(pieces.map((p) => [p.number, p.cell])).toEqual([[1, 0], [2, 2], [3, 3]])
+  })
+
+  it('asks for no glue where a cut only borders an empty cell', () => {
+    const model = openL()
+    expect(makePieces(wasm, model, planFor(model, TAB_LENGTH), TABS, A1_MINI).glueCuts).toEqual([])
+  })
+
+  it('marks a piece that only fits turned 90 degrees', () => {
+    const mk4s: Plate = { width: 250, depth: 210 }
+    const model = open(200, 240, BASE)
+    const { pieces } = makePieces(wasm, model, planFor(model, TAB_LENGTH, mk4s), TABS, mk4s)
+    expect(pieces).toHaveLength(1)
+    expect(pieces[0]?.fits).toBe(true)
+    expect(pieces[0]?.turned).toBe(true)
+    const square = open(150, 120, BASE)
+    expect(makePieces(wasm, square, planFor(square, TAB_LENGTH, mk4s), TABS, mk4s).pieces[0]?.turned).toBe(false)
   })
 
   it('gives a plain flat plate tabs on every cut', () => {
@@ -173,11 +198,31 @@ describe('makePieces fallbacks', () => {
     right.forEach((p) => p && expect(boundsOf(p).min[0]).toBeGreaterThanOrEqual(at - 1e-4))
   })
 
+  it('glues only the half of a cut that crosses raised detail; the other half keeps its tabs (R18)', () => {
+    const model = open(254, 305, BASE, [{ x: [-15, 15], y: [5, 152.5], height: 5 }])
+    const plan = planFor(model, TAB_LENGTH)
+    const xCut = plan.cuts.findIndex((c) => c.axis === 'x')
+    const yCut = plan.cuts.findIndex((c) => c.axis === 'y')
+    const at = plan.cuts[xCut]?.at ?? 0
+    const { pieces, glueCuts, glueSegments } = makePieces(wasm, model, plan, TABS, A1_MINI)
+    expect(glueCuts).toEqual([xCut])
+    expect(glueSegments).toHaveLength(1)
+    expect(glueSegments[0]?.cut).toBe(xCut)
+    expect(glueSegments[0]?.from).toBeCloseTo(plan.cuts[yCut]?.at ?? 0)
+    expect(glueSegments[0]?.to).toBeCloseTo(152.5)
+    // The front half still has tabs: one front piece reaches across the x cut.
+    const [frontLeft, frontRight] = [pieces[0], pieces[1]]
+    const crosses = (frontLeft ? boundsOf(frontLeft).max[0]! > at + 1 : false) || (frontRight ? boundsOf(frontRight).min[0]! < at - 1 : false)
+    expect(crosses).toBe(true)
+  })
+
   it('cuts straight and glues every cut when there is no base', () => {
     const model = open(254, 305, BASE)
     const plan = planFor(model, 0)
     const { pieces, glueCuts } = makePieces(wasm, model, plan, { ...TABS, baseThickness: null }, A1_MINI)
     expect(glueCuts).toEqual(plan.cuts.map((_, i) => i))
+    const { glueSegments } = makePieces(wasm, model, plan, { ...TABS, baseThickness: null, numbers: false }, A1_MINI)
+    expect(glueSegments).toHaveLength(plan.cuts.reduce((n, c) => n + (c.axis === 'x' ? plan.rows : plan.cols), 0))
     expect(pieces).toHaveLength(plan.cols * plan.rows)
     const total = volumes(pieces).reduce((a, b) => a + b, 0)
     expect(Math.abs(total - model.solid.volume())).toBeLessThan(pieces.length * Math.max(...[1, 2, 3, 4].map(engravingVolume)) + 1)

@@ -147,7 +147,7 @@ describe('SplitScreen: making and saving pieces', () => {
   })
 
   it('says which pieces do not fit and disables Save', async () => {
-    setup({ pieces: { pieces: [piece(1), piece(2), piece(3, false), piece(4)], glueCuts: [] } })
+    setup({ pieces: { pieces: [piece(1), piece(2), piece(3, false), piece(4)], glueCuts: [], glueSegments: [] } })
     await openFile()
     await userEvent.click(await screen.findByTestId('split-make'))
     await screen.findByTestId('split-map')
@@ -156,7 +156,7 @@ describe('SplitScreen: making and saving pieces', () => {
   })
 
   it('marks glue cuts on the map', async () => {
-    setup({ pieces: { ...FOUR, glueCuts: [1] } })
+    setup({ pieces: { ...FOUR, glueCuts: [1], glueSegments: [{ cut: 1, from: -127, to: 0 }] } })
     await openFile()
     await userEvent.click(await screen.findByTestId('split-make'))
     expect(within(await screen.findByTestId('split-map')).getByText('glue here')).toBeInTheDocument()
