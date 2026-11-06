@@ -278,6 +278,16 @@ Press **Import STL** (left side) or drop an STL file on the 3D view. The model b
 - **Units:** an STL file doesn't say how big a unit is. BloKade shows the size it found. If that looks too small or too big, pick another unit in the window and check again.
 - **Big models:** very detailed models are simplified so they stay quick to work with. Round edges and Bevel edges aren't offered on imported models.
 
+### Split for printing
+
+For a model that is too big for your printer. Press **✂ Split for printing** (top bar), then open an STL file. BloKade works out how many pieces it needs ("4 pieces (2 × 2)"), cuts the model into them, and saves one STL per piece, all in one ZIP. Your design is not touched.
+
+- **Full detail:** the model is cut exactly as it is. Nothing is simplified, so big, detailed files can take a little while.
+- **Joints:** where a cut runs through the bare base, the pieces get jigsaw tabs (or tongue and groove) so they fit back together. Where the picture crosses a cut, there is no joint. The map says "glue here", so glue those edges.
+- **Fit gap:** a tiny space left around each joint so the pieces slide together after printing. Make it bigger if they are too tight.
+- **Numbers:** each piece has its number on the underside, and the map shows the same numbers, so you know where each one goes.
+- **Move the cuts:** drag the sliders to put a cut somewhere else.
+
 ## How it's built
 
 - `src/document`: the design "recipe" (shapes, groups, transforms) and immutable edits
