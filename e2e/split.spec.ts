@@ -20,7 +20,10 @@ test('splits a chest plate into four pieces', async ({ page }) => {
   await page.getByTestId('split-save').click()
   const path = await (await download).path()
   const files = unzipSync(new Uint8Array(await readFile(path)))
-  expect(Object.keys(files).filter((name) => name.endsWith('.stl'))).toHaveLength(4)
+  const stls = Object.entries(files).filter(([name]) => name.endsWith('.stl'))
+  expect(stls).toHaveLength(4)
+  // An empty binary STL is 84 bytes (header and count): each piece must hold triangles.
+  for (const [name, bytes] of stls) expect(bytes.length, name).toBeGreaterThan(84)
 
   await page.getByTestId('split-back').click()
   await expect(page.getByTestId('split-for-printing')).toBeVisible()
