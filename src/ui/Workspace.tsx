@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react'
 import { useStore } from 'zustand'
 import { checkOverlap } from '../app/check-overlap'
 import { checkPrint } from '../app/check-print'
@@ -39,6 +39,9 @@ import { Toasts } from './Toasts'
 import { PrintCheckPanel } from './PrintCheckPanel'
 import { Toolbar } from './Toolbar'
 import { VariablesPanel } from './VariablesPanel'
+
+/** Loaded only when opened, so the split tool (and its worker) stay out of the main bundle. */
+const SplitScreen = lazy(() => import('./SplitScreen').then((m) => ({ default: m.SplitScreen })))
 
 function useLessonTarget(store: BloKadeStore, lessons: LessonStore): string | null {
   const openDesignId = useStore(store, (s) => s.designId)
@@ -139,6 +142,7 @@ export function Workspace({ deps, lessons: injected }: { deps: AppDeps; lessons?
   // Rebuilt whenever the shape list changes, so Add knows about shapes checked after the first render.
   const actions = useMemo(() => createActions(store, shapes.registry, shapes.carriedCodeOf), [store, shapes.registry, shapes.carriedCodeOf])
   const [showDesigns, setShowDesigns] = useState(false)
+  const [splitting, setSplitting] = useState(false)
   const stl = useStlImport(deps.client, store)
   useGeometrySync(store, deps.client)
   useEdgeCandidates(store, deps.client)
@@ -150,7 +154,7 @@ export function Workspace({ deps, lessons: injected }: { deps: AppDeps; lessons?
   const help = useHelpControls(lessons)
   const editor = useEditorScreen(shapes.editor)
   // The code box is typing, not design editing: Delete or Ctrl+Z there must never change the design.
-  useShortcuts(actions, !showDesigns && !stl.pending && !help.helpMode && !editor.open)
+  useShortcuts(actions, !showDesigns && !stl.pending && !help.helpMode && !editor.open && !splitting)
   const onExport = (format: ExportFormat): void => void exportDesign({ client: deps.client, store, format })
   const layers = <HelpLayers store={store} lessons={lessons} help={help} />
 
@@ -164,11 +168,21 @@ export function Workspace({ deps, lessons: injected }: { deps: AppDeps; lessons?
       </>
     )
   }
+  if (splitting) {
+    return (
+      <>
+        <Suspense fallback={<p className="viewport-hint" role="status">Opening Split for printing…</p>}>
+          <SplitScreen helpMode={help.helpMode} onHelpMode={help.toggle} onBack={() => setSplitting(false)} />
+        </Suspense>
+        {layers}
+      </>
+    )
+  }
   return (
     <div className={lessonsOpen ? 'workspace with-lessons' : 'workspace'}>
       <Toolbar actions={actions} onExport={onExport} onOpenDesigns={() => setShowDesigns(true)}
         learnOpen={lessonsOpen} onLearn={() => lessons.getState().togglePanel()}
-        helpMode={help.helpMode} onHelpMode={help.toggle} onMyShapes={editor.show}
+        helpMode={help.helpMode} onHelpMode={help.toggle} onMyShapes={editor.show} onSplit={() => setSplitting(true)}
         onCheckPrint={() => void checkPrint(store, deps.client)} />
       <DesignPanes deps={deps} store={store} actions={actions} shapes={shapes} lessons={lessons} session={session} stl={stl} />
       {stl.pending && <ImportDialog fileName={stl.pending.fileName} model={stl.pending.model} onImport={stl.confirm} onCancel={stl.cancel} />}

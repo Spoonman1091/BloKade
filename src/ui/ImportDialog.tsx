@@ -11,7 +11,7 @@ interface ImportDialogProps {
   onCancel(): void
 }
 
-const UNIT_LABELS: Readonly<Record<ImportUnit, string>> = { mm: 'Millimetres (mm)', cm: 'Centimetres (cm)', inches: 'Inches' }
+export const UNIT_LABELS: Readonly<Record<ImportUnit, string>> = { mm: 'Millimetres (mm)', cm: 'Centimetres (cm)', inches: 'Inches' }
 const UNITS = Object.keys(UNIT_FACTORS) as ImportUnit[]
 
 /** Asks which units the file uses before the model is added. */

@@ -6,12 +6,13 @@ interface DraftFieldProps<T> {
   value: T
   onCommit(value: T): void
   testId?: string
+  disabled?: boolean
   format(value: T): string
   parse(text: string): T | null
 }
 
 /** Text input holding a draft; commits valid changes on Enter/blur, reverts junk and on Escape. */
-function DraftField<T>({ label, value, onCommit, testId, format, parse }: DraftFieldProps<T>) {
+function DraftField<T>({ label, value, onCommit, testId, disabled, format, parse }: DraftFieldProps<T>) {
   const [draft, setDraft] = useState(format(value))
   useEffect(() => setDraft(format(value)), [value, format])
 
@@ -43,6 +44,7 @@ function DraftField<T>({ label, value, onCommit, testId, format, parse }: DraftF
         type="text"
         inputMode="decimal"
         data-testid={testId}
+        disabled={disabled}
         value={draft}
         onChange={(event) => {
           dirty.current = true

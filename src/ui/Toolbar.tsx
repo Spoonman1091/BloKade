@@ -29,10 +29,12 @@ interface ToolbarProps {
   onHelpMode(): void
   /** Opens 🛠️ My shapes. The button only shows when this is given. */
   onMyShapes?(): void
+  /** Opens ✂ Split for printing. The button only shows when this is given. */
+  onSplit?(): void
   onCheckPrint(): void
 }
 
-export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn, helpMode, onHelpMode, onMyShapes, onCheckPrint }: ToolbarProps) {
+export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn, helpMode, onHelpMode, onMyShapes, onSplit, onCheckPrint }: ToolbarProps) {
   const undoable = useBloKade((s) => canUndo(s.history))
   const redoable = useBloKade((s) => canRedo(s.history))
   const count = useBloKade((s) => s.selection.length)
@@ -52,6 +54,7 @@ export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn, 
         <button type="button" className="tool-button" data-testid="help-mode" data-help-toggle="" aria-pressed={helpMode}
           aria-label="Help mode" onClick={onHelpMode}>❓</button>
         {onMyShapes && <button type="button" className="tool-button" data-testid="my-shapes" onClick={onMyShapes}>🛠️ My shapes</button>}
+        {onSplit && <button type="button" className="tool-button" data-testid="split-for-printing" onClick={onSplit}>✂ Split for printing</button>}
       </div>
       <div className="toolbar-group">
         <button type="button" className="tool-button" data-testid="undo" title="Undo (Ctrl+Z)" disabled={!undoable} onClick={actions.undo}>↶ Undo</button>
@@ -95,7 +98,7 @@ export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn, 
 }
 
 /** Which printer's plate the 3D view shows and checks parts against. */
-function PrinterPicker() {
+export function PrinterPicker() {
   const printerId = usePrinterId()
   return (
     <label className="toolbar-group">
