@@ -38,6 +38,8 @@ const START: State = {
 
 /** The pieces are out of date as soon as a setting or a cut changes. */
 const stale = (s: State): State => (s.stage === 'pieces' ? { ...s, stage: 'planned', pieces: null } : s)
+/** No plan (it failed or was cancelled): back to just opened, so "Work out the pieces" shows. */
+const unplanned = (s: State): State => ({ ...s, stage: 'opened', grid: null, pieces: null })
 
 export interface Split extends State {
   readonly plate: Plate | null
@@ -74,7 +76,10 @@ export function useSplit(client: SplitClient): Split {
 
   const shown = useMemo(() => effectiveSettings(state.settings, state.hasBase), [state.settings, state.hasBase])
 
-  /** Runs one worker call. Cancel is not an error: it just ends the wait and `onCancel` restores the screen. */
+  /**
+   * Runs one worker call. Cancel is not an error: it just ends the wait and `cancelled` restores the screen.
+   * Cancel starts a fresh worker that holds no pieces, so every `cancelled` drops them.
+   */
   const run = useCallback(async <T,>(busy: Exclude<Busy, null>, call: () => Promise<SplitResult<T>>, done: (value: T) => (s: State) => State,
     failed: (message: string) => (s: State) => State, cancelled: (s: State) => State): Promise<void> => {
     const mine = ++sequence.current
@@ -123,8 +128,8 @@ export function useSplit(client: SplitClient): Split {
         const settings = first ? normalizeSettings({ ...cur.settings, baseThickness }) : cur.settings
         return { ...cur, grid, hasBase: baseThickness !== null, settings, stage: 'planned', pieces: null }
       },
-      (message) => (cur) => ({ ...cur, stage: 'opened', grid: null, pieces: null, error: message }),
-      (cur) => cur)
+      (message) => (cur) => ({ ...unplanned(cur), error: message }),
+      unplanned)
   }, [client, run])
 
   // Plan on its own once a file is open, and again when the joint style or the printer changes (they change the reserve).
@@ -150,8 +155,8 @@ export function useSplit(client: SplitClient): Split {
     const { grid } = s
     await run('making', () => client.pieces(grid, effectiveSettings(s.settings, s.hasBase), p),
       (pieces) => (cur) => ({ ...cur, pieces, stage: 'pieces' }),
-      (message) => (cur) => ({ ...cur, error: message }),
-      (cur) => cur)
+      (message) => (cur) => ({ ...stale(cur), error: message }),
+      stale)
   }, [client, run])
 
   const save = useCallback(async (): Promise<void> => {
@@ -161,7 +166,7 @@ export function useSplit(client: SplitClient): Split {
     await run('saving', () => client.save(name),
       (zip) => (cur) => { downloadBytes(zip as BlobPart, `${name}-pieces.zip`, 'application/zip'); return cur },
       (message) => (cur) => ({ ...cur, error: message }),
-      (cur) => cur)
+      stale)
   }, [client, run])
 
   const cancel = useCallback((): void => client.cancel(), [client])

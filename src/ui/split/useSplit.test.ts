@@ -57,6 +57,48 @@ describe('useSplit', () => {
     expect(hook.result.current.messages).toEqual([])
   })
 
+  it('drops the pieces when Make again is cancelled, so Save is off', async () => {
+    const { hook, settings } = await planned()
+    await act(async () => { await hook.result.current.makePieces() })
+    expect(hook.result.current.canSave).toBe(true)
+    settings.hangPieces = true
+    let made: Promise<void> | undefined
+    act(() => { made = hook.result.current.makePieces() })
+    await waitFor(() => expect(hook.result.current.busy).toBe('making'))
+    act(() => hook.result.current.cancel())
+    await act(async () => { await made })
+    expect(hook.result.current.stage).toBe('planned')
+    expect(hook.result.current.pieces).toBeNull()
+    expect(hook.result.current.canSave).toBe(false)
+  })
+
+  it('drops the pieces when Save is cancelled (the fresh worker has none)', async () => {
+    const { hook, settings } = await planned()
+    await act(async () => { await hook.result.current.makePieces() })
+    settings.hangSave = true
+    let saved: Promise<void> | undefined
+    act(() => { saved = hook.result.current.save() })
+    await waitFor(() => expect(hook.result.current.busy).toBe('saving'))
+    act(() => hook.result.current.cancel())
+    await act(async () => { await saved })
+    expect(hook.result.current.stage).toBe('planned')
+    expect(hook.result.current.canSave).toBe(false)
+  })
+
+  it('goes back to "opened" with no grid when a new plan is cancelled', async () => {
+    const { hook, settings } = await planned()
+    await act(async () => { await hook.result.current.makePieces() })
+    settings.hangPlan = true
+    act(() => hook.result.current.replan())
+    await waitFor(() => expect(hook.result.current.busy).toBe('planning'))
+    act(() => hook.result.current.cancel())
+    await waitFor(() => expect(hook.result.current.busy).toBeNull())
+    expect(hook.result.current.stage).toBe('opened')
+    expect(hook.result.current.grid).toBeNull()
+    expect(hook.result.current.pieces).toBeNull()
+    expect(hook.result.current.canSave).toBe(false)
+  })
+
   it('reports the thin tongue message under 4 mm', async () => {
     const { hook } = await planned({ base: 3 })
     expect(hook.result.current.messages).toContain(THIN_TONGUE_MESSAGE)

@@ -24,22 +24,28 @@ export interface FakeOptions {
   pieces?: PiecesResult
   /** pieces() never answers until cancel() rejects it. */
   hangPieces?: boolean
+  /** plan() never answers until cancel() rejects it. */
+  hangPlan?: boolean
+  /** save() never answers until cancel() rejects it. */
+  hangSave?: boolean
 }
 
 /** A SplitClient with every call recorded and answers set by `options` (read at call time, so tests can change it). */
 export function fakeSplitClient(options: FakeOptions = {}) {
-  const settings = { base: 6.4, pieces: FOUR, hangPieces: false, ...options }
+  const settings = { base: 6.4, pieces: FOUR, hangPieces: false, hangPlan: false, hangSave: false, ...options }
   const listeners = new Set<(done: number, total: number) => void>()
   let reject: (() => void) | null = null
+  const hang = <T,>(): Promise<T> => new Promise<T>((_, no) => { reject = () => no(new SplitCancelled()) })
   const client = {
     open: vi.fn(async (..._args: Parameters<SplitClient['open']>) => ok(OPENED)),
-    plan: vi.fn(async (..._args: Parameters<SplitClient['plan']>) => ok({ grid: GRID, baseThickness: settings.base })),
+    plan: vi.fn(async (..._args: Parameters<SplitClient['plan']>) =>
+      settings.hangPlan ? hang<never>() : ok({ grid: GRID, baseThickness: settings.base })),
     pieces: vi.fn(async (..._args: Parameters<SplitClient['pieces']>): Promise<SplitResult<PiecesResult>> => {
       listeners.forEach((l) => l(1, 4))
-      if (settings.hangPieces) return new Promise((_, no) => { reject = () => no(new SplitCancelled()) })
+      if (settings.hangPieces) return hang()
       return ok(settings.pieces)
     }),
-    save: vi.fn(async () => ok(new Uint8Array([1, 2, 3]))),
+    save: vi.fn(async (..._args: Parameters<SplitClient['save']>) => (settings.hangSave ? hang<never>() : ok(new Uint8Array([1, 2, 3])))),
     onProgress: vi.fn((fn: (done: number, total: number) => void) => { listeners.add(fn); return () => { listeners.delete(fn) } }),
     cancel: vi.fn(() => { reject?.(); reject = null }),
     dispose: vi.fn(),
