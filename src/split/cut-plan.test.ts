@@ -24,10 +24,14 @@ describe('findBaseThickness', () => {
     expect(findBaseThickness(plate([{ x: [-20, 20], y: [-40, 40], height: 5 }]))).toBeCloseTo(6.4, 1)
   })
 
-  it('is null for a plain box', () => {
+  it('is the full height for a plain box', () => {
     const box = wasm.Manifold.cube([50, 50, 6.4], false)
     solids.push(box)
-    expect(findBaseThickness(box)).toBeNull()
+    expect(findBaseThickness(box)).toBeCloseTo(6.4, 1)
+  })
+
+  it('is the full height for a plain plate read from an STL', () => {
+    expect(findBaseThickness(plate())).toBeCloseTo(6.4, 1)
   })
 
   it('is null for a sphere-like shape', () => {
@@ -41,6 +45,15 @@ describe('findBaseThickness', () => {
 
 describe('placeCuts', () => {
   const a1 = { width: 180, depth: 180 }
+
+  it('keeps even cuts on a plain plate, whose base is its full height', () => {
+    const solid = plate()
+    const grid = planGrid(254, 305, a1, TAB_LENGTH)
+    if (!grid) throw new Error('no grid')
+    const base = findBaseThickness(solid)
+    expect(base).not.toBeNull()
+    expect(placeCuts(solid, grid, base).cuts.map((c) => c.at)).toEqual(grid.cuts.map((c) => c.at))
+  })
 
   it('moves the cut off a raised strip and keeps the other in the middle', () => {
     const solid = plate([{ x: [-10, 10], y: [-152.5, 152.5], height: 5 }])

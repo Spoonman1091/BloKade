@@ -13,6 +13,8 @@ import type { Cut, GridPlan, PieceMesh, PiecesResult, Plate, SplitSettings } fro
 const JOINT_CLEAR = 2
 /** How far below the bottom the number's cutter starts, so it opens cleanly, mm. */
 const ENGRAVE_CLEAR = 1
+/** A cell's cut with less material than this holds nothing to print, mm³. */
+const EMPTY_VOLUME = 1e-3
 
 interface Joints { readonly edits: readonly Edit[]; readonly joined: ReadonlySet<number> }
 
@@ -90,14 +92,21 @@ function applyEdits(wasm: ManifoldToplevel, plain: Manifold, edits: readonly Edi
   return piece
 }
 
-function buildPiece(wasm: ManifoldToplevel, model: OpenModel, cell: Cell, bounds: Bounds, edits: readonly Edit[], numbers: boolean): Manifold {
+/** The model's material inside one cell, before joints. Caller frees it. */
+function plainCut(wasm: ManifoldToplevel, model: OpenModel, cell: Cell, bounds: Bounds): Manifold {
   const box = cellBox(wasm, cell, bounds)
-  const plain = model.solid.intersect(box)
-  box.delete()
-  const joined = applyEdits(wasm, plain, edits.filter((e) => e.piece === cell.index))
-  if (!numbers) return joined
   try {
-    return engrave(wasm, joined, cell.index + 1)
+    return model.solid.intersect(box)
+  } finally {
+    box.delete()
+  }
+}
+
+function buildPiece(wasm: ManifoldToplevel, plain: Manifold, cell: Cell, edits: readonly Edit[], number: number | null): Manifold {
+  const joined = applyEdits(wasm, plain, edits.filter((e) => e.piece === cell.index))
+  if (number === null) return joined
+  try {
+    return engrave(wasm, joined, number)
   } finally {
     joined.delete()
   }
@@ -124,6 +133,20 @@ function toPieceMesh(piece: Manifold, number: number, plate: Plate): PieceMesh {
 }
 
 /**
+ * The cells that hold material (an L- or U-shaped model leaves some empty), each with its
+ * plain cut, in row-major order. Empty cuts are freed here; the caller frees the rest.
+ */
+function filledCells(wasm: ManifoldToplevel, model: OpenModel, cells: readonly Cell[], bounds: Bounds): { cell: Cell; plain: Manifold }[] {
+  return cells.flatMap((cell) => {
+    const plain = plainCut(wasm, model, cell, bounds)
+    // A cell beside a model wall that lies on the cut can come back as zero-volume faces, not empty.
+    if (!plain.isEmpty() && plain.volume() > EMPTY_VOLUME) return [{ cell, plain }]
+    plain.delete()
+    return []
+  })
+}
+
+/**
  * Cuts the model into the plan's grid of pieces, joined by tabs or a tongue on bare base
  * (straight, glued cuts elsewhere), each numbered underneath. Pieces stay in assembly position.
  * Throws SplitProblem when a tongue is asked for on a base too thin to hold one.
@@ -143,18 +166,28 @@ export function makePieces(
   const { cells } = layoutGrid(plan.cuts, bounds)
   const { edits, joined } = jointsFor(wasm, model, plan.cuts, bounds, settings)
   try {
-    const pieces = cells.map((cell) => {
-      const piece = buildPiece(wasm, model, cell, bounds, edits, settings.numbers)
-      try {
-        return toPieceMesh(piece, cell.index + 1, plate)
-      } finally {
-        piece.delete()
-        onProgress?.(cell.index + 1, cells.length)
-      }
-    })
-    const glueCuts = plan.cuts.map((_, i) => i).filter((i) => !joined.has(i))
-    return { pieces, glueCuts }
+    const filled = filledCells(wasm, model, cells, bounds)
+    let used = 0
+    try {
+      const pieces = filled.map(({ cell, plain }) => {
+        const number = ++used
+        const piece = buildPiece(wasm, plain, cell, edits, settings.numbers ? number : null)
+        try {
+          return toPieceMesh(piece, number, plate)
+        } finally {
+          piece.delete()
+          onProgress?.(number, filled.length)
+        }
+      })
+      return { pieces, glueCuts: glueCutsOf(plan.cuts, joined) }
+    } finally {
+      filled.slice(used).forEach(({ plain }) => plain.delete())
+    }
   } finally {
     edits.forEach((e) => e.solid.delete())
   }
+}
+
+function glueCutsOf(cuts: readonly Cut[], joined: ReadonlySet<number>): number[] {
+  return cuts.map((_, i) => i).filter((i) => !joined.has(i))
 }

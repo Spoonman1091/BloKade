@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Manifold, ManifoldToplevel } from 'manifold-3d'
 import { DEFAULT_FIT_GAP, DIGIT_HEIGHT, ENGRAVE_DEPTH, TAB_LENGTH, THIN_TONGUE_MESSAGE, TONGUE_OUT } from './constants'
+import { findBaseThickness } from './cut-plan'
 import { digitOutline } from './digits'
 import { planGrid } from './grid'
 import { loadManifold } from './manifold'
@@ -122,6 +123,40 @@ describe('makePieces on a chest plate with a raised block (A1 mini, tabs)', () =
     const calls: [number, number][] = []
     makePieces(wasm, model, planFor(model, TAB_LENGTH), TABS, A1_MINI, (done, total) => calls.push([done, total]))
     expect(calls).toEqual([[1, 4], [2, 4], [3, 4], [4, 4]])
+  })
+})
+
+/** A 254 x 305 plate with its back-right quarter removed: an L. */
+function openL(): OpenModel {
+  const plate = open(254, 305, BASE)
+  const corner = wasm.Manifold.cube([200, 200, 20]).translate([0, 0, -5])
+  const solid = plate.solid.subtract(corner)
+  corner.delete()
+  const model = { solid, info: plate.info }
+  models.push(model)
+  return model
+}
+
+describe('makePieces on odd shapes', () => {
+  it('skips empty cells and numbers the rest 1..N', () => {
+    const model = openL()
+    const { pieces } = makePieces(wasm, model, planFor(model, TAB_LENGTH), TABS, A1_MINI)
+    expect(pieces.map((p) => p.number)).toEqual([1, 2, 3])
+    pieces.forEach((p) => {
+      expect(p.triangles.length).toBeGreaterThan(0)
+      p.size.forEach((s) => expect(Number.isFinite(s)).toBe(true))
+    })
+    expect(() => volumes(pieces)).not.toThrow()
+  })
+
+  it('gives a plain flat plate tabs on every cut', () => {
+    const model = open(254, 305, BASE)
+    const plan = planFor(model, TAB_LENGTH)
+    const settings = { ...TABS, baseThickness: findBaseThickness(model.solid) }
+    const { pieces, glueCuts } = makePieces(wasm, model, plan, settings, A1_MINI)
+    expect(glueCuts).toEqual([])
+    const plain = volumes(makePieces(wasm, model, plan, { ...settings, joint: 'none' }, A1_MINI).pieces)
+    volumes(pieces).forEach((v, i) => expect(Math.abs(v - (plain[i] ?? 0))).toBeGreaterThan(1))
   })
 })
 

@@ -13,21 +13,31 @@ function sliceArea(solid: Manifold, z: number): number {
   return area
 }
 
+/** True when a slice is (nearly) the footprint: not much smaller, as over raised detail, nor bigger, as up a dome. */
+function matchesFootprint(area: number, footprint: number): boolean {
+  return area >= BASE_COVERAGE * footprint && area * BASE_COVERAGE <= footprint
+}
+
+/** Slack for float32 vertex heights when comparing against the model top, mm. */
+const TOP_TOLERANCE = 1e-4
+
 /**
  * The height of the flat base: the last height whose slice still covers (nearly) the
- * whole footprint. Null when nothing rises above it, or the model has no flat base.
+ * whole footprint (and no more). A plain flat plate is all base, so it gets its full height.
+ * Null only when the model has no flat base (the first step above the footprint already fails).
  */
 export function findBaseThickness(solid: Manifold): number | null {
   const top = solid.boundingBox().max[2]
   const footprint = sliceArea(solid, BASE_STEP)
   let base: number | null = null
-  for (let step = 1; step * BASE_STEP < top - BASE_STEP / 2; step++) {
+  // Step 1 is the footprint itself; the walk starts above it.
+  for (let step = 2; step * BASE_STEP < top - BASE_STEP / 2; step++) {
     const z = step * BASE_STEP
-    if (sliceArea(solid, z) < BASE_COVERAGE * footprint) break
+    if (!matchesFootprint(sliceArea(solid, z), footprint)) break
     base = z
   }
-  if (base === null || base >= top - BASE_STEP - 1e-9) return null
-  return base
+  if (base === null) return null
+  return base >= top - BASE_STEP - TOP_TOLERANCE ? top : base
 }
 
 /** The outline of everything that stands just above the base. Caller frees it. */
