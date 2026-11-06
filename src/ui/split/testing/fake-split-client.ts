@@ -3,9 +3,10 @@ import type { OpenedModel } from '../../../split/split-api'
 import { SplitCancelled, type SplitClient } from '../../../split/split-client'
 import type { Cut, GridPlan, PieceMesh, PiecesResult, SplitResult } from '../../../split/types'
 
+/** The A1 mini plan for the 254 x 305 chest plate with tabs: every place in these windows fits. */
 export const CUTS: readonly Cut[] = [
-  { axis: 'x', min: -60, max: 60, at: 0 },
-  { axis: 'y', min: -70, max: 70, at: 10 },
+  { axis: 'x', min: -33, max: 33, at: 0 },
+  { axis: 'y', min: -7.5, max: 7.5, at: 2 },
 ]
 export const GRID: GridPlan = { cols: 2, rows: 2, cuts: CUTS }
 export const OPENED: OpenedModel = {
@@ -28,18 +29,20 @@ export interface FakeOptions {
   hangPlan?: boolean
   /** save() never answers until cancel() rejects it. */
   hangSave?: boolean
+  /** The grid plan() answers with. */
+  grid?: GridPlan
 }
 
 /** A SplitClient with every call recorded and answers set by `options` (read at call time, so tests can change it). */
 export function fakeSplitClient(options: FakeOptions = {}) {
-  const settings = { base: 6.4, pieces: FOUR, hangPieces: false, hangPlan: false, hangSave: false, ...options }
+  const settings = { base: 6.4, pieces: FOUR, hangPieces: false, hangPlan: false, hangSave: false, grid: GRID, ...options }
   const listeners = new Set<(done: number, total: number) => void>()
   let reject: (() => void) | null = null
   const hang = <T,>(): Promise<T> => new Promise<T>((_, no) => { reject = () => no(new SplitCancelled()) })
   const client = {
     open: vi.fn(async (..._args: Parameters<SplitClient['open']>) => ok(OPENED)),
     plan: vi.fn(async (..._args: Parameters<SplitClient['plan']>) =>
-      settings.hangPlan ? hang<never>() : ok({ grid: GRID, baseThickness: settings.base })),
+      settings.hangPlan ? hang<never>() : ok({ grid: settings.grid, baseThickness: settings.base })),
     pieces: vi.fn(async (..._args: Parameters<SplitClient['pieces']>): Promise<SplitResult<PiecesResult>> => {
       listeners.forEach((l) => l(1, 4))
       if (settings.hangPieces) return hang()

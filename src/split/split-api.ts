@@ -1,13 +1,13 @@
 import type { ImportUnit } from '../app/import-stl'
-import { TAB_LENGTH, TONGUE_OUT, TOO_MANY_MESSAGE, UNEXPECTED_MESSAGE } from './constants'
+import { TOO_MANY_MESSAGE, UNEXPECTED_MESSAGE } from './constants'
 import { findBaseThickness, placeCuts } from './cut-plan'
-import { planGrid } from './grid'
+import { JOINT_RESERVE, planGrid } from './grid'
 import { loadManifold } from './manifold'
 import { openModel, type OpenModel } from './model'
 import { makePieces } from './pieces'
 import { SplitProblem } from './problem'
 import { zipPieces } from './save'
-import type { GridPlan, JointStyle, ModelInfo, PiecesResult, Plate, SplitResult, SplitSettings } from './types'
+import type { GridPlan, ModelInfo, PiecesResult, Plate, SplitResult, SplitSettings } from './types'
 
 export interface ModelPreview { readonly vertices: Float32Array; readonly triangles: Uint32Array }
 export type OpenedModel = ModelInfo & { readonly preview: ModelPreview }
@@ -18,8 +18,6 @@ export interface SplitApi {
   pieces(plan: GridPlan, settings: SplitSettings, plate: Plate): Promise<SplitResult<PiecesResult>>
   save(name: string): Promise<SplitResult<Uint8Array>>
 }
-
-const RESERVE: Readonly<Record<JointStyle, number>> = { tabs: TAB_LENGTH, tongue: TONGUE_OUT, none: 0 }
 
 const fail = <T>(message: string): SplitResult<T> => ({ ok: false, message })
 
@@ -66,10 +64,12 @@ export function createSplitApi(onProgress: (done: number, total: number) => void
     async plan(plate, settings) {
       try {
         if (!model) throw new Error('plan called before a model was opened')
-        const grid = planGrid(model.info.size[0], model.info.size[1], plate, RESERVE[settings.joint])
+        const reserve = JOINT_RESERVE[settings.joint]
+        const grid = planGrid(model.info.size[0], model.info.size[1], plate, reserve)
         if (!grid) return fail(TOO_MANY_MESSAGE)
         const baseThickness = findBaseThickness(model.solid)
-        return { ok: true, value: { grid: placeCuts(model.solid, grid, baseThickness), baseThickness } }
+        const wasm = await loadManifold()
+        return { ok: true, value: { grid: placeCuts(wasm, model.solid, grid, baseThickness, { plate, reserve }), baseThickness } }
       } catch (error) {
         return unexpected(error)
       }

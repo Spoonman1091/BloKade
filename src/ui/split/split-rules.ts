@@ -6,8 +6,11 @@ const MIN_CUT_GAP = 1
 
 const clamp = (value: number, low: number, high: number): number => Math.min(high, Math.max(low, value))
 
-/** The cuts with cut `index` moved to `at`: kept inside its window and ≥ 1 mm from its neighbours on the same axis. */
-export function moveCutIn(cuts: readonly Cut[], index: number, at: number): readonly Cut[] {
+/**
+ * The cuts with cut `index` moved to `at`: kept inside its window and ≥ 1 mm from its neighbours on the same axis.
+ * When `fits` says the moved cuts would make a piece too big, the move is refused and `cuts` come back unchanged.
+ */
+export function moveCutIn(cuts: readonly Cut[], index: number, at: number, fits: (moved: readonly Cut[]) => boolean = () => true): readonly Cut[] {
   const cut = cuts[index]
   if (!cut) return cuts
   const sameAxis = cuts
@@ -20,7 +23,8 @@ export function moveCutIn(cuts: readonly Cut[], index: number, at: number): read
   const low = Math.max(cut.min, before ? before.at + MIN_CUT_GAP : cut.min)
   const high = Math.min(cut.max, after ? after.at - MIN_CUT_GAP : cut.max)
   const next = low > high ? cut.at : clamp(at, low, high)
-  return cuts.map((c, i) => (i === index ? { ...c, at: next } : c))
+  const moved = cuts.map((c, i) => (i === index ? { ...c, at: next } : c))
+  return fits(moved) ? moved : cuts
 }
 
 const TOO_BIG_TAIL = 'too big for your printer. Move the cuts or pick a bigger printer.'
@@ -33,6 +37,12 @@ export function misfitMessage(numbers: readonly number[]): string | null {
   const last = rest[rest.length - 1]
   const list = [only, ...rest.slice(0, -1)].join(', ')
   return `Pieces ${list} and ${last} are ${TOO_BIG_TAIL}`
+}
+
+/** Before the pieces are made: "One piece would be too big …", or null when every piece would fit. */
+export function liveMisfitMessage(count: number): string | null {
+  if (count === 0) return null
+  return `${count === 1 ? 'One piece' : `${count} pieces`} would be ${TOO_BIG_TAIL}`
 }
 
 /** A tongue needs a thick enough base; anything thinner switches to tabs. */

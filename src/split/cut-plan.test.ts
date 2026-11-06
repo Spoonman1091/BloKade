@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Manifold, ManifoldToplevel } from 'manifold-3d'
 import { TAB_LENGTH } from './constants'
 import { findBaseThickness, placeCuts } from './cut-plan'
-import { planGrid } from './grid'
+import { misfitCells, planGrid } from './grid'
 import { loadManifold } from './manifold'
 import { openModel } from './model'
 import { plateStl, type Raised } from './test-meshes'
@@ -45,6 +45,7 @@ describe('findBaseThickness', () => {
 
 describe('placeCuts', () => {
   const a1 = { width: 180, depth: 180 }
+  const fit = { plate: a1, reserve: TAB_LENGTH }
 
   it('keeps even cuts on a plain plate, whose base is its full height', () => {
     const solid = plate()
@@ -52,14 +53,14 @@ describe('placeCuts', () => {
     if (!grid) throw new Error('no grid')
     const base = findBaseThickness(solid)
     expect(base).not.toBeNull()
-    expect(placeCuts(solid, grid, base).cuts.map((c) => c.at)).toEqual(grid.cuts.map((c) => c.at))
+    expect(placeCuts(wasm, solid, grid, base, fit).cuts.map((c) => c.at)).toEqual(grid.cuts.map((c) => c.at))
   })
 
   it('moves the cut off a raised strip and keeps the other in the middle', () => {
     const solid = plate([{ x: [-10, 10], y: [-152.5, 152.5], height: 5 }])
     const grid = planGrid(254, 305, a1, TAB_LENGTH)
     if (!grid) throw new Error('no grid')
-    const placed = placeCuts(solid, grid, 6.4)
+    const placed = placeCuts(wasm, solid, grid, 6.4, fit)
     const xCut = placed.cuts.find((c) => c.axis === 'x')
     const yCut = placed.cuts.find((c) => c.axis === 'y')
     expect(Math.abs(xCut?.at ?? 0)).toBe(11)
@@ -70,7 +71,7 @@ describe('placeCuts', () => {
     const solid = plate([{ x: [-60, 60], y: [-152.5, 152.5], height: 5 }])
     const grid = planGrid(254, 305, a1, TAB_LENGTH)
     if (!grid) throw new Error('no grid')
-    const cut = placeCuts(solid, grid, 6.4).cuts.find((c) => c.axis === 'x')
+    const cut = placeCuts(wasm, solid, grid, 6.4, fit).cuts.find((c) => c.axis === 'x')
     expect(cut).toBeDefined()
     expect(cut!.at).toBeGreaterThanOrEqual(cut!.min)
     expect(cut!.at).toBeLessThanOrEqual(cut!.max)
@@ -80,6 +81,15 @@ describe('placeCuts', () => {
     const solid = plate()
     const grid = planGrid(254, 305, a1, TAB_LENGTH)
     if (!grid) throw new Error('no grid')
-    expect(placeCuts(solid, grid, null)).toEqual(grid)
+    expect(placeCuts(wasm, solid, grid, null, fit)).toEqual(grid)
+  })
+  it('never returns cuts that make a piece too big: falls back to even cuts on that axis (R19)', () => {
+    // Raised strips push the first cut far left and the second right, which alone would make piece 2 192 mm long.
+    const solid = plate([{ x: [-148, -90], y: [-50, 50], height: 5 }, { x: [-25, 22], y: [-50, 50], height: 5 }], 500, 100)
+    const grid = planGrid(500, 100, a1, TAB_LENGTH)
+    if (!grid) throw new Error('no grid')
+    expect(grid.cuts).toHaveLength(3)
+    const placed = placeCuts(wasm, solid, grid, 6.4, fit)
+    expect(misfitCells(placed, { width: 500, depth: 100 }, a1, TAB_LENGTH)).toEqual([])
   })
 })

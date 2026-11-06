@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fitsPlate, planGrid } from './grid'
+import { fitsPlate, misfitCells, pieceExtents, planGrid } from './grid'
 
 const A1MINI = { width: 180, depth: 180 }
 
@@ -51,5 +51,23 @@ describe('planGrid', () => {
     expect(none.cuts[0]!.min).toBeCloseTo(-5); expect(none.cuts[0]!.max).toBeCloseTo(5)
     const tabs = planGrid(330, 100, A1MINI, 10)!
     expect([tabs.cols, tabs.rows]).toEqual([3, 1])
+  })
+})
+
+describe('pieceExtents and misfitCells (R19)', () => {
+  it('measures each piece, with joint room on its cut edges', () => {
+    const plan = planGrid(254, 305, A1MINI, 10)!
+    expect(pieceExtents(plan, { width: 254, depth: 305 }, 10)).toEqual([
+      { cell: 0, x: 137, y: 162.5 }, { cell: 1, x: 137, y: 162.5 }, { cell: 2, x: 137, y: 162.5 }, { cell: 3, x: 137, y: 162.5 },
+    ])
+  })
+
+  it('finds the piece that moved cuts make too big (3 cuts on a 500 mm strip)', () => {
+    const size = { width: 500, depth: 100 }
+    const plan = planGrid(500, 100, A1MINI, 10)!
+    expect([plan.cols, plan.rows]).toEqual([4, 1])
+    expect(misfitCells(plan, size, A1MINI, 10)).toEqual([])
+    const moved = { ...plan, cuts: plan.cuts.map((c, i) => ({ ...c, at: [-149, 23, 125][i]! })) }
+    expect(misfitCells(moved, size, A1MINI, 10)).toEqual([1])
   })
 })

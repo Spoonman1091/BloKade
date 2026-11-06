@@ -1,5 +1,8 @@
-import { MARGIN, MAX_GRID } from './constants'
-import type { Axis2, Cut, GridPlan, Plate } from './types'
+import { MARGIN, MAX_GRID, TAB_LENGTH, TONGUE_OUT } from './constants'
+import type { Axis2, Cut, GridPlan, JointStyle, Plate } from './types'
+
+/** Joint room per cut edge for each joint style, mm. */
+export const JOINT_RESERVE: Readonly<Record<JointStyle, number>> = { tabs: TAB_LENGTH, tongue: TONGUE_OUT, none: 0 }
 
 /** True when a piece of x by y mm fits the plate with a margin each side, either way round. */
 export function fitsPlate(x: number, y: number, plate: Plate): boolean {
@@ -79,4 +82,32 @@ export function planGrid(width: number, depth: number, plate: Plate, reserve: nu
   const xCuts = axisCuts('x', width, cols, worstExtent(depth, rows, reserve), plate, reserve)
   const yCuts = axisCuts('y', depth, rows, worstExtent(width, cols, reserve), plate, reserve)
   return { cols, rows, cuts: [...xCuts, ...yCuts] }
+}
+
+/** One grid cell's longest reach on x and y (mm), counting joint room on its cut edges. Cell is row-major from the front-left. */
+export interface PieceExtent { readonly cell: number; readonly x: number; readonly y: number }
+
+/** The cuts' positions on one axis, smallest first, with the model's two ends. */
+function axisEdges(cuts: readonly Cut[], axis: Axis2, length: number): number[] {
+  return [-length / 2, ...cuts.filter((c) => c.axis === axis).map((c) => c.at).sort((a, b) => a - b), length / 2]
+}
+
+/** How long each piece would be for these cut positions, before any are made. */
+export function pieceExtents(grid: GridPlan, size: { readonly width: number; readonly depth: number }, reserve: number): PieceExtent[] {
+  const xs = axisEdges(grid.cuts, 'x', size.width)
+  const ys = axisEdges(grid.cuts, 'y', size.depth)
+  const [cols, rows] = [xs.length - 1, ys.length - 1]
+  return Array.from({ length: cols * rows }, (_, cell): PieceExtent => {
+    const [c, r] = [cell % cols, Math.floor(cell / cols)]
+    return {
+      cell,
+      x: (xs[c + 1] ?? 0) - (xs[c] ?? 0) + reserve * cutEdges(c, cols),
+      y: (ys[r + 1] ?? 0) - (ys[r] ?? 0) + reserve * cutEdges(r, rows),
+    }
+  })
+}
+
+/** The cells whose piece would be too big for the plate with these cut positions. */
+export function misfitCells(grid: GridPlan, size: { readonly width: number; readonly depth: number }, plate: Plate, reserve: number): number[] {
+  return pieceExtents(grid, size, reserve).filter((e) => !fitsPlate(e.x, e.y, plate)).map((e) => e.cell)
 }

@@ -7,8 +7,9 @@ import { DEFAULT_FIT_GAP, NO_BASE_MESSAGE, NO_PRINTER_MESSAGE, THIN_TONGUE_MESSA
 import { baseName } from '../../split/save'
 import type { OpenedModel } from '../../split/split-api'
 import { SplitCancelled, type SplitClient } from '../../split/split-client'
-import type { GridPlan, PiecesResult, Plate, SplitResult, SplitSettings } from '../../split/types'
-import { effectiveSettings, misfitMessage, moveCutIn, normalizeSettings } from './split-rules'
+import type { Cut, GridPlan, PiecesResult, Plate, SplitResult, SplitSettings } from '../../split/types'
+import { JOINT_RESERVE, misfitCells } from '../../split/grid'
+import { effectiveSettings, liveMisfitMessage, misfitMessage, moveCutIn, normalizeSettings } from './split-rules'
 
 export type Stage = 'empty' | 'opened' | 'planned' | 'pieces'
 export type Busy = 'opening' | 'planning' | 'making' | 'saving' | null
@@ -38,6 +39,13 @@ const START: State = {
 
 /** The pieces are out of date as soon as a setting or a cut changes. */
 const stale = (s: State): State => (s.stage === 'pieces' ? { ...s, stage: 'planned', pieces: null } : s)
+/** The grid cells whose piece would be too big with these cuts, for the joint style in use. */
+function plannedMisfits(grid: GridPlan, s: State, plate: Plate): number[] {
+  const [width, depth] = s.info?.size ?? [0, 0]
+  const reserve = JOINT_RESERVE[effectiveSettings(s.settings, s.hasBase).joint]
+  return misfitCells(grid, { width, depth }, plate, reserve)
+}
+
 /** No plan (it failed or was cancelled): back to just opened, so "Work out the pieces" shows. */
 const unplanned = (s: State): State => ({ ...s, stage: 'opened', grid: null, pieces: null })
 
@@ -150,9 +158,12 @@ export function useSplit(client: SplitClient): Split {
   }, [])
 
   const moveCut = useCallback((index: number, at: number): void => {
+    const p = latest.current.plate
     setState((s) => {
       if (!s.grid) return s
-      const cuts = moveCutIn(s.grid.cuts, index, at)
+      const grid = s.grid
+      const fits = (moved: readonly Cut[]): boolean => !p || !s.info || plannedMisfits({ ...grid, cuts: moved }, s, p).length === 0
+      const cuts = moveCutIn(grid.cuts, index, at, fits)
       if (cuts[index]?.at === s.grid.cuts[index]?.at) return s
       return stale({ ...s, grid: { ...s.grid, cuts } })
     })
@@ -183,6 +194,11 @@ export function useSplit(client: SplitClient): Split {
   const cancel = useCallback((): void => client.cancel(), [client])
 
   const misfits = useMemo(() => (state.pieces?.pieces ?? []).filter((p) => !p.fits).map((p) => p.number), [state.pieces])
+  // Live, before Make: how many pieces the current cuts would make too big.
+  const liveMisfits = useMemo(
+    () => (state.grid && state.info && plate && !state.pieces ? plannedMisfits(state.grid, state, plate).length : 0),
+    [state, plate],
+  )
   const messages = useMemo(() => {
     const base = state.settings.baseThickness
     return [
@@ -191,8 +207,9 @@ export function useSplit(client: SplitClient): Split {
       state.hasBase === false ? NO_BASE_MESSAGE : null,
       state.hasBase && base !== null && base < TONGUE_MIN_BASE ? THIN_TONGUE_MESSAGE : null,
       misfitMessage(misfits),
+      liveMisfitMessage(liveMisfits),
     ].filter((m): m is string => m !== null)
-  }, [state.error, state.hasBase, state.settings.baseThickness, plate, misfits])
+  }, [state.error, state.hasBase, state.settings.baseThickness, plate, misfits, liveMisfits])
 
   const idle = state.busy === null
   return {

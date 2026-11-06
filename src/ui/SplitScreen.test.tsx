@@ -45,9 +45,9 @@ describe('SplitScreen: opening and planning', () => {
     expect(screen.getByTestId('split-size')).toHaveTextContent('254 × 305 × 12 mm, 812,000 triangles')
     expect(await screen.findByText('4 pieces (2 × 2)')).toBeInTheDocument()
     const first = screen.getByTestId('split-cut-0')
-    expect([first.getAttribute('min'), first.getAttribute('max')]).toEqual(['-60', '60'])
+    expect([first.getAttribute('min'), first.getAttribute('max')]).toEqual(['-33', '33'])
     const second = screen.getByTestId('split-cut-1')
-    expect([second.getAttribute('min'), second.getAttribute('max'), (second as HTMLInputElement).value]).toEqual(['-70', '70', '10'])
+    expect([second.getAttribute('min'), second.getAttribute('max'), (second as HTMLInputElement).value]).toEqual(['-7.5', '7.5', '2'])
     expect(screen.getByTestId('split-base')).toHaveValue('6.4')
   })
 
