@@ -51,6 +51,18 @@ describe('SplitScreen: opening and planning', () => {
     expect(screen.getByTestId('split-base')).toHaveValue('6.4')
   })
 
+  it('slides cuts smoothly and says where each one is in mm', async () => {
+    setup()
+    await openFile()
+    await screen.findByText('4 pieces (2 × 2)')
+    const first = screen.getByTestId('split-cut-0')
+    expect(first.getAttribute('step')).toBe('any')
+    expect(screen.getByText(/Cut 1: slide left or right/)).toHaveTextContent('127 mm from the left')
+    expect(screen.getByText(/Cut 2: slide front or back/)).toHaveTextContent('154.5 mm from the front')
+    fireEvent.change(first, { target: { value: '12.25' } })
+    expect(screen.getByText(/Cut 1: slide left or right/)).toHaveTextContent('139.3 mm from the left')
+  })
+
   it('opens with the chosen unit and opens the kept file again when the unit changes', async () => {
     const { client } = setup()
     await userEvent.selectOptions(screen.getByTestId('split-units'), 'inches')

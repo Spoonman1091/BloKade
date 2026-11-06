@@ -15,7 +15,14 @@ const JOINTS: readonly { value: JointStyle; label: string }[] = [
   { value: 'none', label: 'None (glue only)' },
 ]
 
-const cutLabel = (cut: Cut, index: number): string => `Cut ${index + 1}: slide ${cut.axis === 'x' ? 'left or right' : 'front or back'}`
+const tenths = (mm: number): number => Math.round(mm * 10) / 10
+
+/** "Cut 1: slide left or right (127 mm from the left)". Positions count from the model's left or front edge. */
+function cutLabel(cut: Cut, index: number, size: readonly number[]): string {
+  const across = cut.axis === 'x'
+  const from = cut.at + (size[across ? 0 : 1] ?? 0) / 2
+  return `Cut ${index + 1}: slide ${across ? 'left or right' : 'front or back'} (${tenths(from)} mm from the ${across ? 'left' : 'front'})`
+}
 
 function FilePicker({ split }: { split: Split }) {
   const onChange = (event: ChangeEvent<HTMLInputElement>): void => {
@@ -41,7 +48,7 @@ function FilePicker({ split }: { split: Split }) {
 
 function Summary({ split }: { split: Split }) {
   if (!split.info) return null
-  const [x, y, z] = split.info.size.map((n) => Math.round(n * 10) / 10)
+  const [x, y, z] = split.info.size.map(tenths)
   return (
     <div data-testid="split-summary">
       <p className="split-size" data-testid="split-size">{x} × {y} × {z} mm, {split.info.triangleCount.toLocaleString('en-US')} triangles</p>
@@ -87,8 +94,8 @@ function CutSliders({ split }: { split: Split }) {
       <h3>Move the cuts</h3>
       {cuts.map((cut, i) => (
         <label className="field split-cut" key={i}>
-          <span>{cutLabel(cut, i)}</span>
-          <input type="range" data-testid={`split-cut-${i}`} min={cut.min} max={cut.max} step={0.5} value={cut.at} disabled={split.busy !== null}
+          <span>{cutLabel(cut, i, split.info?.size ?? [])}</span>
+          <input type="range" data-testid={`split-cut-${i}`} min={cut.min} max={cut.max} step="any" value={cut.at} disabled={split.busy !== null}
             onChange={(e) => split.moveCut(i, Number(e.target.value))} />
         </label>
       ))}
