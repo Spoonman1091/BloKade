@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { downloadBytes } from '../../app/download'
 import { printerStore } from '../../printers/printer-store'
 import { DEFAULT_PRINTER } from '../../printers/printers'
 import { THIN_TONGUE_MESSAGE } from '../../split/constants'
@@ -10,7 +11,7 @@ import { fakeSplitClient } from './testing/fake-split-client'
 import { useSplit } from './useSplit'
 
 vi.mock('../../app/download', () => ({ downloadBytes: vi.fn() }))
-afterEach(() => { cleanup(); printerStore.getState().setPrinter(DEFAULT_PRINTER) })
+afterEach(() => { cleanup(); printerStore.getState().setPrinter(DEFAULT_PRINTER); vi.clearAllMocks() })
 
 const file = () => new File([new Uint8Array([1, 2, 3])], 'a.stl')
 
@@ -97,6 +98,17 @@ describe('useSplit', () => {
     expect(hook.result.current.grid).toBeNull()
     expect(hook.result.current.pieces).toBeNull()
     expect(hook.result.current.canSave).toBe(false)
+  })
+
+  it('downloads the ZIP once, even in StrictMode', async () => {
+    const fake = fakeSplitClient()
+    const hook = renderHook(() => useSplit(fake.client), { reactStrictMode: true })
+    await act(async () => { await hook.result.current.open(file(), 'mm') })
+    await waitFor(() => expect(hook.result.current.stage).toBe('planned'))
+    await act(async () => { await hook.result.current.makePieces() })
+    await act(async () => { await hook.result.current.save() })
+    expect(downloadBytes).toHaveBeenCalledTimes(1)
+    expect(downloadBytes).toHaveBeenCalledWith(expect.any(Uint8Array), 'a-pieces.zip', 'application/zip')
   })
 
   it('reports the thin tongue message under 4 mm', async () => {

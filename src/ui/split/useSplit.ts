@@ -60,6 +60,9 @@ export interface Split extends State {
   cancel(): void
 }
 
+/** A call's value, when it answered and is still the latest call; null otherwise. */
+type Answer<T> = { readonly value: T } | null
+
 const plateOf = (size: readonly number[] | undefined): Plate | null => (size ? { width: size[0] ?? 0, depth: size[1] ?? 0 } : null)
 
 /** The Split for printing screen's state and actions. All heavy work goes through `client`. */
@@ -81,17 +84,23 @@ export function useSplit(client: SplitClient): Split {
    * Cancel starts a fresh worker that holds no pieces, so every `cancelled` drops them.
    */
   const run = useCallback(async <T,>(busy: Exclude<Busy, null>, call: () => Promise<SplitResult<T>>, done: (value: T) => (s: State) => State,
-    failed: (message: string) => (s: State) => State, cancelled: (s: State) => State): Promise<void> => {
+    failed: (message: string) => (s: State) => State, cancelled: (s: State) => State): Promise<Answer<T>> => {
     const mine = ++sequence.current
     setState((s) => ({ ...s, busy, progress: null, error: null }))
-    const finish = (change: (s: State) => State) => { if (mine === sequence.current) setState((s) => ({ ...change(s), busy: null, progress: null })) }
+    const finish = (change: (s: State) => State): boolean => {
+      if (mine !== sequence.current) return false
+      setState((s) => ({ ...change(s), busy: null, progress: null }))
+      return true
+    }
     try {
       const result = await call()
-      finish(result.ok ? done(result.value) : failed(result.message))
+      const current = finish(result.ok ? done(result.value) : failed(result.message))
+      return current && result.ok ? { value: result.value } : null
     } catch (error) {
-      if (error instanceof SplitCancelled) return finish(cancelled)
+      if (error instanceof SplitCancelled) { finish(cancelled); return null }
       console.error('Split for printing screen failed:', error)
       finish(failed(UNEXPECTED_MESSAGE))
+      return null
     }
   }, [])
 
@@ -163,10 +172,12 @@ export function useSplit(client: SplitClient): Split {
     const { state: s } = latest.current
     if (s.stage !== 'pieces' || s.busy) return
     const name = baseName(s.fileName ?? '')
-    await run('saving', () => client.save(name),
-      (zip) => (cur) => { downloadBytes(zip as BlobPart, `${name}-pieces.zip`, 'application/zip'); return cur },
+    const answer = await run('saving', () => client.save(name),
+      () => (cur) => cur,
       (message) => (cur) => ({ ...cur, error: message }),
       stale)
+    // Outside any state updater: React may run an updater twice.
+    if (answer) downloadBytes(answer.value as BlobPart, `${name}-pieces.zip`, 'application/zip')
   }, [client, run])
 
   const cancel = useCallback((): void => client.cancel(), [client])
