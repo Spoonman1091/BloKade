@@ -28,22 +28,45 @@ export function plateStl(opts: { width: number; depth: number; base: number; rai
     for (const p of [a, b, c, d]) vertices.push(...p)
     triangles.push(first, first + 1, first + 2, first, first + 2, first + 3)
   }
+  // A wall on the plate's outer edge, from a to b, h tall. Its two ends get a vertex where the
+  // neighbouring wall along the edge stops (m0 / m1), so no T-junction is left. `standard` picks the winding.
+  const outerWall = (a: readonly [number, number], b: readonly [number, number], h: number, m0: number, m1: number, standard: boolean): void => {
+    const at = (p: readonly [number, number], z: number): Point => [p[0], p[1], z]
+    const ring: Point[] = [at(a, 0), at(b, 0)]
+    if (m1 > 0 && m1 < h) ring.push(at(b, m1))
+    ring.push(at(b, h), at(a, h))
+    if (m0 > 0 && m0 < h) ring.push(at(a, m0))
+    const ordered = standard ? ring : [...ring].reverse()
+    if (ring.length === 4) return quad(...(ordered as [Point, Point, Point, Point]))
+    const hub: Point = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, h / 2]
+    const first = vertices.length / 3
+    for (const p of [hub, ...ordered]) vertices.push(...p)
+    for (let k = 1; k <= ordered.length; k++) triangles.push(first, first + k, first + 1 + (k % ordered.length))
+  }
   for (let i = 0; i < xs.length - 1; i++) {
     for (let j = 0; j < ys.length - 1; j++) {
       const [x0, x1, y0, y1] = [xs[i] ?? 0, xs[i + 1] ?? 0, ys[j] ?? 0, ys[j + 1] ?? 0]
       const h = heightAt(i, j)
       quad([x0, y0, h], [x1, y0, h], [x1, y1, h], [x0, y1, h])
       quad([x0, y0, 0], [x0, y1, 0], [x1, y1, 0], [x1, y0, 0])
-      // Walls toward +x and +y neighbours (and the outside), facing out of the taller side.
+      // Walls toward +x / +y neighbours, facing out of the taller side. The plate's own outer edge counts as height 0.
       const right = heightAt(i + 1, j)
-      if (h > right) quad([x1, y0, right], [x1, y1, right], [x1, y1, h], [x1, y0, h])
-      else if (right > h) quad([x1, y0, h], [x1, y0, right], [x1, y1, right], [x1, y1, h])
+      if (i + 1 < xs.length - 1) {
+        if (h > right) quad([x1, y0, right], [x1, y1, right], [x1, y1, h], [x1, y0, h])
+        else if (right > h) quad([x1, y0, h], [x1, y0, right], [x1, y1, right], [x1, y1, h])
+      } else {
+        outerWall([x1, y0], [x1, y1], h, Math.min(h, heightAt(i, j - 1)), Math.min(h, heightAt(i, j + 1)), true)
+      }
       const back = heightAt(i, j + 1)
-      if (h > back) quad([x0, y1, back], [x0, y1, h], [x1, y1, h], [x1, y1, back])
-      else if (back > h) quad([x0, y1, h], [x1, y1, h], [x1, y1, back], [x0, y1, back])
-      // Walls toward -x / -y only at the plate's own edge (inner ones come from the neighbour).
-      if (i === 0) quad([x0, y0, 0], [x0, y0, h], [x0, y1, h], [x0, y1, 0])
-      if (j === 0) quad([x0, y0, 0], [x1, y0, 0], [x1, y0, h], [x0, y0, h])
+      if (j + 1 < ys.length - 1) {
+        if (h > back) quad([x0, y1, back], [x0, y1, h], [x1, y1, h], [x1, y1, back])
+        else if (back > h) quad([x0, y1, h], [x1, y1, h], [x1, y1, back], [x0, y1, back])
+      } else {
+        outerWall([x0, y1], [x1, y1], h, Math.min(h, heightAt(i - 1, j)), Math.min(h, heightAt(i + 1, j)), false)
+      }
+      // The -x / -y outer edges (inner walls come from the neighbour).
+      if (i === 0) outerWall([x0, y0], [x0, y1], h, Math.min(h, heightAt(i, j - 1)), Math.min(h, heightAt(i, j + 1)), false)
+      if (j === 0) outerWall([x0, y0], [x1, y0], h, Math.min(h, heightAt(i - 1, j)), Math.min(h, heightAt(i + 1, j)), true)
     }
   }
   return binaryStl({ vertices, triangles })
