@@ -2,9 +2,6 @@ import type { Cut, GridPlan, PiecesResult } from '../../split/types'
 import type { Vec3 } from '../../document/types'
 
 const PAD = 6
-const MISFIT_FILL = '#ffd6d6'
-const FIT_FILL = '#e3ecfb'
-const GLUE_COLOR = '#b3261e'
 
 /** The cut positions on one axis, with the model's two ends, smallest first: the edges of the map's cells. */
 function edges(cuts: readonly Cut[], axis: Cut['axis'], length: number): readonly number[] {
@@ -36,10 +33,10 @@ export function PieceMap({ size, grid, result }: PieceMapProps) {
         const [x0, x1, y0, y1] = [xs[col] ?? 0, xs[col + 1] ?? 0, ys[row] ?? 0, ys[row + 1] ?? 0]
         return (
           <g key={piece.number}>
-            <rect x={left(x0)} y={top(y1)} width={x1 - x0} height={y1 - y0} fill={piece.fits ? FIT_FILL : MISFIT_FILL}
-              stroke="#5b6f8f" strokeWidth={0.6} />
+            <rect x={left(x0)} y={top(y1)} width={x1 - x0} height={y1 - y0} className={piece.fits ? 'map-cell' : 'map-cell misfit'}
+              strokeWidth={0.6} />
             <text x={left((x0 + x1) / 2)} y={top((y0 + y1) / 2)} fontSize={labelSize} textAnchor="middle" dominantBaseline="central"
-              fill={piece.fits ? '#1c2a44' : '#b3261e'}>{piece.number}</text>
+              className={piece.fits ? 'map-number' : 'map-number misfit'}>{piece.number}</text>
           </g>
         )
       })}
@@ -54,8 +51,8 @@ export function PieceMap({ size, grid, result }: PieceMapProps) {
           : [left(glue.from), top(cut.at), left(glue.to), top(cut.at)]
         return (
           <g key={`${glue.cut}:${glue.from}`}>
-            <line x1={ax} y1={ay} x2={bx} y2={by} stroke={GLUE_COLOR} strokeWidth={1.2} strokeDasharray="3 2" />
-            <text className="split-map-glue" fontSize={glueSize} textAnchor="middle" fill={GLUE_COLOR} x={x} y={y - 1}
+            <line x1={ax} y1={ay} x2={bx} y2={by} className="map-glue" strokeWidth={1.2} strokeDasharray="3 2" />
+            <text className="split-map-glue" fontSize={glueSize} textAnchor="middle" x={x} y={y - 1}
               transform={vertical ? `rotate(-90 ${x} ${y})` : undefined}>glue here</text>
           </g>
         )

@@ -6,6 +6,7 @@ import type { OpenedModel } from '../../split/split-api'
 import type { Cut, GridPlan, PieceMesh, PiecesResult } from '../../split/types'
 import { usePrinter } from '../../printers/printer-store'
 import { PrinterPlate } from '../../viewport/PrinterPlate'
+import { useSceneColors } from '../../viewport/scene-colors'
 import { cameraFit, type Footprint } from './camera-fit'
 
 // Z-up like the design view; harmless to repeat.
@@ -90,11 +91,12 @@ interface SplitViewProps {
 /** The model (or the finished pieces, spread a little apart) on the printer's plate, with the cuts as red lines. */
 export function SplitView({ info, grid, result }: SplitViewProps) {
   const printer = usePrinter()
+  const sceneColors = useSceneColors()
   const [width, depth, height] = info?.size ?? [0, 0, 0]
   const [plateWidth, plateDepth] = printer?.size ?? [0, 0]
   return (
     <Canvas camera={{ position: [120, -160, 120], fov: FOV, near: 0.5, far: 5000 }}>
-      <color attach="background" args={['#e9eef7']} />
+      <color attach="background" args={[sceneColors.background]} />
       <ambientLight intensity={0.7} />
       <directionalLight position={[150, -100, 250]} intensity={1.6} />
       <PrinterPlate printer={printer} />

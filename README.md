@@ -160,6 +160,12 @@ npm run e2e           # end-to-end tests in a real browser
 Lesson progress is kept in this browser. In a private window the lessons still work, but they forget your
 ✓ marks when you close it.
 
+### Dark mode and colour themes
+
+BloKade starts in dark mode. The ☀️ button in the top bar switches to light mode and 🌙 switches back. The 🎨
+button picks a colour theme (Ocean, Grape, Forest, Sunset, Bubblegum or Lagoon) that colours the buttons, panels
+and 3D view; every theme works in both dark and light mode. BloKade remembers both choices in this browser.
+
 ### Keyboard shortcuts
 
 | Keys | What it does |

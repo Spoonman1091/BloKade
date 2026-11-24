@@ -9,6 +9,7 @@ import { registry } from '../plugins/index'
 import { printerStore } from '../printers/printer-store'
 import { DEFAULT_PRINTER } from '../printers/printers'
 import { createBloKadeStore } from '../store/store'
+import { themeStore } from './theme-store'
 import { Toolbar } from './Toolbar'
 
 function setup() {
@@ -25,7 +26,46 @@ function setup() {
 }
 
 describe('Toolbar', () => {
-  afterEach(() => printerStore.getState().setPrinter(DEFAULT_PRINTER))
+  afterEach(() => {
+    printerStore.getState().setPrinter(DEFAULT_PRINTER)
+    if (themeStore.getState().theme !== 'dark') themeStore.getState().toggle()
+    themeStore.getState().setColor('ocean')
+  })
+
+  it('picks a colour theme from the 🎨 menu', async () => {
+    setup()
+    expect(screen.queryByRole('radiogroup', { name: 'Colour theme' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByTestId('theme-colors'))
+    const menu = screen.getByRole('radiogroup', { name: 'Colour theme' })
+    expect(menu.querySelectorAll('[role="radio"]')).toHaveLength(6)
+    expect(screen.getByRole('radio', { name: 'Ocean' })).toHaveAttribute('aria-checked', 'true')
+    await userEvent.click(screen.getByRole('radio', { name: 'Forest' }))
+    expect(themeStore.getState().color).toBe('forest')
+    expect(screen.queryByRole('radiogroup', { name: 'Colour theme' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByTestId('theme-colors'))
+    expect(screen.getByRole('radio', { name: 'Forest' })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('closes the colour menu with Escape or a click elsewhere', async () => {
+    setup()
+    await userEvent.click(screen.getByTestId('theme-colors'))
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('radiogroup', { name: 'Colour theme' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByTestId('theme-colors'))
+    await userEvent.click(document.body)
+    expect(screen.queryByRole('radiogroup', { name: 'Colour theme' })).not.toBeInTheDocument()
+  })
+
+  it('switches between dark and light', async () => {
+    setup()
+    const toggle = screen.getByTestId('theme-toggle')
+    expect(toggle).toHaveAccessibleName('Switch to light mode')
+    await userEvent.click(toggle)
+    expect(themeStore.getState().theme).toBe('light')
+    expect(toggle).toHaveAccessibleName('Switch to dark mode')
+    await userEvent.click(toggle)
+    expect(themeStore.getState().theme).toBe('dark')
+  })
 
   it('picks the printer, starting on the A1 mini', async () => {
     setup()

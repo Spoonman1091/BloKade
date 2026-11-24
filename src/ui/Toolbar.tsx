@@ -5,6 +5,7 @@ import { printerStore, usePrinterId } from '../printers/printer-store'
 import { NO_PRINTER, PRINTERS, printerLabel } from '../printers/printers'
 import { useBloKade } from '../store/context'
 import type { ToolMode } from '../store/store'
+import { ColorThemePicker, ThemeToggle } from './ThemeControls'
 
 const SNAP_OPTIONS = [
   { value: 1, label: '1 mm' },
@@ -53,6 +54,8 @@ export function Toolbar({ actions, onExport, onOpenDesigns, learnOpen, onLearn, 
         <button type="button" className="tool-button" data-testid="learn" aria-pressed={learnOpen} onClick={onLearn}>📘 Learn</button>
         <button type="button" className="tool-button" data-testid="help-mode" data-help-toggle="" aria-pressed={helpMode}
           aria-label="Help mode" onClick={onHelpMode}>❓</button>
+        <ThemeToggle />
+        <ColorThemePicker />
         {onMyShapes && <button type="button" className="tool-button" data-testid="my-shapes" onClick={onMyShapes}>🛠️ My shapes</button>}
         {onSplit && <button type="button" className="tool-button" data-testid="split-for-printing" onClick={onSplit}>✂ Split for printing</button>}
       </div>

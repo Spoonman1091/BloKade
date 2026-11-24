@@ -3,6 +3,7 @@ import { bracketMatching, foldGutter, indentOnInput } from '@codemirror/language
 import { highlightActiveLine, highlightActiveLineGutter, lineNumbers } from '@codemirror/view'
 import { EditorView, minimalSetup } from 'codemirror'
 import { useEffect, useRef } from 'react'
+import { codeTheme } from './code-theme'
 
 export interface CodeJump {
   readonly line: number
@@ -47,6 +48,7 @@ export function CodeBox({ docKey, code, onChange, jump }: CodeBoxProps) {
         indentOnInput(),
         foldGutter(),
         javascript(),
+        codeTheme,
         EditorView.updateListener.of((update) => {
           if (update.docChanged) changed.current(update.state.doc.toString())
         }),

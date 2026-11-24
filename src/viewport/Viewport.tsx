@@ -14,6 +14,7 @@ import { NodeMesh } from './NodeMesh'
 import { OverlapMesh } from './OverlapMesh'
 import { PrintCheckMeshes } from './PrintCheckMeshes'
 import { PrinterPlate } from './PrinterPlate'
+import { useSceneColors } from './scene-colors'
 import { sizeHintFor } from './size-drag'
 import { TransformHandles } from './TransformHandles'
 import { usePlateFit } from './usePlateFit'
@@ -25,6 +26,7 @@ Object3D.DEFAULT_UP.set(0, 0, 1)
 
 export function Viewport({ registry, onToggleEdge }: { registry: PluginRegistry; onToggleEdge(fingerprint: EdgeFingerprint): void }) {
   const store = useBloKadeStore()
+  const sceneColors = useSceneColors()
   const doc = useBloKade((s) => s.history.present)
   const meshes = useBloKade((s) => s.meshes)
   const selection = useBloKade((s) => s.selection)
@@ -55,7 +57,7 @@ export function Viewport({ registry, onToggleEdge }: { registry: PluginRegistry;
     <>
       <Canvas camera={{ position: [120, -160, 120], fov: 45, near: 0.5, far: 5000 }} onPointerMissed={onPointerMissed}
         data-misfits={[...fit.misfitIds].join(' ')}>
-        <color attach="background" args={['#e9eef7']} />
+        <color attach="background" args={[sceneColors.background]} />
         <ambientLight intensity={0.7} />
         <directionalLight position={[150, -100, 250]} intensity={1.6} />
         <directionalLight position={[-150, 100, 80]} intensity={0.5} />

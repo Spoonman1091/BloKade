@@ -27,6 +27,7 @@ const ALIGN_AXIS: Readonly<Record<string, string>> = { x: 'left to right', y: 'f
 
 /** Families of controls. Checked in order, so more specific patterns come first. */
 export const HELP_PATTERNS: readonly HelpPattern[] = [
+  { pattern: /^theme-color-.+$/, entry: (label) => ({ tip: `Switches to the ${label} colours.`, card: 'Each colour theme changes the buttons, the panels and the 3D view. It works in dark mode and light mode.' }) },
   { pattern: /^split-cut-\d+$/, entry: () => ({ tip: 'Slides this cut.', card: 'Drag to move the cut. The red line in the 3D view follows. It stays inside the places where the pieces still fit your printer.' }) },
   { pattern: /^shape-item-.+$/, entry: (label) => ({ tip: `Opens ${label}.`, card: 'Click a shape to open its code and its preview.' }) },
   { pattern: /^problem-\d+$/, entry: () => ({ tip: 'Click to jump to the line with the problem.', card: 'The message says what is wrong and which line to look at. Click it and the code box jumps there.' }) },
